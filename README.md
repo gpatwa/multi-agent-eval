@@ -1,0 +1,145 @@
+# Multi-Agent, Multi-Provider Model Evaluation
+
+A multi-agent application that evaluates LLMs from different provider
+platforms — **Anthropic (Claude), OpenAI (GPT), Google (Gemini), and Z.ai
+(GLM)** — on the same task suite, using an **LLM-as-judge** pipeline, and
+produces a comparison report.
+
+The concrete use case it proves: *"Which model should we use for our
+workload?"* — answered with data (quality scores, latency, token usage)
+instead of vibes.
+
+## Architecture
+
+```
+                       ┌──────────────────────────────────────────┐
+ tasks.yaml ──────────▶│               Orchestrator               │
+                       │  (runner.py: fan-out, judge, aggregate)  │
+                       └───────┬──────────────────────────┬───────┘
+                               │ same prompt, in parallel │
+              ┌────────────┬───┴────────┬────────────┐    │
+              ▼            ▼            ▼            ▼    ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────┐ ┌───────────┐
+        │  Agent   │ │  Agent   │ │  Agent   │ │Agent │ │Judge Agent│
+        │ "claude" │ │  "gpt"   │ │ "gemini" │ │"glm" │ │ (any      │
+        └────┬─────┘ └────┬─────┘ └────┬─────┘ └──┬───┘ │ provider) │
+             ▼            ▼            ▼          ▼     └─────┬─────┘
+      ╔════════════════════════════════════════════════╗     │
+      ║        Provider interface (providers/base.py)  ║◀────┘
+      ║   complete(messages, system) -> ModelResponse  ║
+      ╚═══╤══════════╤═══════════╤════════════╤════════╝
+          ▼          ▼           ▼            ▼
+      anthropic    openai    google-genai   openai SDK
+        SDK         SDK         SDK        + Z.ai base_url
+```
+
+### Design decisions (the "flexibility to switch models" part)
+
+1. **Adapter pattern at the provider boundary** ([base.py](eval_agents/providers/base.py)).
+   One tiny interface — `complete(messages, system) -> ModelResponse` — with a
+   normalized message/response shape. Nothing outside `providers/` imports a
+   vendor SDK. Each adapter is ~40 lines using the vendor's *official* SDK, so
+   you keep native features (Claude adaptive thinking, Gemini system
+   instructions) instead of the lowest common denominator a generic proxy
+   gives you.
+
+2. **Config-driven model binding** ([config.yaml](config.yaml)). Roles
+   (candidate, judge) are bound to `provider + model` in YAML. Switching a
+   model is a one-line edit; adding a provider is one adapter file + one
+   registry entry ([registry.py](eval_agents/registry.py)). Providers are
+   imported lazily, so you only need SDKs for providers you actually use, and
+   candidates with missing API keys are skipped rather than failing the run.
+
+3. **OpenAI-compatible endpoints are subclasses, not new integrations.**
+   Z.ai GLM speaks the OpenAI wire protocol, so
+   [zai_provider.py](eval_agents/providers/zai_provider.py) is ~10 lines: it
+   inherits the OpenAI adapter and overrides `base_url`, the key env var, and
+   the token-cap parameter name. The same trick covers vLLM, Ollama,
+   DeepSeek, Mistral, etc.
+
+4. **Agents are roles, not vendors** ([agents.py](eval_agents/agents.py)).
+   An `Agent` = name + system prompt + a `Provider` instance. The judge is
+   just another agent, so you can grade with Claude today and Gemini
+   tomorrow by editing one YAML block.
+
+5. **A mock provider makes the pipeline testable offline**
+   ([mock_provider.py](eval_agents/providers/mock_provider.py)) — run the
+   whole system with zero API keys to verify orchestration, parsing, and
+   reporting.
+
+**Why not LangChain/LiteLLM?** Those are fine choices when you need their
+breadth (hundreds of providers, routing, fallbacks). For learning how to
+*build* this, and for production systems where you want full control over
+each vendor's native request shape, a ~40-line adapter per provider is less
+code than the abstraction it replaces — and this codebase shows exactly
+where such a library would slot in (behind `Provider`).
+
+## The evaluation pipeline (concrete use case)
+
+1. **Fan-out** — each task in [tasks.yaml](tasks.yaml) (summarization,
+   reasoning, extraction, coding) is sent to every candidate agent
+   concurrently.
+2. **Judge** — a judge agent scores each answer 1–5 on accuracy,
+   completeness, clarity, and instruction-following against reference
+   notes, returning strict JSON (prompt-based so it works identically on
+   all providers).
+3. **Report** — results aggregate into `results/report.md` (leaderboard +
+   per-task tables) and `results/results.json`.
+
+**Judge bias caveat:** the judge shares a vendor with one candidate. To
+control for it, re-run with judges from different providers and compare
+rankings — it's a one-line config change.
+
+## Quick start
+
+```bash
+cd multi-agent-eval
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# 1. Prove the pipeline offline — no API keys needed
+python main.py --config config.demo.yaml --out results-demo
+
+# 2. Real run — set keys for the providers you have (others are skipped)
+export ANTHROPIC_API_KEY=... OPENAI_API_KEY=... GEMINI_API_KEY=... ZAI_API_KEY=...
+python main.py --config config.yaml --out results
+open results/report.md
+```
+
+## Extending
+
+- **Add a provider:** create `eval_agents/providers/foo_provider.py`
+  implementing `Provider.complete()`, register it in `registry.py`, and
+  reference it in `config.yaml`. If it's OpenAI-compatible, subclass
+  `OpenAIProvider` like the Z.ai adapter does.
+- **Add tasks:** append to `tasks.yaml` — real value comes from tasks that
+  mirror *your* workload.
+- **Multiple judges / panel scoring:** instantiate several judge agents and
+  average their `Verdict.overall` in `runner.py`.
+- **Different use case:** the agent/provider layers are use-case agnostic —
+  the same abstraction supports a planner→worker→reviewer pipeline where
+  each role runs on the provider best suited (e.g. cheap model for
+  classification, frontier model for synthesis).
+
+## Project layout
+
+```
+multi-agent-eval/
+├── main.py                     # CLI entry point
+├── config.yaml                 # provider/model bindings (the switchboard)
+├── config.demo.yaml            # offline mock configuration
+├── tasks.yaml                  # evaluation task suite
+└── eval_agents/
+    ├── registry.py             # provider factory (config -> adapter)
+    ├── agents.py               # Agent = role + provider binding
+    ├── judge.py                # LLM-as-judge rubric + JSON parsing
+    ├── runner.py               # orchestrator (fan-out, judging)
+    ├── report.py               # markdown + JSON reporting
+    └── providers/
+        ├── base.py             # Provider interface + normalized types
+        ├── anthropic_provider.py
+        ├── openai_provider.py  # also base class for OpenAI-compatible APIs
+        ├── zai_provider.py     # GLM via OpenAI-compatible endpoint
+        ├── gemini_provider.py
+        └── mock_provider.py    # offline testing
+```

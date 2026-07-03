@@ -1,0 +1,78 @@
+# Evaluation task suite. Each task has an id, a category, the prompt sent
+# to every candidate, and optional reference notes the judge can grade
+# against. Add your own domain-specific tasks here — that's what makes the
+# comparison meaningful for YOUR use case.
+
+tasks:
+  - id: summarize-incident
+    category: summarization
+    prompt: |
+      Summarize the following incident report in exactly 3 bullet points,
+      each under 20 words, for an executive audience:
+
+      "At 02:14 UTC the payment service began returning 503 errors for
+      roughly 18% of checkout requests. On-call traced the issue to a
+      connection pool exhaustion in the orders database, triggered by a
+      slow migration job that had been started earlier that evening and
+      held long-running locks. The migration was killed at 02:41 UTC and
+      error rates returned to baseline by 02:49 UTC. Approximately 4,200
+      checkout attempts failed during the window. A retry banner was shown
+      to affected users. Follow-ups: add migration runbook gating, alert
+      on pool saturation at 80%, and backfill failed orders."
+    reference: |
+      Must mention: ~35min partial checkout outage caused by a migration
+      exhausting DB connections; ~4,200 failed checkouts; fixed by killing
+      the migration; follow-ups exist. Must be exactly 3 bullets, <20 words each.
+
+  - id: reasoning-schedule
+    category: reasoning
+    prompt: |
+      Four meetings (A, B, C, D) must be scheduled into two rooms during
+      slots 9:00, 10:00, and 11:00. Constraints:
+      - A and B need the same room, with A immediately before B.
+      - C must be at 9:00.
+      - D cannot be in the same room as C.
+      - No room holds two meetings in one slot.
+      Give one valid schedule as a table (room x slot) and briefly verify
+      each constraint.
+    reference: |
+      Since D cannot share a room with C, C and D occupy different rooms.
+      A immediately before B forces the pair into 9:00+10:00 or 10:00+11:00
+      of one room. One valid schedule: Room 1: C@9:00, A@10:00, B@11:00;
+      Room 2: D in any slot. The answer must present a room-by-slot table
+      and verify all four constraints.
+
+  - id: extract-contacts
+    category: structured-extraction
+    prompt: |
+      Extract every person mentioned below into a JSON array of objects
+      with keys "name", "role", "company". Use null for unknown fields.
+      Output JSON only.
+
+      "The kickoff was led by Priya Nair, VP of Engineering at Datacore.
+      She was joined by consultant Marcus Webb and by Datacore's newly
+      hired SRE lead, Tom Okafor. A note-taker from the vendor side,
+      Ana Ruiz of CloudBridge, joined remotely."
+    reference: |
+      4 people: Priya Nair (VP of Engineering, Datacore); Marcus Webb
+      (consultant, null company); Tom Okafor (SRE lead, Datacore);
+      Ana Ruiz (note-taker, CloudBridge). Valid JSON array only.
+
+  - id: code-fix
+    category: coding
+    prompt: |
+      This Python function is supposed to return the n most frequent words
+      in a text, breaking ties alphabetically, but it has bugs. Fix it and
+      return only the corrected code with a one-line explanation per fix.
+
+      def top_words(text, n):
+          counts = {}
+          for w in text.split():
+              counts[w] = counts[w] + 1
+          ordered = sorted(counts, key=lambda w: counts[w])
+          return ordered[:n]
+    reference: |
+      Bugs: KeyError on first occurrence (needs counts.get(w, 0) + 1 or
+      defaultdict); sort must be descending by count and ascending
+      alphabetically for ties: sorted(counts, key=lambda w: (-counts[w], w)).
+      Case/punctuation normalization is a bonus, not required.

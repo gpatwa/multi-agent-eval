@@ -1,0 +1,17 @@
+# Offline demo config — runs the full pipeline with mock providers,
+# no API keys needed. Proves the orchestration end-to-end.
+
+candidates:
+  - name: mock-alpha
+    provider: mock
+    model: mock-worker-alpha
+  - name: mock-beta
+    provider: mock
+    model: mock-worker-beta
+  - name: mock-gamma
+    provider: mock
+    model: mock-worker-gamma
+
+judge:
+  provider: mock
+  model: mock-judge

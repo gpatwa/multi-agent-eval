@@ -1,0 +1,25 @@
+# Model assignment lives here — switching a model or provider is a one-line
+# edit; no code changes. Delete or add candidates freely. Candidates whose
+# API key is missing are skipped automatically.
+
+candidates:
+  - name: claude
+    provider: anthropic
+    model: claude-opus-4-8
+  - name: gpt
+    provider: openai
+    model: gpt-5          # adjust to whichever OpenAI model you're targeting
+  - name: gemini
+    provider: gemini
+    model: gemini-2.5-pro
+  - name: glm
+    provider: zai
+    model: glm-4.6
+
+# The judge is just another agent — point it at any provider/model.
+# Note: the judge shares a vendor with one candidate (grading bias); to
+# control for this, re-run with a judge from a different provider and
+# compare rankings, or average across multiple judge runs.
+judge:
+  provider: anthropic
+  model: claude-opus-4-8
