@@ -5,6 +5,8 @@ Usage:
     python main.py --config config.demo.yaml            # offline mock demo
     python main.py --config config.yaml                 # real providers
     python main.py --config config.yaml --tasks tasks.yaml --out results/
+
+For the web UI, run:  uvicorn webapp.server:app --reload
 """
 from __future__ import annotations
 
@@ -12,40 +14,9 @@ import argparse
 import pathlib
 import sys
 
-import yaml
-
-from eval_agents.agents import Agent
-from eval_agents.judge import JUDGE_SYSTEM
-from eval_agents.registry import MissingCredentials, create_provider
+from eval_agents.config import load_agents, load_config, load_tasks
 from eval_agents.report import to_json, to_markdown
-from eval_agents.runner import Task, run_evaluation
-
-
-def load_agents(config: dict) -> tuple[list[Agent], Agent]:
-    candidates: list[Agent] = []
-    for spec in config["candidates"]:
-        try:
-            provider = create_provider(spec["provider"], spec["model"])
-        except MissingCredentials as exc:
-            print(f"skipping candidate {spec['name']!r}: {exc}", file=sys.stderr)
-            continue
-        candidates.append(Agent(name=spec["name"], provider=provider))
-
-    if not candidates:
-        sys.exit("No candidates available — set at least one provider API key.")
-
-    judge_spec = config["judge"]
-    judge = Agent(
-        name="judge",
-        provider=create_provider(judge_spec["provider"], judge_spec["model"]),
-        system=JUDGE_SYSTEM,
-    )
-    return candidates, judge
-
-
-def load_tasks(path: str) -> list[Task]:
-    data = yaml.safe_load(pathlib.Path(path).read_text())
-    return [Task(**t) for t in data["tasks"]]
+from eval_agents.runner import run_evaluation
 
 
 def main() -> None:
@@ -55,8 +26,10 @@ def main() -> None:
     parser.add_argument("--out", default="results")
     args = parser.parse_args()
 
-    config = yaml.safe_load(pathlib.Path(args.config).read_text())
-    candidates, judge = load_agents(config)
+    try:
+        candidates, judge = load_agents(load_config(args.config))
+    except RuntimeError as exc:
+        sys.exit(str(exc))
     tasks = load_tasks(args.tasks)
 
     print(

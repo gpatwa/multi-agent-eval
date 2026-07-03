@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>multi-agent-eval</title>
+<style>
+  :root {
+    --bg: #101418; --panel: #1a2027; --panel2: #222a33; --border: #2e3944;
+    --text: #e6edf3; --dim: #8b98a5; --accent: #4da3ff; --good: #3fb950;
+    --warn: #d29922; --bad: #f85149;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 14px 24px; border-bottom: 1px solid var(--border);
+           display: flex; align-items: baseline; gap: 14px; }
+  header h1 { font-size: 17px; margin: 0; }
+  header span { color: var(--dim); font-size: 13px; }
+  main { display: grid; grid-template-columns: 300px 1fr; gap: 18px;
+         padding: 18px 24px; max-width: 1400px; }
+  .panel { background: var(--panel); border: 1px solid var(--border);
+           border-radius: 8px; padding: 14px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+       color: var(--dim); margin: 0 0 10px; }
+  select, button { font: inherit; border-radius: 6px; border: 1px solid var(--border); }
+  select { width: 100%; padding: 7px; background: var(--panel2); color: var(--text); }
+  button { background: var(--accent); color: #04101f; border: none; font-weight: 600;
+           padding: 8px 14px; cursor: pointer; width: 100%; margin-top: 10px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .cfg-detail { color: var(--dim); font-size: 12px; margin-top: 8px; }
+  .cfg-detail code { color: var(--text); }
+  .run-item { padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px;
+              margin-bottom: 8px; cursor: pointer; }
+  .run-item:hover, .run-item.active { border-color: var(--accent); }
+  .run-item .id { font-family: ui-monospace, monospace; font-size: 12px; }
+  .status { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 10px; }
+  .status.running   { background: #1c2d3f; color: var(--accent); }
+  .status.completed { background: #16301d; color: var(--good); }
+  .status.failed    { background: #3a1518; color: var(--bad); }
+  .progress { height: 6px; background: var(--panel2); border-radius: 3px;
+              overflow: hidden; margin-top: 6px; }
+  .progress div { height: 100%; background: var(--accent); transition: width .4s; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 14px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  tr.best td { color: var(--good); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  details { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px;
+            background: var(--panel); }
+  summary { cursor: pointer; padding: 10px 14px; font-weight: 600; }
+  summary .cat { color: var(--dim); font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .task-body { padding: 0 14px 12px; }
+  .prompt { color: var(--dim); white-space: pre-wrap; font-size: 12.5px;
+            border-left: 3px solid var(--border); padding-left: 10px; margin: 4px 0 12px; }
+  .answer { background: var(--panel2); border-radius: 6px; padding: 10px 12px;
+            margin: 8px 0; }
+  .answer .head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; }
+  .answer .head b { font-size: 13.5px; }
+  .answer .model { color: var(--dim); font-size: 12px; font-family: ui-monospace, monospace; }
+  .answer pre { white-space: pre-wrap; margin: 6px 0; font-size: 12.5px;
+                font-family: ui-monospace, monospace; }
+  .scores { color: var(--dim); font-size: 12px; }
+  .scores b { color: var(--text); }
+  .overall { font-weight: 700; color: var(--accent); }
+  .rationale { font-style: italic; color: var(--dim); font-size: 12.5px; }
+  .error { color: var(--bad); }
+  .empty { color: var(--dim); padding: 30px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>multi-agent-eval</h1>
+  <span>compare LLMs across providers with an LLM judge</span>
+</header>
+<main>
+  <div>
+    <div class="panel">
+      <h2>New run</h2>
+      <select id="config-select"></select>
+      <div class="cfg-detail" id="config-detail"></div>
+      <button id="run-btn">Start evaluation</button>
+    </div>
+    <div class="panel" style="margin-top:18px">
+      <h2>Runs</h2>
+      <div id="runs-list"><div class="empty">No runs yet</div></div>
+    </div>
+  </div>
+  <div id="detail"><div class="panel empty">Start a run, or select one on the left.</div></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const DIMS = ["accuracy", "completeness", "clarity", "instruction_following"];
+let configs = [], selectedRun = null, pollTimer = null;
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g,
+  (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+  return res.json();
+}
+
+// ---------------- config picker ----------------
+async function loadConfigs() {
+  configs = await api("/api/configs");
+  $("config-select").innerHTML = configs
+    .map((c) => `<option value="${esc(c.file)}">${esc(c.file)}</option>`).join("");
+  renderConfigDetail();
+}
+function renderConfigDetail() {
+  const cfg = configs.find((c) => c.file === $("config-select").value);
+  if (!cfg) return;
+  $("config-detail").innerHTML =
+    cfg.candidates.map((c) => `• ${esc(c.name)} — <code>${esc(c.model)}</code>`).join("<br>") +
+    `<br>judge: <code>${esc(cfg.judge.model || "?")}</code>`;
+}
+$("config-select").addEventListener("change", renderConfigDetail);
+
+// ---------------- runs ----------------
+$("run-btn").addEventListener("click", async () => {
+  $("run-btn").disabled = true;
+  try {
+    const run = await api("/api/runs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ config: $("config-select").value }),
+    });
+    selectedRun = run.id;
+    schedulePoll();
+  } catch (e) { alert(e.message); }
+  $("run-btn").disabled = false;
+});
+
+async function refresh() {
+  const runs = await api("/api/runs");
+  $("runs-list").innerHTML = runs.length
+    ? runs.map((r) => `
+      <div class="run-item ${r.id === selectedRun ? "active" : ""}" onclick="selectRun('${r.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="id">${r.id}</span>
+          <span class="status ${r.status}">${r.status}</span>
+        </div>
+        <div style="color:var(--dim);font-size:12px">${esc(r.config_file)} ·
+          ${new Date(r.started_at * 1000).toLocaleTimeString()}</div>
+        ${r.status === "running" ? `<div class="progress"><div style="width:${
+          r.total_tasks ? (100 * r.done_tasks / r.total_tasks) : 5}%"></div></div>` : ""}
+      </div>`).join("")
+    : '<div class="empty">No runs yet</div>';
+
+  if (selectedRun) renderDetail(await api(`/api/runs/${selectedRun}`));
+  const anyRunning = runs.some((r) => r.status === "running");
+  if (anyRunning) schedulePoll();
+}
+function schedulePoll() {
+  clearTimeout(pollTimer);
+  pollTimer = setTimeout(refresh, 1200);
+}
+window.selectRun = (id) => { selectedRun = id; refresh(); };
+
+// ---------------- detail view ----------------
+function leaderboard(results) {
+  const agg = {};
+  for (const tr of results) for (const r of tr.results) {
+    const a = (agg[r.candidate] ??= { model: r.model, scores: [], lat: [], toks: [], errors: 0 });
+    if (r.error) { a.errors++; continue; }
+    a.lat.push(r.latency_s); a.toks.push(r.output_tokens);
+    if (r.verdict && !r.verdict.parse_error) a.scores.push(r.verdict.overall);
+  }
+  const avg = (xs) => xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0;
+  return Object.entries(agg)
+    .map(([name, a]) => ({ name, model: a.model, score: avg(a.scores),
+                           lat: avg(a.lat), toks: avg(a.toks), errors: a.errors }))
+    .sort((x, y) => y.score - x.score);
+}
+
+function renderDetail(run) {
+  const rows = leaderboard(run.results);
+  const lb = rows.length ? `
+    <div class="panel">
+      <h2>Leaderboard ${run.status === "running"
+        ? `(live — ${run.done_tasks}/${run.total_tasks} tasks)` : ""}</h2>
+      <table><thead><tr><th>#</th><th>Candidate</th><th>Model</th>
+        <th class="num">Avg score</th><th class="num">Avg latency</th>
+        <th class="num">Avg out-tokens</th><th class="num">Errors</th></tr></thead>
+      <tbody>${rows.map((r, i) => `
+        <tr class="${i === 0 ? "best" : ""}"><td>${i + 1}</td><td><b>${esc(r.name)}</b></td>
+          <td class="model">${esc(r.model)}</td>
+          <td class="num">${r.score.toFixed(2)}</td>
+          <td class="num">${r.lat.toFixed(1)}s</td>
+          <td class="num">${Math.round(r.toks)}</td>
+          <td class="num">${r.errors}</td></tr>`).join("")}
+      </tbody></table>
+    </div>` : "";
+
+  const tasks = run.results.map((tr) => `
+    <details ${run.results.length <= 2 ? "open" : ""}>
+      <summary>${esc(tr.task.id)}<span class="cat">${esc(tr.task.category)}</span></summary>
+      <div class="task-body">
+        <div class="prompt">${esc(tr.task.prompt.trim())}</div>
+        ${[...tr.results].sort((a, b) =>
+            (b.verdict?.overall ?? -1) - (a.verdict?.overall ?? -1)).map((r) => {
+          if (r.error) return `<div class="answer"><div class="head"><b>${esc(r.candidate)}</b>
+            <span class="error">${esc(r.error)}</span></div></div>`;
+          const v = r.verdict;
+          const scores = v && !v.parse_error
+            ? `<span class="overall">overall ${v.overall}</span> · ` +
+              DIMS.map((d) => `${d.replace("_", " ")} <b>${v.scores[d]}</b>`).join(" · ")
+            : `<span class="error">${esc(v?.parse_error || "not judged")}</span>`;
+          return `<div class="answer">
+            <div class="head"><b>${esc(r.candidate)}</b>
+              <span class="model">${esc(r.model)} · ${r.latency_s.toFixed(1)}s ·
+                ${r.output_tokens} tok</span></div>
+            <div class="scores">${scores}</div>
+            ${v && v.rationale ? `<div class="rationale">${esc(v.rationale)}</div>` : ""}
+            <pre>${esc(r.answer)}</pre>
+          </div>`;
+        }).join("")}
+      </div>
+    </details>`).join("");
+
+  $("detail").innerHTML =
+    (run.status === "failed"
+      ? `<div class="panel error" style="margin-bottom:14px">Run failed: ${esc(run.error)}</div>` : "") +
+    lb + (tasks || '<div class="panel empty">Waiting for first task…</div>');
+}
+
+loadConfigs().then(refresh);
+</script>
+</body>
+</html>

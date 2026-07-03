@@ -1,5 +1,9 @@
 pyyaml>=6.0
 
+# Web UI (optional — only needed for `uvicorn webapp.server:app`)
+fastapi>=0.110
+uvicorn>=0.29
+
 # Provider SDKs — install only the ones you configure in config.yaml.
 anthropic>=0.60
 openai>=1.60          # also used for Z.ai GLM (OpenAI-compatible endpoint)

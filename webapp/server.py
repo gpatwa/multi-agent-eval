@@ -1,0 +1,151 @@
+"""Web UI for the multi-provider evaluation harness.
+
+Run from the project root:
+
+    uvicorn webapp.server:app --reload
+
+API:
+    GET  /api/configs          -> available config files + their contents
+    GET  /api/runs             -> run summaries (newest first)
+    POST /api/runs             -> {"config": "config.demo.yaml"} starts a run
+    GET  /api/runs/{run_id}    -> full run detail incl. partial results
+
+Runs execute in a background thread; the frontend polls for progress.
+Results are kept in memory and also written to runs/<run_id>/ on completion.
+"""
+from __future__ import annotations
+
+import pathlib
+import threading
+import time
+import uuid
+from dataclasses import asdict, dataclass, field
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
+from eval_agents.config import load_agents, load_config, load_tasks
+from eval_agents.report import to_json, to_markdown
+from eval_agents.runner import run_evaluation
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+STATIC = pathlib.Path(__file__).resolve().parent / "static"
+
+app = FastAPI(title="multi-agent-eval")
+
+
+# ---------------------------------------------------------------- run store
+@dataclass
+class Run:
+    id: str
+    config_file: str
+    tasks_file: str
+    status: str = "running"  # running | completed | failed
+    error: str | None = None
+    started_at: float = field(default_factory=time.time)
+    finished_at: float | None = None
+    total_tasks: int = 0
+    done_tasks: int = 0
+    candidates: list[str] = field(default_factory=list)
+    results: list[dict] = field(default_factory=list)
+
+    def summary(self) -> dict:
+        return {
+            "id": self.id,
+            "config_file": self.config_file,
+            "status": self.status,
+            "error": self.error,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
+            "total_tasks": self.total_tasks,
+            "done_tasks": self.done_tasks,
+            "candidates": self.candidates,
+        }
+
+
+RUNS: dict[str, Run] = {}
+_LOCK = threading.Lock()
+
+
+def _execute(run: Run) -> None:
+    try:
+        candidates, judge = load_agents(load_config(ROOT / run.config_file))
+        tasks = load_tasks(ROOT / run.tasks_file)
+        run.total_tasks = len(tasks)
+        run.candidates = [c.name for c in candidates]
+
+        def on_task_done(task_result, done, total):
+            with _LOCK:
+                run.results.append(asdict(task_result))
+                run.done_tasks = done
+
+        results = run_evaluation(tasks, candidates, judge, on_task_done=on_task_done)
+
+        out = ROOT / "runs" / run.id
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "results.json").write_text(to_json(results))
+        (out / "report.md").write_text(to_markdown(results))
+        run.status = "completed"
+    except Exception as exc:
+        run.status = "failed"
+        run.error = f"{type(exc).__name__}: {exc}"
+    finally:
+        run.finished_at = time.time()
+
+
+# ---------------------------------------------------------------- endpoints
+class NewRun(BaseModel):
+    config: str = "config.yaml"
+    tasks: str = "tasks.yaml"
+
+
+@app.get("/api/configs")
+def list_configs() -> list[dict]:
+    configs = []
+    for path in sorted(ROOT.glob("config*.yaml")):
+        cfg = load_config(path)
+        configs.append(
+            {
+                "file": path.name,
+                "candidates": cfg.get("candidates", []),
+                "judge": cfg.get("judge", {}),
+            }
+        )
+    return configs
+
+
+@app.get("/api/runs")
+def list_runs() -> list[dict]:
+    return [r.summary() for r in sorted(RUNS.values(), key=lambda r: r.started_at, reverse=True)]
+
+
+@app.post("/api/runs", status_code=201)
+def create_run(body: NewRun) -> dict:
+    for name in (body.config, body.tasks):
+        # config/tasks must be a plain filename inside the project root
+        if "/" in name or "\\" in name or not (ROOT / name).is_file():
+            raise HTTPException(400, f"file not found: {name}")
+
+    run = Run(id=uuid.uuid4().hex[:12], config_file=body.config, tasks_file=body.tasks)
+    RUNS[run.id] = run
+    threading.Thread(target=_execute, args=(run,), daemon=True).start()
+    return run.summary()
+
+
+@app.get("/api/runs/{run_id}")
+def get_run(run_id: str) -> dict:
+    run = RUNS.get(run_id)
+    if not run:
+        raise HTTPException(404, "run not found")
+    with _LOCK:
+        return {**run.summary(), "results": run.results}
+
+
+@app.get("/")
+def index() -> FileResponse:
+    return FileResponse(STATIC / "index.html")
+
+
+app.mount("/static", StaticFiles(directory=STATIC), name="static")

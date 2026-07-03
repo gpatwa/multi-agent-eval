@@ -90,6 +90,30 @@ where such a library would slot in (behind `Provider`).
 control for it, re-run with judges from different providers and compare
 rankings — it's a one-line config change.
 
+## Web UI
+
+A FastAPI server with a browser frontend wraps the same pipeline:
+
+```bash
+uvicorn webapp.server:app --port 8321
+# open http://localhost:8321
+```
+
+Pick a config, hit **Start evaluation**, and watch the leaderboard fill in
+live (runs execute in a background thread; the page polls for progress).
+Each task expands to show every candidate's answer with its per-dimension
+scores and the judge's rationale. Completed runs are also written to
+`runs/<run_id>/` as `report.md` + `results.json`.
+
+REST API (usable without the frontend):
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/configs` | available config files + their model bindings |
+| `POST` | `/api/runs` | `{"config": "config.demo.yaml"}` — start a run |
+| `GET` | `/api/runs` | run summaries with progress |
+| `GET` | `/api/runs/{id}` | full results (partial while running) |
+
 ## Quick start
 
 ```bash
@@ -126,6 +150,9 @@ open results/report.md
 ```
 multi-agent-eval/
 ├── main.py                     # CLI entry point
+├── webapp/
+│   ├── server.py               # FastAPI REST API + background run manager
+│   └── static/index.html       # browser frontend (no build step)
 ├── config.yaml                 # provider/model bindings (the switchboard)
 ├── config.demo.yaml            # offline mock configuration
 ├── tasks.yaml                  # evaluation task suite

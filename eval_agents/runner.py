@@ -59,7 +59,12 @@ def _run_candidate(agent: Agent, task: Task) -> CandidateResult:
         )
 
 
-def run_evaluation(tasks: list[Task], candidates: list[Agent], judge: Agent) -> list[TaskResult]:
+def run_evaluation(
+    tasks: list[Task],
+    candidates: list[Agent],
+    judge: Agent,
+    on_task_done=None,  # callback(task_result, done_count, total) for live progress
+) -> list[TaskResult]:
     all_results: list[TaskResult] = []
     for i, task in enumerate(tasks, 1):
         print(f"[{i}/{len(tasks)}] {task.id} ({task.category})", file=sys.stderr)
@@ -79,5 +84,8 @@ def run_evaluation(tasks: list[Task], candidates: list[Agent], judge: Agent) -> 
             )
             print(f"    {result.candidate}: {shown} ({result.latency_s:.1f}s)", file=sys.stderr)
 
-        all_results.append(TaskResult(task=task, results=results))
+        task_result = TaskResult(task=task, results=results)
+        all_results.append(task_result)
+        if on_task_done:
+            on_task_done(task_result, i, len(tasks))
     return all_results
