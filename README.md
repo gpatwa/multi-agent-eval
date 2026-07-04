@@ -130,6 +130,36 @@ python main.py --config config.yaml --out results
 open results/report.md
 ```
 
+## No API keys? Use your subscriptions instead
+
+You can run the whole thing on **consumer subscriptions** (Claude Pro/Max,
+ChatGPT Plus/Pro, a free Google account) with **no pay-per-token API keys**.
+Each subscription candidate bridges to the vendor's coding-agent CLI, which
+authenticates with your normal login:
+
+| Provider key | CLI | Auth | Install |
+|---|---|---|---|
+| `claude-code` | `claude -p` | Claude Pro/Max | `npm i -g @anthropic-ai/claude-code` then `claude` → `/login` |
+| `codex-cli` | `codex exec` | ChatGPT Plus/Pro | `npm i -g @openai/codex` then `codex login` |
+| `gemini-cli` | `gemini -p` | free Google account | `npm i -g @google/gemini-cli` then `gemini` (OAuth) |
+
+```bash
+# Install & log in to at least one CLI above, then:
+python main.py --config config.subscription.yaml --out results-sub
+```
+
+See [config.subscription.yaml](config.subscription.yaml). CLIs that aren't
+installed are skipped, so one subscription is enough to start. If a CLI lives
+off `PATH`, point at it with `CLAUDE_CLI_PATH` / `CODEX_CLI_PATH` /
+`GEMINI_CLI_PATH`.
+
+**Trade-offs vs. the API adapters:** you're benchmarking *model + agent-CLI*
+(not the bare model), latency includes CLI startup, subscription rate limits
+apply, and only Claude Code reports token counts. Great for personal
+benchmarking on plans you already pay for; don't route production traffic
+through these. Both paths share the exact same orchestrator, judge, and
+report code — subscriptions are just another `Provider` behind the same seam.
+
 ## Extending
 
 - **Add a provider:** create `eval_agents/providers/foo_provider.py`

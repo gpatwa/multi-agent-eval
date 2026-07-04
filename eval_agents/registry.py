@@ -8,20 +8,24 @@ from __future__ import annotations
 
 import os
 
-from .providers.base import Provider
+from .providers.base import MissingCredentials, Provider
+
+__all__ = ["MissingCredentials", "create_provider"]
 
 # provider key -> (module path, class name, required env var or None)
 _PROVIDERS: dict[str, tuple[str, str, str | None]] = {
+    # API-key providers (pay per token)
     "anthropic": ("eval_agents.providers.anthropic_provider", "AnthropicProvider", "ANTHROPIC_API_KEY"),
     "openai": ("eval_agents.providers.openai_provider", "OpenAIProvider", "OPENAI_API_KEY"),
     "gemini": ("eval_agents.providers.gemini_provider", "GeminiProvider", "GEMINI_API_KEY"),
     "zai": ("eval_agents.providers.zai_provider", "ZaiProvider", "ZAI_API_KEY"),
+    # Subscription providers (vendor CLIs, no API key — see cli_providers.py)
+    "claude-code": ("eval_agents.providers.cli_providers", "ClaudeCodeProvider", None),
+    "codex-cli": ("eval_agents.providers.cli_providers", "CodexProvider", None),
+    "gemini-cli": ("eval_agents.providers.cli_providers", "GeminiCliProvider", None),
+    # Offline testing
     "mock": ("eval_agents.providers.mock_provider", "MockProvider", None),
 }
-
-
-class MissingCredentials(Exception):
-    pass
 
 
 def create_provider(provider: str, model: str) -> Provider:

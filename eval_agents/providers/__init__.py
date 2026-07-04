@@ -1,3 +1,3 @@
-from .base import ChatMessage, ModelResponse, Provider
+from .base import ChatMessage, MissingCredentials, ModelResponse, Provider
 
-__all__ = ["ChatMessage", "ModelResponse", "Provider"]
+__all__ = ["ChatMessage", "MissingCredentials", "ModelResponse", "Provider"]

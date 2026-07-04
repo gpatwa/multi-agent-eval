@@ -1,0 +1,32 @@
+# Subscription-based config — NO API keys.
+#
+# Each candidate bridges to a vendor coding-agent CLI that authenticates with
+# a consumer subscription (or free account) instead of pay-per-token keys:
+#
+#   claude-code  ->  Claude Pro/Max login   (npm i -g @anthropic-ai/claude-code; claude → /login)
+#   codex-cli    ->  ChatGPT Plus/Pro login (npm i -g @openai/codex; codex login)
+#   gemini-cli   ->  free Google account    (npm i -g @google/gemini-cli; gemini → OAuth)
+#
+# model: "default" uses each CLI's currently-selected model. You can also pin
+# one, e.g. model: opus / sonnet for claude-code, or gpt-5-codex for codex-cli.
+#
+# Candidates whose CLI isn't installed are skipped automatically, so you can
+# run this with just one subscription.
+
+candidates:
+  - name: claude
+    provider: claude-code
+    model: default
+  - name: gpt
+    provider: codex-cli
+    model: default
+  - name: gemini
+    provider: gemini-cli
+    model: default
+
+# Judge on a Claude subscription. Note the same judge-bias caveat as the API
+# config: the judge shares a vendor with the "claude" candidate — re-run with
+# provider: gemini-cli here to cross-check rankings.
+judge:
+  provider: claude-code
+  model: default

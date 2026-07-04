@@ -10,6 +10,13 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 
+class MissingCredentials(Exception):
+    """Raised when a provider can't run (no API key, CLI not installed).
+
+    Candidates that raise this at construction time are skipped, not fatal.
+    """
+
+
 @dataclass
 class ChatMessage:
     role: str  # "user" | "assistant"
