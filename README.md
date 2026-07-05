@@ -90,6 +90,47 @@ where such a library would slot in (behind `Provider`).
 control for it, re-run with judges from different providers and compare
 rankings — it's a one-line config change.
 
+## Real customer problem: support ticket triage & reply
+
+The flagship benchmark targets an actual production decision: *which model
+should power our support triage?* Each ticket in
+[tasks.triage.yaml](tasks.triage.yaml) must be routed to a queue, assigned a
+priority, and answered with a reply that follows company policy
+([the policy lives in triage.py](eval_agents/usecases/triage.py) and is given
+verbatim to both the candidates and the judge, so they can never drift apart).
+
+Scoring is decision-grade, not a single vibe score:
+
+- **routing** & **priority** are graded *deterministically* against gold
+  labels — a mis-route is objectively wrong, the judge doesn't get a vote;
+- **policy_adherence**, **resolution**, and **tone** of the reply are graded
+  by the LLM judge against the policy (promising a refund the policy forbids
+  is an automatic 1);
+- invalid JSON output scores 1 across the board instead of being excluded —
+  breaking the output contract *is* a triage failure;
+- the ten synthesized tickets each target one policy decision point (refund
+  inside vs. outside the 14-day window, monthly vs. annual proration,
+  retention-then-honor cancellation, account-takeover escalation, priority
+  boundaries), so the per-task table shows *which rule* a model gets wrong.
+
+The final ranking is a **balanced scorecard** — a weighted blend of quality,
+latency, and cost per task (weights and per-model pricing in
+[config.triage.yaml](config.triage.yaml)), because the cheapest
+acceptable-quality model is often the right production answer.
+
+```bash
+# offline demo of the triage benchmark (mock providers, no keys)
+python main.py --config config.triage.demo.yaml --out results-triage-demo
+
+# real run across providers
+python main.py --config config.triage.yaml --out results-triage
+```
+
+To benchmark *your* customer problem: copy `eval_agents/usecases/triage.py`,
+swap in your policy/taxonomy/scorer, register it in
+`eval_agents/usecases/__init__.py`, and point a config's `use_case` at it.
+Configs without a `use_case` fall back to the generic rubric.
+
 ## Web UI
 
 A FastAPI server with a browser frontend wraps the same pipeline:

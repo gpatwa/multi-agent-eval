@@ -26,7 +26,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from eval_agents.config import load_agents, load_config, load_tasks
+from eval_agents.config import load_agents, load_config, load_tasks, select_use_case
 from eval_agents.report import to_json, to_markdown
 from eval_agents.runner import run_evaluation
 
@@ -71,7 +71,9 @@ _LOCK = threading.Lock()
 
 def _execute(run: Run) -> None:
     try:
-        candidates, judge = load_agents(load_config(ROOT / run.config_file))
+        config = load_config(ROOT / run.config_file)
+        candidates, judge = load_agents(config)
+        _, scorer = select_use_case(config)
         tasks = load_tasks(ROOT / run.tasks_file)
         run.total_tasks = len(tasks)
         run.candidates = [c.name for c in candidates]
@@ -81,12 +83,12 @@ def _execute(run: Run) -> None:
                 run.results.append(asdict(task_result))
                 run.done_tasks = done
 
-        results = run_evaluation(tasks, candidates, judge, on_task_done=on_task_done)
+        results = run_evaluation(tasks, candidates, judge, scorer=scorer, on_task_done=on_task_done)
 
         out = ROOT / "runs" / run.id
         out.mkdir(parents=True, exist_ok=True)
         (out / "results.json").write_text(to_json(results))
-        (out / "report.md").write_text(to_markdown(results))
+        (out / "report.md").write_text(to_markdown(results, scorecard=config.get("scorecard")))
         run.status = "completed"
     except Exception as exc:
         run.status = "failed"
@@ -98,7 +100,7 @@ def _execute(run: Run) -> None:
 # ---------------------------------------------------------------- endpoints
 class NewRun(BaseModel):
     config: str = "config.yaml"
-    tasks: str = "tasks.yaml"
+    tasks: str | None = None  # default: config's `tasks:` field, else tasks.yaml
 
 
 @app.get("/api/configs")
@@ -109,6 +111,8 @@ def list_configs() -> list[dict]:
         configs.append(
             {
                 "file": path.name,
+                "use_case": cfg.get("use_case", "generic"),
+                "tasks": cfg.get("tasks", "tasks.yaml"),
                 "candidates": cfg.get("candidates", []),
                 "judge": cfg.get("judge", {}),
             }
@@ -123,12 +127,18 @@ def list_runs() -> list[dict]:
 
 @app.post("/api/runs", status_code=201)
 def create_run(body: NewRun) -> dict:
-    for name in (body.config, body.tasks):
+    tasks = body.tasks
+    if tasks is None:
+        if "/" in body.config or "\\" in body.config or not (ROOT / body.config).is_file():
+            raise HTTPException(400, f"file not found: {body.config}")
+        tasks = load_config(ROOT / body.config).get("tasks", "tasks.yaml")
+
+    for name in (body.config, tasks):
         # config/tasks must be a plain filename inside the project root
         if "/" in name or "\\" in name or not (ROOT / name).is_file():
             raise HTTPException(400, f"file not found: {name}")
 
-    run = Run(id=uuid.uuid4().hex[:12], config_file=body.config, tasks_file=body.tasks)
+    run = Run(id=uuid.uuid4().hex[:12], config_file=body.config, tasks_file=tasks)
     RUNS[run.id] = run
     threading.Thread(target=_execute, args=(run,), daemon=True).start()
     return run.summary()

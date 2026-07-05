@@ -73,3 +73,9 @@ def score(judge: Agent, task_prompt: str, reference: str, answer: str) -> Verdic
         return Verdict(scores=scores, overall=overall, rationale=str(data.get("rationale", "")))
     except Exception as exc:  # malformed judge output shouldn't kill the run
         return Verdict(parse_error=f"{type(exc).__name__}: {exc}")
+
+
+def generic_scorer(judge: Agent, task, answer: str) -> Verdict:
+    """Default scorer used by the orchestrator (adapts `score` to the
+    (judge, task, answer) Scorer signature)."""
+    return score(judge, task.prompt, task.reference, answer)

@@ -9,9 +9,14 @@ from __future__ import annotations
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from typing import Callable
 
 from .agents import Agent
-from .judge import Verdict, score
+from .judge import Verdict, generic_scorer
+
+# A scorer turns (judge, task, candidate_answer) into a Verdict. The generic
+# LLM-as-judge scorer is the default; use cases (e.g. triage) supply their own.
+Scorer = Callable[[Agent, "Task", str], Verdict]
 
 
 @dataclass
@@ -20,6 +25,7 @@ class Task:
     category: str
     prompt: str
     reference: str = ""
+    gold: dict = field(default_factory=dict)  # use-case ground truth (e.g. category/priority)
 
 
 @dataclass
@@ -63,8 +69,10 @@ def run_evaluation(
     tasks: list[Task],
     candidates: list[Agent],
     judge: Agent,
+    scorer: Scorer | None = None,
     on_task_done=None,  # callback(task_result, done_count, total) for live progress
 ) -> list[TaskResult]:
+    scorer = scorer or generic_scorer
     all_results: list[TaskResult] = []
     for i, task in enumerate(tasks, 1):
         print(f"[{i}/{len(tasks)}] {task.id} ({task.category})", file=sys.stderr)
@@ -76,7 +84,7 @@ def run_evaluation(
             if result.error:
                 print(f"    {result.candidate}: ERROR {result.error}", file=sys.stderr)
                 continue
-            result.verdict = score(judge, task.prompt, task.reference, result.answer)
+            result.verdict = scorer(judge, task, result.answer)
             shown = (
                 f"overall {result.verdict.overall}"
                 if not result.verdict.parse_error

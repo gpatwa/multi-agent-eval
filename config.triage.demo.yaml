@@ -1,0 +1,29 @@
+# Offline demo of the triage benchmark — mock providers, no API keys.
+#
+#   python main.py --config config.triage.demo.yaml --tasks tasks.triage.yaml --out results-triage-demo
+
+use_case: support_triage
+
+candidates:
+  - name: mock-alpha
+    provider: mock
+    model: mock-triage-alpha
+  - name: mock-beta
+    provider: mock
+    model: mock-triage-beta
+  - name: mock-gamma
+    provider: mock
+    model: mock-triage-gamma
+
+judge:
+  provider: mock
+  model: mock-judge
+
+scorecard:
+  weights: {quality: 0.6, latency: 0.2, cost: 0.2}
+  pricing:
+    mock-alpha: [5.00, 25.00]
+    mock-beta: [1.25, 10.00]
+    mock-gamma: [0.60, 2.20]
+
+tasks: tasks.triage.yaml

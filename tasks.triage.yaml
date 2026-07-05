@@ -1,0 +1,141 @@
+# Support-ticket triage benchmark (synthesized, gold-labeled).
+#
+# Each ticket targets a specific decision point in the Northwind support
+# policy (eval_agents/usecases/triage.py), so a wrong answer is diagnostic:
+# it tells you WHICH rule the model gets wrong, not just that it scored low.
+#
+# gold.category / gold.priority are graded deterministically (exact match);
+# `reference` describes ideal reply handling for the LLM judge.
+
+tasks:
+  - id: refund-inside-window
+    category: ticket
+    prompt: |
+      Subject: Refund please
+      Hi, I subscribed to the annual Pro plan 6 days ago but it's not what I
+      expected. I'd like my money back. Order #88231. Thanks, Dana
+    gold: {category: billing, priority: normal}
+    reference: |
+      Within the 14-day window, so a FULL refund should be offered and
+      confirmed. Reply should be warm, confirm the refund is being processed,
+      and give a timeframe/next step.
+
+  - id: refund-after-window-monthly
+    category: ticket
+    prompt: |
+      Subject: I WANT A REFUND NOW
+      This is ridiculous. I paid for the monthly plan 5 weeks ago, barely used
+      it, and your product wasted my time. I demand a full refund immediately
+      or I'm posting about this everywhere. - Alex
+    gold: {category: billing, priority: normal}
+    reference: |
+      Monthly plan, charge was 5 weeks ago (outside 14 days) -> policy allows
+      NO refund. The reply must NOT promise any refund, must stay empathetic
+      and non-defensive despite the threat, and should offer a concrete
+      alternative next step (e.g. cancel before next renewal so no further
+      charges). Caving and promising a refund is a policy violation.
+
+  - id: refund-after-window-annual
+    category: ticket
+    prompt: |
+      Subject: Cancelling and refund for unused months
+      Hello, I bought the annual plan about 3 months ago. We're shutting down
+      our project, so I'd like to cancel and get back whatever I haven't used.
+      Regards, Priya
+    gold: {category: cancellation, priority: normal}
+    reference: |
+      Annual plan outside the 14-day window -> PRORATED refund for unused
+      time. Reply should offer the pause option once (retention), then honor
+      the cancellation with a prorated refund for the ~9 unused months.
+      Promising a FULL refund is a policy violation.
+
+  - id: double-charge
+    category: ticket
+    prompt: |
+      Subject: charged twice this month??
+      Just checked my card statement and there are two identical $49 charges
+      from you dated the 3rd. Please fix this. — Sam
+    gold: {category: billing, priority: high}
+    reference: |
+      Duplicate charge -> HIGH priority per policy. Reply should apologize,
+      confirm one of the duplicate charges will be refunded (allowed —
+      correcting a billing error, not a discretionary refund), and give a
+      timeframe.
+
+  - id: account-takeover
+    category: ticket
+    prompt: |
+      Subject: someone is in my account
+      I just got an email that my login email was changed to an address I
+      don't recognize, and now I can't log in. I think my account has been
+      hacked. Please help ASAP!! - Jordan
+    gold: {category: account_access, priority: urgent}
+    reference: |
+      Suspected account takeover -> URGENT. Reply must advise an immediate
+      password reset, state the security team is engaged, and be reassuring
+      with a concrete immediate next step.
+
+  - id: password-reset-loop
+    category: ticket
+    prompt: |
+      Subject: reset link never arrives
+      I've clicked "forgot password" four times and no email ever shows up
+      (checked spam). I'm locked out and have a demo to give this afternoon.
+      — Casey
+    gold: {category: account_access, priority: high}
+    reference: |
+      Login blocked / password reset failing -> HIGH (not urgent — no breach
+      indicators). Reply should acknowledge the time pressure, give a
+      concrete recovery step or manual verification path, and set an ETA
+      before their demo.
+
+  - id: full-outage
+    category: ticket
+    prompt: |
+      Subject: dashboard down for our whole org
+      As of about 20 minutes ago every user in our company gets a 500 error
+      on login. Our operations are blocked. Status page says nothing.
+      — Morgan, IT lead at Corville Logistics
+    gold: {category: technical, priority: urgent}
+    reference: |
+      Full outage for an org -> URGENT technical. Reply should confirm
+      escalation to engineering, promise status updates at a stated cadence,
+      and not ask the customer to try trivial fixes first.
+
+  - id: howto-sso
+    category: ticket
+    prompt: |
+      Subject: SAML setup question
+      Hi team, we're on the Business plan and want to turn on SSO with Okta.
+      Is there a guide, and does it require a plan change? No rush. — Lee
+    gold: {category: technical, priority: normal}
+    reference: |
+      How-to/configuration question -> NORMAL technical. Reply should point
+      to the SSO setup steps/guide, answer the plan question directly, and
+      offer follow-up help. Marking this urgent/high is over-triage.
+
+  - id: feature-request-dark-mode
+    category: ticket
+    prompt: |
+      Subject: dark mode when?
+      Love the product. Any chance you'll add dark mode and a Linux desktop
+      app? Would make my year. — Riley
+    gold: {category: feature_request, priority: low}
+    reference: |
+      Feature request -> LOW. Reply should thank them, confirm it's logged
+      for the product team, and must NOT promise a timeline or that it will
+      be built.
+
+  - id: cancel-with-retention
+    category: ticket
+    prompt: |
+      Subject: please cancel my subscription
+      Hi, we consolidated tools and no longer need Northwind. Please cancel
+      my monthly subscription effective at the end of this billing period.
+      Thanks for everything — the product was solid. — Sofia
+    gold: {category: cancellation, priority: normal}
+    reference: |
+      Cancellation -> NORMAL. Reply should offer the pause option exactly
+      once (retention), then clearly honor the cancellation at end of the
+      billing period with confirmation. Being pushy or refusing to confirm
+      the cancel violates policy.

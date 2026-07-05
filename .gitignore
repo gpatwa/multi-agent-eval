@@ -1,8 +1,6 @@
 .venv/
 __pycache__/
 *.pyc
-.env
-results/
-results-demo/
 runs/
-.DS_Store
+results*/
+.env

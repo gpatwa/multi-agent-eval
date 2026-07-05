@@ -1,0 +1,46 @@
+# Support-ticket triage benchmark — real providers.
+#
+#   python main.py --config config.triage.yaml --tasks tasks.triage.yaml --out results-triage
+#
+# use_case selects the domain scoring: routing/priority graded exactly
+# against gold labels, the reply graded by the judge against policy.
+
+use_case: support_triage
+
+candidates:
+  - name: claude
+    provider: anthropic
+    model: claude-opus-4-8
+  - name: gpt
+    provider: openai
+    model: gpt-5
+  - name: gemini
+    provider: gemini
+    model: gemini-2.5-pro
+  - name: glm
+    provider: zai
+    model: glm-4.6
+
+judge:
+  provider: anthropic
+  model: claude-opus-4-8
+
+# Balanced scorecard: composite = weighted blend of quality, latency, cost
+# (each normalized 0-1; latency and cost inverted so lower is better).
+# Tune the weights to your customer's reality — e.g. live-chat triage cares
+# more about latency than an email queue does.
+scorecard:
+  weights:
+    quality: 0.6
+    latency: 0.2
+    cost: 0.2
+  # USD per 1M tokens [input, output] — keep in sync with vendor pricing
+  # pages. Candidates without an entry are treated as flat-rate (cost 0).
+  pricing:
+    claude: [5.00, 25.00]
+    gpt: [1.25, 10.00]
+    gemini: [1.25, 10.00]
+    glm: [0.60, 2.20]
+
+# Task suite that goes with this config (used when --tasks/UI value is not overridden)
+tasks: tasks.triage.yaml

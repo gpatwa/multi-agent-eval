@@ -25,9 +25,14 @@ class MockProvider(Provider):
         time.sleep(0.05)  # simulate a little latency
 
         if "judge" in self.model:
+            # Match the rubric the prompt asks for (triage reply rubric vs generic).
+            if "policy_adherence" in prompt:
+                dims = ("policy_adherence", "resolution", "tone")
+            else:
+                dims = ("accuracy", "completeness", "clarity", "instruction_following")
             rng = seed
             scores = {}
-            for dim in ("accuracy", "completeness", "clarity", "instruction_following"):
+            for dim in dims:
                 rng, score = divmod(rng, 3)
                 scores[dim] = 3 + score  # 3-5
             text = json.dumps(
@@ -35,6 +40,18 @@ class MockProvider(Provider):
                     "scores": scores,
                     "overall": round(sum(scores.values()) / len(scores), 2),
                     "rationale": f"Mock evaluation by {self.model}.",
+                }
+            )
+        elif system and '"category"' in system:
+            # Triage-shaped worker output: pick pseudorandom labels so the
+            # deterministic routing/priority grading exercises both outcomes.
+            categories = ["billing", "technical", "account_access", "feature_request", "cancellation"]
+            priorities = ["urgent", "high", "normal", "low"]
+            text = json.dumps(
+                {
+                    "category": categories[seed % len(categories)],
+                    "priority": priorities[(seed // 7) % len(priorities)],
+                    "reply": f"[{self.model}] Thanks for reaching out — here's what we'll do next.",
                 }
             )
         else:
