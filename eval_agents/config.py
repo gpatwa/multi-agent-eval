@@ -52,11 +52,14 @@ def load_agents(config: dict) -> tuple[list[Agent], Agent]:
         raise RuntimeError("No candidates available — set at least one provider API key.")
 
     judge_spec = config["judge"]
-    judge = Agent(
-        name="judge",
-        provider=create_provider(judge_spec["provider"], judge_spec["model"]),
-        system=JUDGE_SYSTEM,
-    )
+    try:
+        judge_provider = create_provider(judge_spec["provider"], judge_spec["model"])
+    except MissingCredentials as exc:
+        raise RuntimeError(
+            f"Judge unavailable ({exc}) — the judge is required; set its key or "
+            "pick a different judge provider in the config."
+        ) from None
+    judge = Agent(name="judge", provider=judge_provider, system=JUDGE_SYSTEM)
     return candidates, judge
 
 

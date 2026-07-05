@@ -19,6 +19,7 @@ _PROVIDERS: dict[str, tuple[str, str, str | None]] = {
     "openai": ("eval_agents.providers.openai_provider", "OpenAIProvider", "OPENAI_API_KEY"),
     "gemini": ("eval_agents.providers.gemini_provider", "GeminiProvider", "GEMINI_API_KEY"),
     "zai": ("eval_agents.providers.zai_provider", "ZaiProvider", "ZAI_API_KEY"),
+    "openrouter": ("eval_agents.providers.openrouter_provider", "OpenRouterProvider", "OPENROUTER_API_KEY"),
     # Subscription providers (vendor CLIs, no API key — see cli_providers.py)
     "claude-code": ("eval_agents.providers.cli_providers", "ClaudeCodeProvider", None),
     "codex-cli": ("eval_agents.providers.cli_providers", "CodexProvider", None),

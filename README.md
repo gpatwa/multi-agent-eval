@@ -88,7 +88,13 @@ where such a library would slot in (behind `Provider`).
 
 **Judge bias caveat:** the judge shares a vendor with one candidate. To
 control for it, re-run with judges from different providers and compare
-rankings — it's a one-line config change.
+rankings — it's a one-line config change. For a fully **neutral judge**, use
+[config.triage.hermes.yaml](config.triage.hermes.yaml): it grades with Nous
+Research's **Hermes** via OpenRouter (`OPENROUTER_API_KEY`), a vendor that
+isn't any of the four candidates. Where the Claude-judged and Hermes-judged
+rankings agree, trust the result; where they disagree, read those
+transcripts yourself. Hermes can also be served locally (Ollama/vLLM) by
+setting `OPENROUTER_BASE_URL`, or added as a fifth candidate.
 
 ## Real customer problem: support ticket triage & reply
 

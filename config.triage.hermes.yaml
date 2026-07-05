@@ -1,0 +1,51 @@
+# Support-ticket triage benchmark — judged by Nous Research's Hermes.
+#
+#   export OPENROUTER_API_KEY=...   # openrouter.ai
+#   python main.py --config config.triage.hermes.yaml --out results-triage-hermes
+#
+# Why Hermes as judge: it isn't made by any candidate vendor below, so the
+# grading has no same-vendor bias. Compare this run's ranking against the
+# Claude-judged run (config.triage.yaml) — where the two judges agree, trust
+# the result; where they disagree, read those transcripts yourself.
+#
+# Local alternative (no OpenRouter account): serve Hermes via Ollama/vLLM and
+#   export OPENROUTER_BASE_URL=http://localhost:11434/v1
+#   export OPENROUTER_API_KEY=local
+# then set the judge model to your local tag (e.g. hermes3:70b).
+
+use_case: support_triage
+tasks: tasks.triage.yaml
+
+candidates:
+  - name: claude
+    provider: anthropic
+    model: claude-opus-4-8
+  - name: gpt
+    provider: openai
+    model: gpt-5
+  - name: gemini
+    provider: gemini
+    model: gemini-2.5-pro
+  - name: glm
+    provider: zai
+    model: glm-4.6
+  # Hermes can also compete as a candidate — uncomment to include it:
+  # - name: hermes
+  #   provider: openrouter
+  #   model: nousresearch/hermes-4-405b
+
+judge:
+  provider: openrouter
+  model: nousresearch/hermes-4-405b   # or nousresearch/hermes-4-70b (cheaper)
+
+scorecard:
+  monthly_volume: 5000
+  weights:
+    quality: 0.6
+    latency: 0.2
+    cost: 0.2
+  pricing:
+    claude: [5.00, 25.00]
+    gpt: [1.25, 10.00]
+    gemini: [1.25, 10.00]
+    glm: [0.60, 2.20]
