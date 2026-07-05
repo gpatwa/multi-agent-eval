@@ -32,6 +32,7 @@ class Task:
 class CandidateResult:
     candidate: str
     model: str
+    trial: int = 0  # 0-based trial index (repeat runs of the same task)
     answer: str = ""
     latency_s: float = 0.0
     input_tokens: int = 0
@@ -70,19 +71,27 @@ def run_evaluation(
     candidates: list[Agent],
     judge: Agent,
     scorer: Scorer | None = None,
+    trials: int = 1,  # repeat each task N times per candidate to measure variance
     on_task_done=None,  # callback(task_result, done_count, total) for live progress
 ) -> list[TaskResult]:
     scorer = scorer or generic_scorer
+    trials = max(1, trials)
     all_results: list[TaskResult] = []
     for i, task in enumerate(tasks, 1):
         print(f"[{i}/{len(tasks)}] {task.id} ({task.category})", file=sys.stderr)
 
-        with ThreadPoolExecutor(max_workers=len(candidates)) as pool:
-            results = list(pool.map(lambda a: _run_candidate(a, task), candidates))
+        results: list[CandidateResult] = []
+        for trial in range(trials):
+            with ThreadPoolExecutor(max_workers=len(candidates)) as pool:
+                batch = list(pool.map(lambda a: _run_candidate(a, task), candidates))
+            for r in batch:
+                r.trial = trial
+            results.extend(batch)
 
         for result in results:
+            marker = f" t{result.trial + 1}" if trials > 1 else ""
             if result.error:
-                print(f"    {result.candidate}: ERROR {result.error}", file=sys.stderr)
+                print(f"    {result.candidate}{marker}: ERROR {result.error}", file=sys.stderr)
                 continue
             result.verdict = scorer(judge, task, result.answer)
             shown = (
@@ -90,7 +99,7 @@ def run_evaluation(
                 if not result.verdict.parse_error
                 else f"judge parse error: {result.verdict.parse_error}"
             )
-            print(f"    {result.candidate}: {shown} ({result.latency_s:.1f}s)", file=sys.stderr)
+            print(f"    {result.candidate}{marker}: {shown} ({result.latency_s:.1f}s)", file=sys.stderr)
 
         task_result = TaskResult(task=task, results=results)
         all_results.append(task_result)

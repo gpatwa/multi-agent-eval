@@ -20,6 +20,7 @@ judge:
   model: mock-judge
 
 scorecard:
+  monthly_volume: 5000   # tickets/month for projected-cost column
   weights: {quality: 0.6, latency: 0.2, cost: 0.2}
   pricing:
     mock-alpha: [5.00, 25.00]

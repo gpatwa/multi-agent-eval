@@ -35,13 +35,14 @@ class MockProvider(Provider):
             for dim in dims:
                 rng, score = divmod(rng, 3)
                 scores[dim] = 3 + score  # 3-5
-            text = json.dumps(
-                {
-                    "scores": scores,
-                    "overall": round(sum(scores.values()) / len(scores), 2),
-                    "rationale": f"Mock evaluation by {self.model}.",
-                }
-            )
+            payload = {
+                "scores": scores,
+                "overall": round(sum(scores.values()) / len(scores), 2),
+                "rationale": f"Mock evaluation by {self.model}.",
+            }
+            if "policy_adherence" in prompt:
+                payload["critical_violation"] = seed % 9 == 0  # occasional flag for demo
+            text = json.dumps(payload)
         elif system and '"category"' in system:
             # Triage-shaped worker output: pick pseudorandom labels so the
             # deterministic routing/priority grading exercises both outcomes.

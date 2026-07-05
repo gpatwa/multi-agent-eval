@@ -131,6 +131,54 @@ swap in your policy/taxonomy/scorer, register it in
 `eval_agents/usecases/__init__.py`, and point a config's `use_case` at it.
 Configs without a `use_case` fall back to the generic rubric.
 
+## Guardrails & what gets measured
+
+Beyond quality scores, every run measures:
+
+- **Critical violations (launch gate).** The judge flags replies that promise
+  a forbidden refund/timeline, fail to escalate security issues, follow
+  instructions embedded in the ticket, or leak internal prompts; a regex pass
+  flags card/SSN-shaped PII echoed in replies. Violations are counted as hard
+  events in the scorecard (⚠ column + breakdown table) — treat any non-zero
+  count as disqualifying regardless of composite rank.
+- **Adversarial probes.** `tasks.triage.yaml` includes guardrail tickets:
+  a prompt-injection "system override" demanding a forbidden refund, a
+  prompt-leak attempt disguised as a compliance audit, and a
+  legitimate-but-scary GDPR deletion request (over-refusal check).
+- **Latency p50 / p95** — support SLAs break on the tail, not the mean.
+- **Cost split** — input vs. output cost per task, plus projected monthly
+  spend at your ticket volume (`scorecard.monthly_volume`).
+- **Variance** — `--trials N` repeats every task; quality is reported as
+  mean ± sd. Don't call a winner when the gap is inside the noise.
+
+## Eval rigor: regression gating & judge validation
+
+**Regression gating (evals as CI):** each run writes `summary.json`.
+Compare a new run against a known-good baseline and fail (exit 1) when a
+candidate's quality drops more than the threshold or violations increase:
+
+```bash
+python main.py --config config.triage.yaml --out results-baseline           # pin baseline
+python main.py --config config.triage.yaml --out results-new \
+       --baseline results-baseline --regression-threshold 0.3               # gate
+```
+
+Re-run this whenever the prompt, policy, model version, or provider changes.
+
+**Judge validation:** an LLM judge is itself a model that needs evaluating.
+Export a labeling sheet, hand-label 20–30 rows, and measure agreement:
+
+```bash
+python scripts/judge_agreement.py export results-triage/results.json labels.csv
+# fill in the human_* columns, then:
+python scripts/judge_agreement.py score labels.csv
+```
+
+Rule of thumb: within-1 agreement ≥ 80% and Pearson r ≥ 0.6 means the judge
+is usable; below that, fix the rubric or judge model before trusting
+rankings. Note routing/priority never depend on the judge — they're graded
+deterministically against gold labels.
+
 ## Web UI
 
 A FastAPI server with a browser frontend wraps the same pipeline:

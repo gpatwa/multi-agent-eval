@@ -30,6 +30,7 @@ judge:
 # Tune the weights to your customer's reality — e.g. live-chat triage cares
 # more about latency than an email queue does.
 scorecard:
+  monthly_volume: 5000   # tickets/month for projected-cost column
   weights:
     quality: 0.6
     latency: 0.2

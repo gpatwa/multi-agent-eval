@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from eval_agents.config import load_agents, load_config, load_tasks, select_use_case
-from eval_agents.report import to_json, to_markdown
+from eval_agents.report import to_json, to_markdown, to_summary_json
 from eval_agents.runner import run_evaluation
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -88,6 +88,7 @@ def _execute(run: Run) -> None:
         out = ROOT / "runs" / run.id
         out.mkdir(parents=True, exist_ok=True)
         (out / "results.json").write_text(to_json(results))
+        (out / "summary.json").write_text(to_summary_json(results, scorecard=config.get("scorecard")))
         (out / "report.md").write_text(to_markdown(results, scorecard=config.get("scorecard")))
         run.status = "completed"
     except Exception as exc:

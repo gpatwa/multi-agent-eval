@@ -51,6 +51,9 @@ class Verdict:
     overall: float = 0.0
     rationale: str = ""
     parse_error: str | None = None
+    # Guardrail red flags (e.g. "policy_critical", "pii_echo"). Any flag is a
+    # launch-gate event — counted separately from the 1-5 quality averages.
+    flags: list[str] = field(default_factory=list)
 
 
 def _extract_json(text: str) -> dict:
