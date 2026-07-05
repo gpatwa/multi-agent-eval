@@ -1,0 +1,37 @@
+# Support-ticket triage benchmark on SUBSCRIPTIONS — no API keys.
+#
+# Uses the vendors' coding-agent CLIs, authenticated with your normal logins:
+#   claude-code -> Claude Pro/Max        (npm i -g @anthropic-ai/claude-code; claude -> /login)
+#   codex-cli   -> ChatGPT Plus/Pro      (npm i -g @openai/codex; codex login)
+#   gemini-cli  -> free Google account   (npm i -g @google/gemini-cli; gemini -> OAuth)
+#
+#   python main.py --config config.triage.subscription.yaml --out results-triage-sub
+#
+# CLIs that aren't installed are skipped, so one subscription is enough.
+# Note: this benchmarks model+agent-CLI (latency includes CLI startup), and
+# only Claude Code reports token counts — so cost is weighted 0 and the
+# scorecard blends quality with latency only.
+
+use_case: support_triage
+tasks: tasks.triage.yaml
+
+candidates:
+  - name: claude
+    provider: claude-code
+    model: opus            # alias: opus | sonnet | haiku, or a full model ID
+  - name: gpt
+    provider: codex-cli
+    model: default         # "default" = whatever your Codex plan serves
+  - name: gemini
+    provider: gemini-cli
+    model: gemini-2.5-pro
+
+judge:
+  provider: claude-code
+  model: opus
+
+scorecard:
+  weights:
+    quality: 0.7
+    latency: 0.3
+    cost: 0.0              # subscriptions are flat-rate; no per-token cost

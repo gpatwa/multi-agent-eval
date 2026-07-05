@@ -49,7 +49,11 @@ def load_agents(config: dict) -> tuple[list[Agent], Agent]:
         candidates.append(Agent(name=spec["name"], provider=provider, system=candidate_system))
 
     if not candidates:
-        raise RuntimeError("No candidates available — set at least one provider API key.")
+        raise RuntimeError(
+            "No candidates available — set at least one provider API key, or "
+            "install and log in to a vendor CLI (claude / codex / gemini) for "
+            "the subscription providers."
+        )
 
     judge_spec = config["judge"]
     try:

@@ -128,8 +128,15 @@ acceptable-quality model is often the right production answer.
 # offline demo of the triage benchmark (mock providers, no keys)
 python main.py --config config.triage.demo.yaml --out results-triage-demo
 
-# real run across providers
+# real run across providers (API keys)
 python main.py --config config.triage.yaml --out results-triage
+
+# real run on SUBSCRIPTIONS instead of API keys (Claude Pro/Max, ChatGPT
+# Plus/Pro, free Google account — see "No API keys?" section below):
+python main.py --config config.triage.subscription.yaml --out results-triage-sub
+# cross-vendor judge check, still subscription-only:
+python main.py --config config.triage.subscription.gemini-judge.yaml --out results-triage-sub-b
+python scripts/compare_judges.py results-triage-sub/summary.json results-triage-sub-b/summary.json
 ```
 
 To benchmark *your* customer problem: copy `eval_agents/usecases/triage.py`,

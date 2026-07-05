@@ -1,0 +1,33 @@
+# Second-opinion run for the subscription triage benchmark: same candidates,
+# judged by Gemini CLI instead of Claude Code (cross-vendor judge check).
+#
+#   python main.py --config config.triage.subscription.gemini-judge.yaml --out results-triage-sub-b
+#   python scripts/compare_judges.py results-triage-sub/summary.json results-triage-sub-b/summary.json
+#
+# Gemini still competes as a candidate, so this isn't a fully neutral judge
+# (for that, use the Hermes config with an OpenRouter key) — but two
+# different-vendor judges agreeing is already strong evidence.
+
+use_case: support_triage
+tasks: tasks.triage.yaml
+
+candidates:
+  - name: claude
+    provider: claude-code
+    model: opus
+  - name: gpt
+    provider: codex-cli
+    model: default
+  - name: gemini
+    provider: gemini-cli
+    model: gemini-2.5-pro
+
+judge:
+  provider: gemini-cli
+  model: gemini-2.5-pro
+
+scorecard:
+  weights:
+    quality: 0.7
+    latency: 0.3
+    cost: 0.0
