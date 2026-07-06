@@ -204,8 +204,13 @@ uvicorn webapp.server:app --port 8321
 Pick a config, hit **Start evaluation**, and watch the leaderboard fill in
 live (runs execute in a background thread; the page polls for progress).
 Each task expands to show every candidate's answer with its per-dimension
-scores and the judge's rationale. Completed runs are also written to
-`runs/<run_id>/` as `report.md` + `results.json`.
+scores, guardrail flags, and the judge's rationale.
+
+**Run history is persistent:** every run writes `runs/<run_id>/` (`run.json`
+metadata, `results.json` saved incrementally per task, plus `report.md` and
+`summary.json` on completion) and is rehydrated into the sidebar on server
+restart. A run interrupted by a restart shows as failed with its partial
+results still viewable.
 
 REST API (usable without the frontend):
 
