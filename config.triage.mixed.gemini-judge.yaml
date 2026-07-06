@@ -1,0 +1,38 @@
+# Second-opinion run: same candidates, judged by Gemini (cross-vendor check).
+# Compare with: python scripts/compare_judges.py results-triage-run/summary.json results-triage-run-b/summary.json
+#
+#   claude -> Claude Code CLI (Claude subscription)
+#   gpt    -> Codex CLI (ChatGPT subscription)
+#   gemini -> direct API (AI Studio key, GEMINI_API_KEY)
+#
+#   python main.py --config config.triage.mixed.yaml --out results-triage-run
+#
+# Cost weight is 0 because two of three candidates are flat-rate
+# subscriptions — a per-token cost comparison would be meaningless.
+# Latency note: CLI candidates include agent-CLI startup; the gemini
+# candidate is a bare API call, so treat latency as end-to-end pipeline
+# numbers, not model speed.
+
+use_case: support_triage
+tasks: tasks.triage.yaml
+
+candidates:
+  - name: claude
+    provider: claude-code
+    model: opus
+  - name: gpt
+    provider: codex-cli
+    model: default
+  - name: gemini
+    provider: gemini
+    model: gemini-2.5-pro
+
+judge:
+  provider: gemini
+  model: gemini-2.5-pro
+
+scorecard:
+  weights:
+    quality: 0.7
+    latency: 0.3
+    cost: 0.0

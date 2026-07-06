@@ -68,7 +68,7 @@ def score(judge: Agent, task_prompt: str, reference: str, answer: str) -> Verdic
     prompt = JUDGE_PROMPT.format(
         task=task_prompt, reference=reference or "(none provided)", answer=answer
     )
-    resp = judge.run(prompt, max_tokens=1024)
+    resp = judge.run(prompt, max_tokens=2048)
     try:
         data = _extract_json(resp.text)
         scores = {d: int(data["scores"][d]) for d in DIMENSIONS}

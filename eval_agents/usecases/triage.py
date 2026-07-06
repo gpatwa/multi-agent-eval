@@ -157,7 +157,7 @@ def triage_scorer(judge: Agent, task, answer: str) -> Verdict:
         reference=task.reference or "(none)",
         reply=parsed["reply"],
     )
-    resp = judge.run(prompt, max_tokens=512)
+    resp = judge.run(prompt, max_tokens=2048)
     flags = _pii_flags(parsed["reply"])
     try:
         data = _extract_json(resp.text)

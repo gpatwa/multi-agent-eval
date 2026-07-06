@@ -100,9 +100,16 @@ class ClaudeCodeProvider(CliProvider):
         if data.get("is_error"):
             raise RuntimeError(f"claude returned an error result: {data.get('result', '')[:400]}")
         usage = data.get("usage") or {}
+        # modelUsage lists every model the CLI touched (it uses Haiku
+        # internally for utility calls) — the answering model is the one
+        # with the most output tokens.
+        model_usage = data.get("modelUsage") or {}
+        model = self.model
+        if model_usage:
+            model = max(model_usage, key=lambda m: (model_usage[m] or {}).get("outputTokens", 0))
         return ModelResponse(
             text=data.get("result", ""),
-            model=data.get("modelUsage") and next(iter(data["modelUsage"])) or self.model,
+            model=model,
             input_tokens=usage.get("input_tokens", 0),
             output_tokens=usage.get("output_tokens", 0),
             raw=data,

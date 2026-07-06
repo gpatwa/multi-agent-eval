@@ -27,12 +27,18 @@ class GeminiProvider(Provider):
             )
             for m in messages
         ]
+        # Gemini 2.5 models "think" by default and thinking tokens count
+        # against max_output_tokens — with small budgets the visible text can
+        # come back empty. Bound thinking to at most half the budget
+        # (min 128, the smallest budget 2.5-pro accepts).
+        thinking_budget = min(1024, max(128, max_tokens // 2))
         resp = self.client.models.generate_content(
             model=self.model,
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system,
                 max_output_tokens=max_tokens,
+                thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget),
             ),
         )
         usage = resp.usage_metadata
