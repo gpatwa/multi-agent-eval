@@ -91,7 +91,6 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-const DIMS = ["accuracy", "completeness", "clarity", "instruction_following"];
 let configs = [], selectedRun = null, pollTimer = null;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g,
@@ -114,6 +113,7 @@ function renderConfigDetail() {
   const cfg = configs.find((c) => c.file === $("config-select").value);
   if (!cfg) return;
   $("config-detail").innerHTML =
+    `use case: <code>${esc(cfg.use_case || "generic")}</code> · tasks: <code>${esc(cfg.tasks)}</code><br>` +
     cfg.candidates.map((c) => `• ${esc(c.name)} — <code>${esc(c.model)}</code>`).join("<br>") +
     `<br>judge: <code>${esc(cfg.judge.model || "?")}</code>`;
 }
@@ -207,13 +207,16 @@ function renderDetail(run) {
           const v = r.verdict;
           const scores = v && !v.parse_error
             ? `<span class="overall">overall ${v.overall}</span> · ` +
-              DIMS.map((d) => `${d.replace("_", " ")} <b>${v.scores[d]}</b>`).join(" · ")
+              Object.keys(v.scores)  // rubric-agnostic: render whatever the use case scored
+                .map((d) => `${esc(d.replace(/_/g, " "))} <b>${v.scores[d]}</b>`).join(" · ")
             : `<span class="error">${esc(v?.parse_error || "not judged")}</span>`;
+          const flags = v && v.flags && v.flags.length
+            ? ` · <span class="error">⚠ ${v.flags.map(esc).join(", ")}</span>` : "";
           return `<div class="answer">
             <div class="head"><b>${esc(r.candidate)}</b>
               <span class="model">${esc(r.model)} · ${r.latency_s.toFixed(1)}s ·
                 ${r.output_tokens} tok</span></div>
-            <div class="scores">${scores}</div>
+            <div class="scores">${scores}${flags}</div>
             ${v && v.rationale ? `<div class="rationale">${esc(v.rationale)}</div>` : ""}
             <pre>${esc(r.answer)}</pre>
           </div>`;
