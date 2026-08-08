@@ -283,6 +283,32 @@ change is needed to adopt a new release. Candidate defaults as of
 Cheaper tiers worth benchmarking against the flagships: `claude-sonnet-5`,
 `gpt-5.6-terra` / `gpt-5.6-luna`, `gemini-3.5-flash`, `glm-5`.
 
+### Open-weight models
+
+[config.triage.open.yaml](config.triage.open.yaml) runs the open-weight tier
+against a flagship anchor — the comparison that actually decides deployments,
+since these sit well below flagship pricing:
+
+| Provider key | Model ID | $/MTok in | $/MTok out | Key |
+|---|---|---|---|---|
+| `moonshot` | `kimi-k3` | 3.00 | 15.00 | `MOONSHOT_API_KEY` |
+| `qwen` | `qwen3.8-max` | 2.00 | 6.00 | `DASHSCOPE_API_KEY` |
+| `deepseek` | `deepseek-v4-pro` | 0.435 | 0.87 | `DEEPSEEK_API_KEY` |
+| `zai` | `glm-5.2` | 1.40 | 4.40 | `ZAI_API_KEY` |
+
+Value tiers go lower still: `kimi-k2.6` ($0.95/$4.00), `deepseek-v4-flash`
+($0.14/$0.28), `glm-5`. All four vendors serve OpenAI-compatible endpoints,
+so each adapter is ~8 lines
+([open_weight_providers.py](eval_agents/providers/open_weight_providers.py)).
+You can also reach all of them through a single `OPENROUTER_API_KEY` using
+namespaced ids (`moonshotai/kimi-k3`, `qwen/qwen3.8-max`,
+`deepseek/deepseek-v4-pro`), or self-host the weights and point
+`OPENROUTER_BASE_URL` at a local vLLM/Ollama server.
+
+**Read the result with the guardrail column, not just cost.** A model that's
+10x cheaper but fails the prompt-injection probe isn't a saving — that's why
+violations gate independently of the composite score.
+
 When a vendor ships a new model, edit the `model:` line and its `pricing:`
 entry in the config, then re-run against your pinned baseline
 (`--baseline results-triage/`) to see whether the upgrade actually helps
