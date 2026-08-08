@@ -1,0 +1,31 @@
+# Same candidates as config.triage.mixed.yaml, judged by Codex (GPT) instead
+# of Claude. Used when the Claude Code CLI session is unavailable, and as the
+# cross-vendor second opinion for the Gemini candidate:
+#
+#   python main.py --config config.triage.mixed.codex-judge.yaml --out results-new-a
+#   python main.py --config config.triage.mixed.gemini-judge.yaml --out results-new-b
+#   python scripts/compare_judges.py results-new-a/summary.json results-new-b/summary.json
+
+use_case: support_triage
+tasks: tasks.triage.yaml
+
+candidates:
+  - name: claude
+    provider: claude-code
+    model: opus            # skipped automatically if the CLI isn't logged in
+  - name: gpt
+    provider: codex-cli
+    model: default
+  - name: gemini
+    provider: gemini
+    model: gemini-3.1-pro-preview
+
+judge:
+  provider: codex-cli
+  model: default
+
+scorecard:
+  weights:
+    quality: 0.7
+    latency: 0.3
+    cost: 0.0

@@ -68,8 +68,10 @@ def score(judge: Agent, task_prompt: str, reference: str, answer: str) -> Verdic
     prompt = JUDGE_PROMPT.format(
         task=task_prompt, reference=reference or "(none provided)", answer=answer
     )
-    resp = judge.run(prompt, max_tokens=2048)
     try:
+        # judge.run is inside the try so a judge transport failure degrades
+        # this verdict rather than aborting the run (see triage scorer).
+        resp = judge.run(prompt, max_tokens=2048)
         data = _extract_json(resp.text)
         scores = {d: int(data["scores"][d]) for d in DIMENSIONS}
         overall = float(data.get("overall") or sum(scores.values()) / len(scores))

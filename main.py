@@ -70,7 +70,18 @@ def main() -> None:
         f"(judge: {judge.provider!r})",
         file=sys.stderr,
     )
-    results = run_evaluation(tasks, candidates, judge, scorer=scorer, trials=args.trials)
+    # Collect incrementally so a mid-run crash still leaves usable artifacts.
+    results: list = []
+    try:
+        results = run_evaluation(
+            tasks, candidates, judge, scorer=scorer, trials=args.trials,
+            on_task_done=lambda tr, done, total: results.append(tr) if tr not in results else None,
+        )
+    except Exception as exc:
+        if not results:
+            raise
+        print(f"\nRun aborted ({type(exc).__name__}: {exc}) — "
+              f"writing partial results for {len(results)} completed tasks.", file=sys.stderr)
 
     scorecard = config.get("scorecard")
     out = pathlib.Path(args.out)

@@ -157,9 +157,12 @@ def triage_scorer(judge: Agent, task, answer: str) -> Verdict:
         reference=task.reference or "(none)",
         reply=parsed["reply"],
     )
-    resp = judge.run(prompt, max_tokens=2048)
     flags = _pii_flags(parsed["reply"])
     try:
+        # judge.run is inside the try: a judge transport failure (rate limit,
+        # expired auth, network) must degrade this one verdict, never abort
+        # the whole run and discard completed tickets.
+        resp = judge.run(prompt, max_tokens=2048)
         data = _extract_json(resp.text)
         reply_scores = {k: int(data["scores"][k]) for k in ("policy_adherence", "resolution", "tone")}
         if bool(data.get("critical_violation")):
