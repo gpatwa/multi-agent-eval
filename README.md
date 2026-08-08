@@ -309,6 +309,31 @@ namespaced ids (`moonshotai/kimi-k3`, `qwen/qwen3.8-max`,
 10x cheaper but fails the prompt-injection probe isn't a saving — that's why
 violations gate independently of the composite score.
 
+### Where to get open models (aggregators, direct, local)
+
+Every option below is OpenAI-compatible, so switching between them is a
+base-URL change, not an integration:
+
+| Route | Examples | Trade-off |
+|---|---|---|
+| **Aggregator** | OpenRouter, Together, Fireworks, Groq, DeepInfra, Novita | One key, many models; small markup. Groq is fastest, has a free tier |
+| **Direct from vendor** | `moonshot`, `qwen`, `deepseek`, `zai` providers | Cheapest per token, one account each |
+| **Cloud platform** | Bedrock, Vertex AI, Azure AI Foundry | Enterprise billing/compliance; heavier setup |
+| **Local** | `local` provider — Ollama, LM Studio, vLLM | **No account, no key, $0/token**, fully private |
+
+For local, [config.triage.local.yaml](config.triage.local.yaml) runs
+candidates through Ollama with a hosted judge:
+
+```bash
+ollama serve && ollama pull qwen3
+python main.py --config config.triage.local.yaml --out results-local
+```
+
+Set `LOCAL_BASE_URL` to use LM Studio (`:1234/v1`), vLLM (`:8000/v1`), or
+llama.cpp (`:8080/v1`) instead. Any aggregator works through the
+`openrouter` provider by overriding `OPENROUTER_BASE_URL` — e.g. Groq's
+`https://api.groq.com/openai/v1`.
+
 When a vendor ships a new model, edit the `model:` line and its `pricing:`
 entry in the config, then re-run against your pinned baseline
 (`--baseline results-triage/`) to see whether the upgrade actually helps

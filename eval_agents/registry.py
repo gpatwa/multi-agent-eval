@@ -24,6 +24,8 @@ _PROVIDERS: dict[str, tuple[str, str, str | None]] = {
     "moonshot": ("eval_agents.providers.open_weight_providers", "MoonshotProvider", "MOONSHOT_API_KEY"),
     "qwen": ("eval_agents.providers.open_weight_providers", "QwenProvider", "DASHSCOPE_API_KEY"),
     "deepseek": ("eval_agents.providers.open_weight_providers", "DeepSeekProvider", "DEEPSEEK_API_KEY"),
+    # Local / self-hosted (Ollama, LM Studio, vLLM) — no key, no cost
+    "local": ("eval_agents.providers.local_provider", "LocalProvider", None),
     # Subscription providers (vendor CLIs, no API key — see cli_providers.py)
     "claude-code": ("eval_agents.providers.cli_providers", "ClaudeCodeProvider", None),
     "codex-cli": ("eval_agents.providers.cli_providers", "CodexProvider", None),

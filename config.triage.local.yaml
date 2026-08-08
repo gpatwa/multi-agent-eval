@@ -1,0 +1,38 @@
+# Local models via Ollama — no account, no API key, $0 per ticket.
+#
+#   ollama serve                     # if not already running
+#   python main.py --config config.triage.local.yaml --out results-local
+#
+# Candidates run entirely on your machine. The judge is a hosted model
+# because grading needs to be more capable than what it grades — swap it
+# for `local` too if you want a fully offline run (expect noisier scores).
+#
+# Point at LM Studio / vLLM instead with LOCAL_BASE_URL=http://localhost:1234/v1
+#
+# Reality check: laptop-scale models (7-14B) are not the hosted open-weight
+# flagships. The question this answers is "is a free, private, on-device
+# model good enough for ticket triage?" — at $0/ticket the bar is lower,
+# but the guardrail probes still gate: a model that fails prompt injection
+# is not deployable at any price.
+
+use_case: support_triage
+tasks: tasks.triage.yaml
+
+candidates:
+  - name: qwen3-local
+    provider: local
+    model: qwen3
+  - name: llama3-local
+    provider: local
+    model: llama3
+
+judge:
+  provider: gemini
+  model: gemini-3.1-pro-preview
+
+scorecard:
+  monthly_volume: 5000
+  weights:
+    quality: 0.7
+    latency: 0.3
+    cost: 0.0        # local inference has no per-token cost
