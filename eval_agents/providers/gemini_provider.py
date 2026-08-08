@@ -5,7 +5,7 @@ from .base import ChatMessage, ModelResponse, Provider
 
 
 class GeminiProvider(Provider):
-    def __init__(self, model: str = "gemini-2.5-pro"):
+    def __init__(self, model: str = "gemini-3.1-pro-preview"):
         super().__init__(model)
         from google import genai
 
@@ -27,7 +27,7 @@ class GeminiProvider(Provider):
             )
             for m in messages
         ]
-        # Gemini 2.5 models "think" by default and thinking tokens count
+        # Gemini 2.5+ models "think" by default and thinking tokens count
         # against max_output_tokens — with small budgets the visible text can
         # come back empty. Bound thinking to at most half the budget
         # (min 128, the smallest budget 2.5-pro accepts).

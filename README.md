@@ -267,6 +267,29 @@ benchmarking on plans you already pay for; don't route production traffic
 through these. Both paths share the exact same orchestrator, judge, and
 report code — subscriptions are just another `Provider` behind the same seam.
 
+## Keeping model IDs and pricing current
+
+Model IDs and per-token prices live **only** in the config files — no code
+change is needed to adopt a new release. Candidate defaults as of
+**July 2026**:
+
+| Provider | Model ID | $/MTok in | $/MTok out |
+|---|---|---|---|
+| Anthropic | `claude-opus-5` | 5.00 | 25.00 |
+| OpenAI | `gpt-5.6-sol` | 5.00 | 30.00 |
+| Google | `gemini-3.1-pro-preview` | 2.00 | 12.00 |
+| Z.ai | `glm-5.2` | 1.40 | 4.40 |
+
+Cheaper tiers worth benchmarking against the flagships: `claude-sonnet-5`,
+`gpt-5.6-terra` / `gpt-5.6-luna`, `gemini-3.5-flash`, `glm-5`.
+
+When a vendor ships a new model, edit the `model:` line and its `pricing:`
+entry in the config, then re-run against your pinned baseline
+(`--baseline results-triage/`) to see whether the upgrade actually helps
+*your* use case. Prices change more often than IDs — the `pricing:` map is
+what makes the cost column and monthly projection meaningful, so re-check it
+against the vendor's pricing page when a run informs a real decision.
+
 ## Extending
 
 - **Add a provider:** create `eval_agents/providers/foo_provider.py`

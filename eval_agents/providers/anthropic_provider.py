@@ -5,7 +5,7 @@ from .base import ChatMessage, ModelResponse, Provider
 
 
 class AnthropicProvider(Provider):
-    def __init__(self, model: str = "claude-opus-4-8"):
+    def __init__(self, model: str = "claude-opus-5"):
         super().__init__(model)
         import anthropic
 

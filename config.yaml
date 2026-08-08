@@ -5,16 +5,16 @@
 candidates:
   - name: claude
     provider: anthropic
-    model: claude-opus-4-8
+    model: claude-opus-5
   - name: gpt
     provider: openai
-    model: gpt-5          # adjust to whichever OpenAI model you're targeting
+    model: gpt-5.6-sol    # or gpt-5.6-terra (cheaper) / gpt-5.6-luna (cheapest)
   - name: gemini
     provider: gemini
-    model: gemini-2.5-pro
+    model: gemini-3.1-pro-preview
   - name: glm
     provider: zai
-    model: glm-4.6
+    model: glm-5.2
 
 # The judge is just another agent — point it at any provider/model.
 # Note: the judge shares a vendor with one candidate (grading bias); to
@@ -22,4 +22,4 @@ candidates:
 # compare rankings, or average across multiple judge runs.
 judge:
   provider: anthropic
-  model: claude-opus-4-8
+  model: claude-opus-5

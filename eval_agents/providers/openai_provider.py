@@ -18,7 +18,7 @@ class OpenAIProvider(Provider):
     # often only accept `max_tokens`. Subclasses override as needed.
     token_param = "max_completion_tokens"
 
-    def __init__(self, model: str = "gpt-5"):
+    def __init__(self, model: str = "gpt-5.6-sol"):
         super().__init__(model)
         import openai
 

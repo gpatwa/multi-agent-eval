@@ -24,7 +24,7 @@ candidates:
     model: default         # "default" = whatever your Codex plan serves
   - name: gemini
     provider: gemini-cli
-    model: gemini-2.5-pro
+    model: default         # whatever the CLI's account serves
 
 judge:
   provider: claude-code

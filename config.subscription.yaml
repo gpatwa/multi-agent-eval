@@ -8,7 +8,7 @@
 #   gemini-cli   ->  free Google account    (npm i -g @google/gemini-cli; gemini → OAuth)
 #
 # model: "default" uses each CLI's currently-selected model. You can also pin
-# one, e.g. model: opus / sonnet for claude-code, or gpt-5-codex for codex-cli.
+# one, e.g. model: opus / sonnet for claude-code, or a Codex model tag for codex-cli.
 #
 # Candidates whose CLI isn't installed are skipped automatically, so you can
 # run this with just one subscription.

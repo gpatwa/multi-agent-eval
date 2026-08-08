@@ -15,5 +15,5 @@ class ZaiProvider(OpenAIProvider):
     base_url = "https://api.z.ai/api/paas/v4"
     token_param = "max_tokens"
 
-    def __init__(self, model: str = "glm-4.6"):
+    def __init__(self, model: str = "glm-5.2"):
         super().__init__(model)
