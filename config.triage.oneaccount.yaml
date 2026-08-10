@@ -1,0 +1,54 @@
+# ONE ACCOUNT, WHOLE FIELD — every candidate served through a single
+# aggregator key, including Meta Llama (which has no first-party API).
+#
+#   export OPENROUTER_API_KEY=sk-or-v1-...
+#   python main.py --config config.triage.oneaccount.yaml --out results-oneaccount
+#
+# Swap `provider: openrouter` for together / groq / fireworks / deepinfra to
+# use a different aggregator — only the model-id namespacing changes. Model
+# ids below are OpenRouter's; check your aggregator's model list.
+
+use_case: support_triage
+tasks: tasks.triage.yaml
+
+candidates:
+  - name: llama                       # Meta — aggregator-only
+    provider: openrouter
+    model: meta-llama/llama-4-maverick
+  - name: kimi
+    provider: openrouter
+    model: moonshotai/kimi-k3
+  - name: qwen
+    provider: openrouter
+    model: qwen/qwen3.8-max
+  - name: deepseek
+    provider: openrouter
+    model: deepseek/deepseek-v4-pro
+  - name: glm
+    provider: openrouter
+    model: z-ai/glm-5.2
+  - name: claude                      # closed-model anchor, same key
+    provider: openrouter
+    model: anthropic/claude-opus-5
+
+# Neutral judge: not any candidate's vendor, still the same single key.
+judge:
+  provider: openrouter
+  model: nousresearch/hermes-4-405b
+
+scorecard:
+  monthly_volume: 5000
+  weights:
+    quality: 0.50
+    latency: 0.15
+    cost: 0.35
+  # Aggregator rates run slightly above each vendor's direct pricing —
+  # verify against your aggregator's model pages before trusting the
+  # projected-cost column.
+  pricing:
+    llama:    [0.27,  0.85]     # llama-4-maverick
+    kimi:     [3.00, 15.00]     # kimi-k3
+    qwen:     [2.00,  6.00]     # qwen3.8-max
+    deepseek: [0.435, 0.87]     # deepseek-v4-pro
+    glm:      [1.40,  4.40]     # glm-5.2
+    claude:   [5.00, 25.00]     # claude-opus-5

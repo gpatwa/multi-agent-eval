@@ -309,6 +309,42 @@ namespaced ids (`moonshotai/kimi-k3`, `qwen/qwen3.8-max`,
 10x cheaper but fails the prompt-injection probe isn't a saving — that's why
 violations gate independently of the composite score.
 
+### One account instead of many (aggregators)
+
+Benchmarking across vendors normally means an account, a key, and a billing
+relationship *per vendor*. An aggregator hosts many vendors behind one
+OpenAI-compatible endpoint, so **a single key reaches most of the field** —
+including **Meta Llama, which no longer has a first-party API** and is
+reachable only via an aggregator or self-hosting.
+
+| Provider key | Endpoint env var | Notes |
+|---|---|---|
+| `openrouter` | `OPENROUTER_API_KEY` | widest catalog, includes closed models |
+| `together` | `TOGETHER_API_KEY` | open-weight focus, good throughput |
+| `groq` | `GROQ_API_KEY` | fastest inference, generous free tier |
+| `fireworks` | `FIREWORKS_API_KEY` | open-weight focus, tuning support |
+| `deepinfra` | `DEEPINFRA_API_KEY` | low prices on open weights |
+
+[config.triage.oneaccount.yaml](config.triage.oneaccount.yaml) runs six
+candidates — Llama, Kimi, Qwen, DeepSeek, GLM, and Claude as a closed-model
+anchor — plus a neutral Hermes judge, all through **one key**. Switching
+aggregators is a one-word change (`provider:`) plus the model-id namespacing
+that aggregator uses.
+
+Trade-off: you inherit the aggregator's routing, uptime, and margin, and its
+per-token price sits a little above going direct. For a benchmark harness
+that's the right trade; for production volume, go direct to whichever model
+wins.
+
+### Local / self-hosted (no account at all)
+
+`provider: local` talks to Ollama, LM Studio, vLLM, or llama.cpp — no key,
+no per-token cost, data never leaves the machine
+([local_provider.py](eval_agents/providers/local_provider.py)). Point
+elsewhere with `LOCAL_BASE_URL`. Verified working with `llama3` and `qwen3`
+via Ollama. Laptop-scale models (7–14B) won't match the trillion-parameter
+hosted flagships, but at $0/ticket the bar they must clear is lower.
+
 ### Where to get open models (aggregators, direct, local)
 
 Every option below is OpenAI-compatible, so switching between them is a

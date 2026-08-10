@@ -19,7 +19,13 @@ _PROVIDERS: dict[str, tuple[str, str, str | None]] = {
     "openai": ("eval_agents.providers.openai_provider", "OpenAIProvider", "OPENAI_API_KEY"),
     "gemini": ("eval_agents.providers.gemini_provider", "GeminiProvider", "GEMINI_API_KEY"),
     "zai": ("eval_agents.providers.zai_provider", "ZaiProvider", "ZAI_API_KEY"),
-    "openrouter": ("eval_agents.providers.openrouter_provider", "OpenRouterProvider", "OPENROUTER_API_KEY"),
+    # Aggregators — one account reaches many vendors' models (incl. Meta Llama,
+    # which no longer has a first-party API). See aggregator_providers.py.
+    "openrouter": ("eval_agents.providers.aggregator_providers", "OpenRouterProvider", "OPENROUTER_API_KEY"),
+    "together": ("eval_agents.providers.aggregator_providers", "TogetherProvider", "TOGETHER_API_KEY"),
+    "groq": ("eval_agents.providers.aggregator_providers", "GroqProvider", "GROQ_API_KEY"),
+    "fireworks": ("eval_agents.providers.aggregator_providers", "FireworksProvider", "FIREWORKS_API_KEY"),
+    "deepinfra": ("eval_agents.providers.aggregator_providers", "DeepInfraProvider", "DEEPINFRA_API_KEY"),
     # Open-weight models (all OpenAI-compatible; see open_weight_providers.py)
     "moonshot": ("eval_agents.providers.open_weight_providers", "MoonshotProvider", "MOONSHOT_API_KEY"),
     "qwen": ("eval_agents.providers.open_weight_providers", "QwenProvider", "DASHSCOPE_API_KEY"),
