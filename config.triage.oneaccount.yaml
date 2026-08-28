@@ -30,6 +30,9 @@ candidates:
   - name: claude                      # closed-model anchor, same key
     provider: openrouter
     model: anthropic/claude-opus-5
+  - name: grok
+    provider: openrouter
+    model: x-ai/grok-4.6
 
 # Neutral judge: not any candidate's vendor, still the same single key.
 judge:
@@ -52,3 +55,4 @@ scorecard:
     deepseek: [0.435, 0.87]     # deepseek-v4-pro
     glm:      [1.40,  4.40]     # glm-5.2
     claude:   [5.00, 25.00]     # claude-opus-5
+    grok:     [2.00,  6.00]     # grok-4.6

@@ -15,6 +15,9 @@ candidates:
   - name: glm
     provider: zai
     model: glm-5.2
+  - name: grok
+    provider: xai
+    model: grok-4.6
 
 # The judge is just another agent — point it at any provider/model.
 # Note: the judge shares a vendor with one candidate (grading bias); to

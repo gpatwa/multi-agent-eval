@@ -279,6 +279,7 @@ change is needed to adopt a new release. Candidate defaults as of
 | OpenAI | `gpt-5.6-sol` | 5.00 | 30.00 |
 | Google | `gemini-3.1-pro-preview` | 2.00 | 12.00 |
 | Z.ai | `glm-5.2` | 1.40 | 4.40 |
+| xAI | `grok-4.6` | 2.00 | 6.00 |
 
 Cheaper tiers worth benchmarking against the flagships: `claude-sonnet-5`,
 `gpt-5.6-terra` / `gpt-5.6-luna`, `gemini-3.5-flash`, `glm-5`.

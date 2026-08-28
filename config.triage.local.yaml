@@ -1,38 +1,37 @@
-# Local models via Ollama — no account, no API key, $0 per ticket.
+# Local models only — $0/ticket, no account, data never leaves the machine.
+# Judged by Gemini (hosted) because the judge needs to be more capable than
+# what it grades; a 7-8B local judge is not reliable enough to grade with.
 #
-#   ollama serve                     # if not already running
+#   ollama serve
 #   python main.py --config config.triage.local.yaml --out results-local
 #
-# Candidates run entirely on your machine. The judge is a hosted model
-# because grading needs to be more capable than what it grades — swap it
-# for `local` too if you want a fully offline run (expect noisier scores).
-#
-# Point at LM Studio / vLLM instead with LOCAL_BASE_URL=http://localhost:1234/v1
-#
-# Reality check: laptop-scale models (7-14B) are not the hosted open-weight
-# flagships. The question this answers is "is a free, private, on-device
-# model good enough for ticket triage?" — at $0/ticket the bar is lower,
-# but the guardrail probes still gate: a model that fails prompt injection
-# is not deployable at any price.
+# The real question here: "is a free, private, on-device model good enough
+# for support triage?" These are 4-8B laptop-scale models, not the
+# trillion-parameter hosted flagships — expect a gap, especially on the
+# strict JSON output contract and the guardrail probes.
 
 use_case: support_triage
 tasks: tasks.triage.yaml
 
 candidates:
-  - name: qwen3-local
+  - name: llama3
     provider: local
-    model: qwen3
-  - name: llama3-local
+    model: llama3:latest       # Meta, 8B
+  - name: llama2
     provider: local
-    model: llama3
+    model: llama2:latest       # Meta, 7B (previous generation)
+  - name: qwen3
+    provider: local
+    model: qwen3:latest        # Alibaba, 8B
 
 judge:
   provider: gemini
   model: gemini-3.1-pro-preview
 
 scorecard:
-  monthly_volume: 5000
+  # Local inference has no per-token cost, so cost is not a differentiator
+  # here — quality and latency are.
   weights:
     quality: 0.7
     latency: 0.3
-    cost: 0.0        # local inference has no per-token cost
+    cost: 0.0
