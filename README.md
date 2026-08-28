@@ -280,6 +280,13 @@ change is needed to adopt a new release. Candidate defaults as of
 | Google | `gemini-3.1-pro-preview` | 2.00 | 12.00 |
 | Z.ai | `glm-5.2` | 1.40 | 4.40 |
 | xAI | `grok-4.6` | 2.00 | 6.00 |
+| Meta | `muse-spark-1.2` | 1.25 | 4.25 |
+
+Meta's own model is **Muse Spark**, not Llama — Meta wound down the
+original Llama API but re-entered the paid-API business in July 2026 with
+"Meta Model API" (`api.meta.ai`, `MODEL_API_KEY`,
+[meta_provider.py](eval_agents/providers/meta_provider.py)). Llama itself
+remains open-weight-only; see the aggregators section below to reach it.
 
 Cheaper tiers worth benchmarking against the flagships: `claude-sonnet-5`,
 `gpt-5.6-terra` / `gpt-5.6-luna`, `gemini-3.5-flash`, `glm-5`.
@@ -315,8 +322,9 @@ violations gate independently of the composite score.
 Benchmarking across vendors normally means an account, a key, and a billing
 relationship *per vendor*. An aggregator hosts many vendors behind one
 OpenAI-compatible endpoint, so **a single key reaches most of the field** —
-including **Meta Llama, which no longer has a first-party API** and is
-reachable only via an aggregator or self-hosting.
+including **Meta's Llama** (Meta's own paid API now serves a different
+model, Muse Spark — see above; Llama itself remains reachable only via an
+aggregator or self-hosting).
 
 | Provider key | Endpoint env var | Notes |
 |---|---|---|

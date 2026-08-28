@@ -23,6 +23,9 @@ candidates:
   - name: grok
     provider: xai
     model: grok-4.6
+  - name: meta
+    provider: meta
+    model: muse-spark-1.2
 
 judge:
   provider: anthropic
@@ -46,6 +49,7 @@ scorecard:
     gemini: [2.00, 12.00]    # gemini-3.1-pro-preview (<=200k prompts)
     glm: [1.40, 4.40]        # glm-5.2
     grok: [2.00, 6.00]       # grok-4.6 (<200k context)
+    meta: [1.25, 4.25]      # muse-spark-1.2
 
 # Task suite that goes with this config (used when --tasks/UI value is not overridden)
 tasks: tasks.triage.yaml

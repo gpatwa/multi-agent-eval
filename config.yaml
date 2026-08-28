@@ -18,6 +18,9 @@ candidates:
   - name: grok
     provider: xai
     model: grok-4.6
+  - name: meta
+    provider: meta
+    model: muse-spark-1.2
 
 # The judge is just another agent — point it at any provider/model.
 # Note: the judge shares a vendor with one candidate (grading bias); to
