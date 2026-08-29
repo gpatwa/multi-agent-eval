@@ -21,6 +21,7 @@ _PROVIDERS: dict[str, tuple[str, str, str | None]] = {
     "zai": ("eval_agents.providers.zai_provider", "ZaiProvider", "ZAI_API_KEY"),
     "xai": ("eval_agents.providers.xai_provider", "XAIProvider", "XAI_API_KEY"),
     "meta": ("eval_agents.providers.meta_provider", "MetaProvider", "MODEL_API_KEY"),
+    "nvidia": ("eval_agents.providers.nvidia_provider", "NvidiaProvider", "NVIDIA_API_KEY"),
     # Aggregators — one account reaches many vendors' models (incl. Meta Llama,
     # which no longer has a first-party API). See aggregator_providers.py.
     "openrouter": ("eval_agents.providers.aggregator_providers", "OpenRouterProvider", "OPENROUTER_API_KEY"),

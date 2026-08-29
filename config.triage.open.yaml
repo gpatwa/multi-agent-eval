@@ -1,7 +1,7 @@
 # Open-weight challengers vs. a flagship anchor, on the triage use case.
 #
 #   export ANTHROPIC_API_KEY=... MOONSHOT_API_KEY=... DASHSCOPE_API_KEY=... \
-#          DEEPSEEK_API_KEY=... ZAI_API_KEY=...
+#          DEEPSEEK_API_KEY=... ZAI_API_KEY=... NVIDIA_API_KEY=...
 #   python main.py --config config.triage.open.yaml --out results-open
 #
 # The decision this answers: "can a model at a fraction of flagship cost
@@ -32,6 +32,9 @@ candidates:
   - name: deepseek
     provider: deepseek
     model: deepseek-v4-pro  # value tier: deepseek-v4-flash ($0.14/$0.28)
+  - name: nemotron
+    provider: nvidia
+    model: nvidia/nemotron-3-ultra-550b-a55b  # NVIDIA's own hosted open model
 
 # The judge should be at least as capable as what it grades — keep a
 # flagship here even when the candidates are cheap.
@@ -53,3 +56,4 @@ scorecard:
     kimi:     [3.00, 15.00]     # kimi-k3
     qwen:     [2.00,  6.00]     # qwen3.8-max
     deepseek: [0.435, 0.87]     # deepseek-v4-pro (cache-miss input)
+    nemotron: [0.50,  2.20]     # nemotron-3-ultra-550b-a55b

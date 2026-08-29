@@ -303,9 +303,15 @@ since these sit well below flagship pricing:
 | `qwen` | `qwen3.8-max` | 2.00 | 6.00 | `DASHSCOPE_API_KEY` |
 | `deepseek` | `deepseek-v4-pro` | 0.435 | 0.87 | `DEEPSEEK_API_KEY` |
 | `zai` | `glm-5.2` | 1.40 | 4.40 | `ZAI_API_KEY` |
+| `nvidia` | `nvidia/nemotron-3-ultra-550b-a55b` | 0.50 | 2.20 | `NVIDIA_API_KEY` |
 
 Value tiers go lower still: `kimi-k2.6` ($0.95/$4.00), `deepseek-v4-flash`
-($0.14/$0.28), `glm-5`. All four vendors serve OpenAI-compatible endpoints,
+($0.14/$0.28), `glm-5`, and NVIDIA's own smaller Nemotron tiers
+(`nemotron-3-super-120b-a12b` $0.09/$0.40, `nemotron-3.5-lightning`
+$0.08/$0.20). NVIDIA is a genuine first-party host here, not an
+aggregator: it both trains Nemotron and serves it (plus many other
+vendors' open models) directly at build.nvidia.com — free tier, no card
+required. All these vendors serve OpenAI-compatible endpoints,
 so each adapter is ~8 lines
 ([open_weight_providers.py](eval_agents/providers/open_weight_providers.py)).
 You can also reach all of them through a single `OPENROUTER_API_KEY` using
