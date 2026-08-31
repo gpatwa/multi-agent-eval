@@ -15,11 +15,11 @@ rather than being excluded — that failure mode matters for this use case.
 """
 from __future__ import annotations
 
-import json
 import re
 
 from ..agents import Agent
-from ..judge import Verdict, _extract_json
+from ..json_extract import extract_json
+from ..judge import Verdict
 
 # ---------------------------------------------------------------- taxonomy
 CATEGORIES = ["billing", "technical", "account_access", "feature_request", "cancellation"]
@@ -126,7 +126,7 @@ def _norm(value: str) -> str:
 def parse_response(text: str) -> dict | None:
     """Pull {category, priority, reply} from a candidate's JSON output."""
     try:
-        data = _extract_json(text)
+        data = extract_json(text)
     except Exception:
         return None
     if not isinstance(data, dict):
@@ -163,7 +163,7 @@ def triage_scorer(judge: Agent, task, answer: str) -> Verdict:
         # expired auth, network) must degrade this one verdict, never abort
         # the whole run and discard completed tickets.
         resp = judge.run(prompt, max_tokens=2048)
-        data = _extract_json(resp.text)
+        data = extract_json(resp.text)
         reply_scores = {k: int(data["scores"][k]) for k in ("policy_adherence", "resolution", "tone")}
         if bool(data.get("critical_violation")):
             flags.append("policy_critical")

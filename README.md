@@ -393,6 +393,32 @@ entry in the config, then re-run against your pinned baseline
 what makes the cost column and monthly projection meaningful, so re-check it
 against the vendor's pricing page when a run informs a real decision.
 
+## Testing
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+```
+
+92 tests, no network calls, ~5 seconds — everything routes through the
+`mock` provider or a `FakeProvider` test stub (`tests/conftest.py`), never a
+real vendor. Coverage: JSON extraction from chatty/malformed judge output
+(`tests/test_json_extract.py` — regression tests for two real production
+bugs), every registered provider's construct/skip-cleanly behavior
+(`tests/test_registry.py`), the balanced-scorecard composite/percentile math
+(`tests/test_report.py`), the triage scorer's routing/priority/PII/judge-
+failure logic (`tests/test_triage_scorer.py`), credential-skipping and
+use-case selection (`tests/test_config.py`), every `config*.yaml` file's
+internal consistency — valid providers, non-stale pricing maps
+(`tests/test_all_configs_valid.py`) — and an end-to-end run through the real
+CLI including `--baseline` regression gating (`tests/test_main_cli.py`).
+
+CI (`.github/workflows/ci.yml`) runs this on every push/PR against Python
+3.11 and 3.12. Add tests alongside any new provider or scorer — the registry
+and config-validity tests in particular are parametrized over "everything
+currently registered," so a new provider or config file gets covered
+automatically the moment it's added, no test-file edit required.
+
 ## Extending
 
 - **Add a provider:** create `eval_agents/providers/foo_provider.py`

@@ -6,11 +6,10 @@ the same judge logic works identically across all four platforms.
 """
 from __future__ import annotations
 
-import json
-import re
 from dataclasses import dataclass, field
 
 from .agents import Agent
+from .json_extract import extract_json
 
 JUDGE_SYSTEM = (
     "You are a strict, impartial evaluator of AI model outputs. "
@@ -56,12 +55,9 @@ class Verdict:
     flags: list[str] = field(default_factory=list)
 
 
-def _extract_json(text: str) -> dict:
-    text = re.sub(r"```(?:json)?", "", text).strip("` \n")
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        raise ValueError(f"no JSON object found in judge output: {text[:200]!r}")
-    return json.loads(match.group(0))
+# _extract_json moved to json_extract.extract_json (kept as an alias
+# for backward compat / import convenience).
+_extract_json = extract_json
 
 
 def score(judge: Agent, task_prompt: str, reference: str, answer: str) -> Verdict:
