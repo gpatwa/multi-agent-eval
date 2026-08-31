@@ -423,6 +423,24 @@ safety check. Note: it doesn't preserve hand-aligned column whitespace in
 pricing maps — the numbers are always correct, the diff may include a
 cosmetic re-spacing of the one line it touched.
 
+## Artifact retention
+
+Every web-UI run persists to `runs/<id>/` forever by design (that's what
+makes history survive a server restart). Nothing deletes it automatically
+-- prune explicitly when it grows:
+
+```bash
+python scripts/prune_runs.py --keep-last 20            # dry run (default)
+python scripts/prune_runs.py --keep-last 20 --apply     # actually delete
+python scripts/prune_runs.py --keep-days 30 --apply
+```
+
+CLI runs (`--out some-dir`) are separate and not managed by this tool --
+each is just a plain directory the CLI writes to. `results*/` is
+gitignored; put ad-hoc runs under a single `results/` parent
+(`--out results/my-run`) rather than scattering `results-my-run` at the
+repo root, so they're easy to find and clean up together later.
+
 ## Reproducible installs
 
 `requirements.txt` uses loose `>=` bounds (flexibility for normal use);
