@@ -423,6 +423,18 @@ safety check. Note: it doesn't preserve hand-aligned column whitespace in
 pricing maps — the numbers are always correct, the diff may include a
 cosmetic re-spacing of the one line it touched.
 
+## Reproducible installs
+
+`requirements.txt` uses loose `>=` bounds (flexibility for normal use);
+`requirements-lock.txt` pins exact versions this project is tested against
+and is what CI installs from, so a new upstream SDK release can't silently
+break the build between merges:
+
+```bash
+pip install -r requirements-lock.txt   # exact, reproducible
+pip install -r requirements.txt        # latest compatible (may drift)
+```
+
 ## Testing
 
 ```bash
