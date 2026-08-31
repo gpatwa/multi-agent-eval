@@ -74,35 +74,52 @@ def run_evaluation(
     trials: int = 1,  # repeat each task N times per candidate to measure variance
     on_task_done=None,  # callback(task_result, done_count, total) for live progress
 ) -> list[TaskResult]:
+    """Run every task against every candidate, then score each answer.
+
+    Per-candidate and per-verdict failures (a rate-limited provider, a
+    malformed judge response) are already caught below and turned into
+    error/parse_error results — they never raise out of this loop. The only
+    way this function can still raise is something genuinely unexpected: a
+    bug, or the process being interrupted (Ctrl-C) mid-run. In that case,
+    the tasks completed so far are attached to the exception as
+    `.partial_results` (always a list) so a caller can still write out
+    whatever was produced instead of losing it — this is the single source
+    of truth for "what completed"; callers should not keep their own
+    parallel accumulator.
+    """
     scorer = scorer or generic_scorer
     trials = max(1, trials)
     all_results: list[TaskResult] = []
-    for i, task in enumerate(tasks, 1):
-        print(f"[{i}/{len(tasks)}] {task.id} ({task.category})", file=sys.stderr)
+    try:
+        for i, task in enumerate(tasks, 1):
+            print(f"[{i}/{len(tasks)}] {task.id} ({task.category})", file=sys.stderr)
 
-        results: list[CandidateResult] = []
-        for trial in range(trials):
-            with ThreadPoolExecutor(max_workers=len(candidates)) as pool:
-                batch = list(pool.map(lambda a: _run_candidate(a, task), candidates))
-            for r in batch:
-                r.trial = trial
-            results.extend(batch)
+            results: list[CandidateResult] = []
+            for trial in range(trials):
+                with ThreadPoolExecutor(max_workers=len(candidates)) as pool:
+                    batch = list(pool.map(lambda a: _run_candidate(a, task), candidates))
+                for r in batch:
+                    r.trial = trial
+                results.extend(batch)
 
-        for result in results:
-            marker = f" t{result.trial + 1}" if trials > 1 else ""
-            if result.error:
-                print(f"    {result.candidate}{marker}: ERROR {result.error}", file=sys.stderr)
-                continue
-            result.verdict = scorer(judge, task, result.answer)
-            shown = (
-                f"overall {result.verdict.overall}"
-                if not result.verdict.parse_error
-                else f"judge parse error: {result.verdict.parse_error}"
-            )
-            print(f"    {result.candidate}{marker}: {shown} ({result.latency_s:.1f}s)", file=sys.stderr)
+            for result in results:
+                marker = f" t{result.trial + 1}" if trials > 1 else ""
+                if result.error:
+                    print(f"    {result.candidate}{marker}: ERROR {result.error}", file=sys.stderr)
+                    continue
+                result.verdict = scorer(judge, task, result.answer)
+                shown = (
+                    f"overall {result.verdict.overall}"
+                    if not result.verdict.parse_error
+                    else f"judge parse error: {result.verdict.parse_error}"
+                )
+                print(f"    {result.candidate}{marker}: {shown} ({result.latency_s:.1f}s)", file=sys.stderr)
 
-        task_result = TaskResult(task=task, results=results)
-        all_results.append(task_result)
-        if on_task_done:
-            on_task_done(task_result, i, len(tasks))
-    return all_results
+            task_result = TaskResult(task=task, results=results)
+            all_results.append(task_result)
+            if on_task_done:
+                on_task_done(task_result, i, len(tasks))
+        return all_results
+    except BaseException as exc:
+        exc.partial_results = all_results
+        raise

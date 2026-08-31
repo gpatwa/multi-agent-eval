@@ -70,14 +70,13 @@ def main() -> None:
         f"(judge: {judge.provider!r})",
         file=sys.stderr,
     )
-    # Collect incrementally so a mid-run crash still leaves usable artifacts.
-    results: list = []
+    # run_evaluation attaches whatever completed to the exception as
+    # .partial_results on any failure (including Ctrl-C), so a crash still
+    # leaves usable artifacts instead of losing the whole run.
     try:
-        results = run_evaluation(
-            tasks, candidates, judge, scorer=scorer, trials=args.trials,
-            on_task_done=lambda tr, done, total: results.append(tr) if tr not in results else None,
-        )
-    except Exception as exc:
+        results = run_evaluation(tasks, candidates, judge, scorer=scorer, trials=args.trials)
+    except (Exception, KeyboardInterrupt) as exc:
+        results = getattr(exc, "partial_results", None) or []
         if not results:
             raise
         print(f"\nRun aborted ({type(exc).__name__}: {exc}) — "

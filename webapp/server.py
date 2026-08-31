@@ -169,6 +169,18 @@ def _execute(run: Run) -> None:
     except Exception as exc:
         run.status = "failed"
         run.error = f"{type(exc).__name__}: {exc}"
+        # run_evaluation attaches whatever completed to the exception as
+        # .partial_results — write the aggregate report from it so a crash
+        # mid-run still leaves a usable summary/report, not just the raw
+        # results.json that on_task_done already saved incrementally.
+        partial = getattr(exc, "partial_results", None)
+        if partial and "config" in locals():
+            out = run.dir
+            out.mkdir(parents=True, exist_ok=True)
+            scorecard = config.get("scorecard")
+            (out / "results.json").write_text(to_json(partial))
+            (out / "summary.json").write_text(to_summary_json(partial, scorecard=scorecard))
+            (out / "report.md").write_text(to_markdown(partial, scorecard=scorecard))
     finally:
         run.finished_at = time.time()
         run.save_meta()
