@@ -393,6 +393,36 @@ entry in the config, then re-run against your pinned baseline
 what makes the cost column and monthly projection meaningful, so re-check it
 against the vendor's pricing page when a run informs a real decision.
 
+## Managing the provider roster
+
+With 20 registered providers and 14 config files, two small scripts remove
+the repetitive parts of keeping them current:
+
+**`scripts/provider_status.py`** — one command instead of a fresh audit
+script every time: which providers have credentials set, which vendor CLIs
+are installed, which need a login.
+
+```bash
+python scripts/provider_status.py          # fast: env vars + CLI presence
+python scripts/provider_status.py --live    # also live-probes installed CLIs
+                                             # (slow, costs quota — confirms
+                                             # actual auth state, not just presence)
+```
+
+**`scripts/bump_model.py`** — a vendor model bump (e.g. GLM-5.2 → 5.3) tends
+to touch every config that candidate appears in, plus its adapter's default.
+One command instead of a manual multi-file find/replace:
+
+```bash
+python scripts/bump_model.py glm-5.2 glm-5.3 --price glm=1.40,4.40
+python scripts/bump_model.py --dry-run glm-5.2 glm-5.3   # preview only
+```
+
+Re-parses every config and re-imports every provider module afterward as a
+safety check. Note: it doesn't preserve hand-aligned column whitespace in
+pricing maps — the numbers are always correct, the diff may include a
+cosmetic re-spacing of the one line it touched.
+
 ## Testing
 
 ```bash
