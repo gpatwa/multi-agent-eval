@@ -83,6 +83,18 @@ class ClaudeCodeProvider(CliProvider):
 
     Model accepts an alias (`opus`, `sonnet`, `haiku`) or a full model ID.
     The JSON output includes real token usage.
+
+    `max_tokens` is accepted for interface consistency with the other
+    providers but is NOT enforceable here: `claude -p --help` exposes no
+    output-length flag (only `--autocompact`, a context-window trigger, and
+    `--max-budget-usd`, a dollar cap — neither limits response length).
+    Observed effect: as a judge with a multi-field JSON response, this CLI
+    occasionally truncates mid-response (~5% of calls in one benchmark run),
+    which the scorer already handles correctly — a truncated judge response
+    degrades to Verdict.parse_error rather than crashing, and any
+    deterministic score components (routing/priority) are preserved. If
+    this becomes frequent enough to matter, the mitigation is judging with
+    a different provider, not a code fix on this adapter.
     """
 
     binary = "claude"
