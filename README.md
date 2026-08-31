@@ -306,7 +306,8 @@ since these sit well below flagship pricing:
 | `nvidia` | `nvidia/nemotron-3-ultra-550b-a55b` | 0.50 | 2.20 | `NVIDIA_API_KEY` |
 
 Value tiers go lower still: `kimi-k2.6` ($0.95/$4.00), `deepseek-v4-flash`
-($0.14/$0.28), `glm-5`, and NVIDIA's own smaller Nemotron tiers
+($0.14/$0.28), `qwen3.8-flash` ($0.16/$0.47), `glm-5`, and NVIDIA's own
+smaller Nemotron tiers
 (`nemotron-3-super-120b-a12b` $0.09/$0.40, `nemotron-3.5-lightning`
 $0.08/$0.20). NVIDIA is a genuine first-party host here, not an
 aggregator: it both trains Nemotron and serves it (plus many other

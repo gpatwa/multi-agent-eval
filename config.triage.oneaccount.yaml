@@ -26,7 +26,7 @@ candidates:
     model: deepseek/deepseek-v4-pro
   - name: glm
     provider: openrouter
-    model: z-ai/glm-5.2
+    model: z-ai/glm-5.3
   - name: claude                      # closed-model anchor, same key
     provider: openrouter
     model: anthropic/claude-opus-5
@@ -53,6 +53,6 @@ scorecard:
     kimi:     [3.00, 15.00]     # kimi-k3
     qwen:     [2.00,  6.00]     # qwen3.8-max
     deepseek: [0.435, 0.87]     # deepseek-v4-pro
-    glm:      [1.40,  4.40]     # glm-5.2
+    glm:      [1.40,  4.40]     # glm-5.3
     claude:   [5.00, 25.00]     # claude-opus-5
     grok:     [2.00,  6.00]     # grok-4.6

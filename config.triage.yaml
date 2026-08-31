@@ -19,7 +19,7 @@ candidates:
     model: gemini-3.1-pro-preview
   - name: glm
     provider: zai
-    model: glm-5.2
+    model: glm-5.3
   - name: grok
     provider: xai
     model: grok-4.6
@@ -47,7 +47,7 @@ scorecard:
     claude: [5.00, 25.00]    # claude-opus-5
     gpt: [5.00, 30.00]       # gpt-5.6-sol
     gemini: [2.00, 12.00]    # gemini-3.1-pro-preview (<=200k prompts)
-    glm: [1.40, 4.40]        # glm-5.2
+    glm: [1.40, 4.40]        # glm-5.3
     grok: [2.00, 6.00]       # grok-4.6 (<200k context)
     meta: [1.25, 4.25]      # muse-spark-1.2
 
