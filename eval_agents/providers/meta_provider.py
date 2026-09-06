@@ -21,5 +21,5 @@ class MetaProvider(OpenAIProvider):
     base_url = "https://api.meta.ai/v1"
     token_param = "max_tokens"
 
-    def __init__(self, model: str = "muse-spark-1.2"):
+    def __init__(self, model: str = "muse-spark-1.3"):
         super().__init__(model)

@@ -8,7 +8,7 @@ candidates:
     model: claude-opus-5
   - name: gpt
     provider: openai
-    model: gpt-5.6-sol    # or gpt-5.6-terra (cheaper) / gpt-5.6-luna (cheapest)
+    model: gpt-6-astra    # flagship; gpt-5.6-terra/luna (prev-gen) remain the cheaper tiers — no GPT-6 mini/nano yet
   - name: gemini
     provider: gemini
     model: gemini-3.1-pro-preview
@@ -20,7 +20,7 @@ candidates:
     model: grok-4.6
   - name: meta
     provider: meta
-    model: muse-spark-1.2
+    model: muse-spark-1.3
 
 # The judge is just another agent — point it at any provider/model.
 # Note: the judge shares a vendor with one candidate (grading bias); to

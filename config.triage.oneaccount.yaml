@@ -20,7 +20,7 @@ candidates:
     model: moonshotai/kimi-k3
   - name: qwen
     provider: openrouter
-    model: qwen/qwen3.8-max
+    model: qwen/qwen3.8-max-0902
   - name: deepseek
     provider: openrouter
     model: deepseek/deepseek-v4-pro
@@ -51,7 +51,7 @@ scorecard:
   pricing:
     llama:    [0.27,  0.85]     # llama-4-maverick
     kimi:     [3.00, 15.00]     # kimi-k3
-    qwen:     [2.00,  6.00]     # qwen3.8-max
+    qwen:     [2.00,  6.00]     # qwen3.8-max-0902
     deepseek: [0.435, 0.87]     # deepseek-v4-pro
     glm:      [1.40,  4.40]     # glm-5.3
     claude:   [5.00, 25.00]     # claude-opus-5

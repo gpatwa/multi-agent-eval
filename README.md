@@ -271,16 +271,16 @@ report code — subscriptions are just another `Provider` behind the same seam.
 
 Model IDs and per-token prices live **only** in the config files — no code
 change is needed to adopt a new release. Candidate defaults as of
-**July 2026**:
+**September 2026**:
 
 | Provider | Model ID | $/MTok in | $/MTok out |
 |---|---|---|---|
 | Anthropic | `claude-opus-5` | 5.00 | 25.00 |
-| OpenAI | `gpt-5.6-sol` | 5.00 | 30.00 |
+| OpenAI | `gpt-6-astra` | 10.00 | 50.00 |
 | Google | `gemini-3.1-pro-preview` | 2.00 | 12.00 |
-| Z.ai | `glm-5.2` | 1.40 | 4.40 |
+| Z.ai | `glm-5.3` | 1.40 | 4.40 |
 | xAI | `grok-4.6` | 2.00 | 6.00 |
-| Meta | `muse-spark-1.2` | 1.25 | 4.25 |
+| Meta | `muse-spark-1.3` | 1.25 | 4.25 |
 
 Meta's own model is **Muse Spark**, not Llama — Meta wound down the
 original Llama API but re-entered the paid-API business in July 2026 with
@@ -289,7 +289,8 @@ original Llama API but re-entered the paid-API business in July 2026 with
 remains open-weight-only; see the aggregators section below to reach it.
 
 Cheaper tiers worth benchmarking against the flagships: `claude-sonnet-5`,
-`gpt-5.6-terra` / `gpt-5.6-luna`, `gemini-3.5-flash`, `glm-5`.
+`gpt-5.6-terra` / `gpt-5.6-luna` (prev-gen — no GPT-6 mini/nano yet),
+`gemini-3.5-flash`, `glm-5`.
 
 ### Open-weight models
 
@@ -300,9 +301,9 @@ since these sit well below flagship pricing:
 | Provider key | Model ID | $/MTok in | $/MTok out | Key |
 |---|---|---|---|---|
 | `moonshot` | `kimi-k3` | 3.00 | 15.00 | `MOONSHOT_API_KEY` |
-| `qwen` | `qwen3.8-max` | 2.00 | 6.00 | `DASHSCOPE_API_KEY` |
+| `qwen` | `qwen3.8-max-0902` | 2.00 | 6.00 | `DASHSCOPE_API_KEY` |
 | `deepseek` | `deepseek-v4-pro` | 0.435 | 0.87 | `DEEPSEEK_API_KEY` |
-| `zai` | `glm-5.2` | 1.40 | 4.40 | `ZAI_API_KEY` |
+| `zai` | `glm-5.3` | 1.40 | 4.40 | `ZAI_API_KEY` |
 | `nvidia` | `nvidia/nemotron-3-ultra-550b-a55b` | 0.50 | 2.20 | `NVIDIA_API_KEY` |
 
 Value tiers go lower still: `kimi-k2.6` ($0.95/$4.00), `deepseek-v4-flash`
@@ -316,7 +317,7 @@ required. All these vendors serve OpenAI-compatible endpoints,
 so each adapter is ~8 lines
 ([open_weight_providers.py](eval_agents/providers/open_weight_providers.py)).
 You can also reach all of them through a single `OPENROUTER_API_KEY` using
-namespaced ids (`moonshotai/kimi-k3`, `qwen/qwen3.8-max`,
+namespaced ids (`moonshotai/kimi-k3`, `qwen/qwen3.8-max-0902`,
 `deepseek/deepseek-v4-pro`), or self-host the weights and point
 `OPENROUTER_BASE_URL` at a local vLLM/Ollama server.
 

@@ -17,7 +17,7 @@ Keys (one per vendor you want to evaluate):
 
 Alternatively, reach all of them through one OpenRouter key using
 `provider: openrouter` with a namespaced model id (e.g.
-`moonshotai/kimi-k3`, `qwen/qwen3.8-max`, `deepseek/deepseek-v4-pro`).
+`moonshotai/kimi-k3`, `qwen/qwen3.8-max-0902`, `deepseek/deepseek-v4-pro`).
 Open weights also mean you can self-host and point OPENROUTER_BASE_URL at
 a local vLLM/Ollama server instead.
 """
@@ -47,7 +47,7 @@ class QwenProvider(OpenAIProvider):
     base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
     token_param = "max_tokens"
 
-    def __init__(self, model: str = "qwen3.8-max"):
+    def __init__(self, model: str = "qwen3.8-max-0902"):
         super().__init__(model)
 
 

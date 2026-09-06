@@ -28,7 +28,7 @@ candidates:
     model: kimi-k3        # value tier: kimi-k2.6 ($0.95/$4.00)
   - name: qwen
     provider: qwen
-    model: qwen3.8-max  # cheaper: qwen3.8-flash ($0.16/$0.47) — new Aug 26 2026
+    model: qwen3.8-max-0902  # cheaper: qwen3.8-flash ($0.16/$0.47) — new Aug 26 2026
   - name: deepseek
     provider: deepseek
     model: deepseek-v4-pro  # value tier: deepseek-v4-flash ($0.14/$0.28)
@@ -54,6 +54,6 @@ scorecard:
     claude:   [5.00, 25.00]     # claude-opus-5
     glm:      [1.40,  4.40]     # glm-5.3
     kimi:     [3.00, 15.00]     # kimi-k3
-    qwen:     [2.00,  6.00]     # qwen3.8-max
+    qwen:     [2.00,  6.00]     # qwen3.8-max-0902
     deepseek: [0.435, 0.87]     # deepseek-v4-pro (cache-miss input)
     nemotron: [0.50,  2.20]     # nemotron-3-ultra-550b-a55b

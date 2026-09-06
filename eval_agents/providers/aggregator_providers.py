@@ -19,7 +19,7 @@ adapter with a different base URL and key env var:
     deepinfra       DEEPINFRA_API_KEY     low prices on open weights
 
 Model ids are namespaced per aggregator — check its model list. Examples:
-    openrouter   meta-llama/llama-4-maverick, moonshotai/kimi-k3, qwen/qwen3.8-max
+    openrouter   meta-llama/llama-4-maverick, moonshotai/kimi-k3, qwen/qwen3.8-max-0902
     groq         llama-4-maverick-17b-128e-instruct
     together     meta-llama/Llama-4-Maverick-17B-128E-Instruct
 
