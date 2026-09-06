@@ -53,12 +53,19 @@ class CliProvider(Provider):
             )
 
     def _run(self, args: list[str], stdin: str | None = None) -> subprocess.CompletedProcess:
+        # subprocess.run's `input` and `stdin` kwargs are mutually exclusive.
+        # When we have nothing to pipe in, explicitly close stdin (DEVNULL)
+        # rather than let the child inherit ours — some CLI versions read
+        # "additional input" from stdin even after a positional prompt, and
+        # inheriting a parent stdin that never sends EOF (e.g. this process
+        # running as a backgrounded server) hangs the call indefinitely.
+        io_kwargs = {"input": stdin} if stdin is not None else {"stdin": subprocess.DEVNULL}
         proc = subprocess.run(
             [self.binary_path, *args],
-            input=stdin,
             capture_output=True,
             text=True,
             timeout=self.timeout_s,
+            **io_kwargs,
         )
         if proc.returncode != 0:
             raise RuntimeError(
