@@ -32,6 +32,12 @@ and `--config config.triage.mixed.gemini-judge.yaml` for the second judge
 (full reports land in `results-triage-run3{,-b}/report.md` — these result
 dirs are gitignored, not checked in).
 
+*Scope note:* this is the subscription-only 3-way comparison (Claude/GPT/
+Gemini). The 6-vendor "flagship" config ([config.triage.yaml](config.triage.yaml),
+adding GLM, Grok, and Meta) hasn't been run — those three have no
+subscription/CLI path in this project, only pay-per-token API keys, which
+aren't configured in this environment.
+
 ## Architecture
 
 ```
