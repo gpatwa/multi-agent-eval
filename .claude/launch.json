@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "webapp",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "set -a; [ -f .env ] && source .env; set +a; exec .venv/bin/uvicorn webapp.server:app --port 8321"],
+      "runtimeExecutable": ".venv/bin/uvicorn",
+      "runtimeArgs": ["webapp.server:app", "--port", "8321"],
       "port": 8321
     }
   ]

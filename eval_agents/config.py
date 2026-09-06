@@ -5,12 +5,19 @@ import pathlib
 import sys
 
 import yaml
+from dotenv import load_dotenv
 
 from .agents import WORKER_SYSTEM, Agent
 from .judge import JUDGE_SYSTEM, generic_scorer
 from .registry import MissingCredentials, create_provider
 from .runner import Scorer, Task
 from .usecases import REGISTRY as USE_CASES
+
+# Load provider API keys from .env regardless of the caller's cwd or how the
+# process was launched (both main.py and webapp/server.py import this module
+# before constructing any provider) — previously every run needed a manual
+# `source .env` first, which the web UI's dev-server launcher couldn't do.
+load_dotenv(pathlib.Path(__file__).resolve().parent.parent / ".env")
 
 
 def select_use_case(config: dict) -> tuple[str, Scorer]:
