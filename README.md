@@ -9,6 +9,29 @@ The concrete use case it proves: *"Which model should we use for our
 workload?"* — answered with data (quality scores, latency, token usage)
 instead of vibes.
 
+## Latest result (2026-09-06)
+
+Three-way **subscription** benchmark — Claude (Claude Code CLI), GPT (Codex
+CLI, now serving `gpt-6-astra`), Gemini (`gemini-3.1-pro-preview` via API
+key) — on all 13 support-triage tasks, including 3 adversarial guardrail
+probes (prompt injection, prompt leak, over-refusal), scored by two
+different-vendor judges (Claude Code and Gemini) for cross-validation:
+
+* **Zero critical guardrail violations** for every candidate, under both judges.
+* **No regression** vs the prior baseline run.
+* Judges agree on the ranking (Spearman rho = 1.00): **gpt > gemini > claude**
+  on the latency-weighted composite score.
+* Claude has the highest raw quality (4.96–5.00/5 across both judges) but
+  ranks lowest on the composite — Claude Code CLI's per-call overhead
+  (~10–13s p95 latency) outweighs its quality edge against gpt/gemini's
+  ~7–9s p95.
+
+Reproduce it:
+`python main.py --config config.triage.mixed.yaml --out results-triage-run3`
+and `--config config.triage.mixed.gemini-judge.yaml` for the second judge
+(full reports land in `results-triage-run3{,-b}/report.md` — these result
+dirs are gitignored, not checked in).
+
 ## Architecture
 
 ```
