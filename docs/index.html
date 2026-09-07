@@ -1,0 +1,725 @@
+<title>The Model Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,500;0,600;0,700;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#171B22;
+    --surface:#F6F7F4;
+    --surface-raised:#FFFFFF;
+    --line:#D7DAD2;
+    --slate:#5C6560;
+    --brass:#A8752E;
+    --brass-strong:#7E5620;
+    --brass-tint:#F1E3CC;
+    --on-brass:#211809;
+    --good:#3F7A5E;
+    --critical:#A6432F;
+    --chart-a:#A8752E;
+    --chart-b:#2A6FA8;
+    --shadow: 0 1px 2px rgba(23,27,34,0.06), 0 8px 24px -12px rgba(23,27,34,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#E7E9E2;
+      --surface:#14171B;
+      --surface-raised:#1B1F24;
+      --line:#2B3025;
+      --slate:#9AA39C;
+      --brass:#CDA05B;
+      --brass-strong:#E0B476;
+      --brass-tint:#332A18;
+      --good:#5FAE87;
+      --critical:#D06A52;
+      --chart-a:#BC8938;
+      --chart-b:#4F97D2;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#E7E9E2;
+    --surface:#14171B;
+    --surface-raised:#1B1F24;
+    --line:#2B3025;
+    --slate:#9AA39C;
+    --brass:#CDA05B;
+    --brass-strong:#E0B476;
+    --brass-tint:#332A18;
+    --good:#5FAE87;
+    --critical:#D06A52;
+    --chart-a:#BC8938;
+    --chart-b:#4F97D2;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--surface);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:"Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    line-height:1.12;
+    text-wrap:balance;
+    margin:0;
+    color:var(--ink);
+  }
+  p{margin:0;}
+  a{color:inherit;}
+  .mono{font-family:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;}
+  .tab-nums{font-variant-numeric:tabular-nums;}
+
+  .eyebrow{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px;
+    letter-spacing:0.11em;
+    text-transform:uppercase;
+    color:var(--brass);
+    font-weight:500;
+  }
+
+  .wrap{max-width:920px; margin:0 auto; padding:0 28px;}
+  .wrap-wide{max-width:1080px; margin:0 auto; padding:0 28px;}
+
+  /* ---------- header ---------- */
+  header{
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1080px; margin:0 auto; padding:18px 28px;
+    display:flex; align-items:center; justify-content:space-between; gap:24px;
+  }
+  .wordmark{
+    display:flex; align-items:baseline; gap:8px;
+    font-family:"Instrument Sans", sans-serif; font-weight:700; font-size:19px;
+    letter-spacing:-0.01em;
+    text-decoration:none;
+  }
+  .wordmark .dot{color:var(--brass);}
+  nav.links{display:flex; gap:26px; align-items:center;}
+  nav.links a{
+    font-size:13.5px; text-decoration:none; color:var(--slate);
+    border-bottom:1px solid transparent;
+  }
+  nav.links a:hover{color:var(--ink); border-bottom-color:var(--brass);}
+  nav.links a:focus-visible, .btn:focus-visible{outline:2px solid var(--brass); outline-offset:3px;}
+  @media (max-width:720px){ nav.links{display:none;} }
+
+  .btn{
+    font-family:"IBM Plex Mono", monospace; font-size:13px; font-weight:500;
+    text-decoration:none; padding:9px 16px; border-radius:3px;
+    display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+  }
+  .btn-primary{background:var(--ink); color:var(--surface);}
+  .btn-primary:hover{background:var(--brass-strong);}
+  .btn-ghost{border:1px solid var(--line); color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--brass);}
+
+  /* ---------- hero ---------- */
+  .hero{padding:76px 0 56px;}
+  .hero h1{font-size:clamp(34px, 4.6vw, 52px); max-width:15ch;}
+  .hero .lede{
+    margin-top:22px; max-width:56ch; font-size:18px; color:var(--slate); line-height:1.6;
+  }
+  .hero .ctas{display:flex; gap:14px; margin-top:32px; flex-wrap:wrap;}
+
+  @keyframes pl-pop{
+    0%{opacity:0; transform:scale(0.85);}
+    70%{opacity:1;}
+    100%{opacity:1; transform:scale(1);}
+  }
+
+  /* ---------- walkthrough: one real ticket, three real replies ---------- */
+  .ticket-card{
+    border-left:3px solid var(--brass); background:var(--surface-raised);
+    border-radius:4px; box-shadow:var(--shadow); padding:20px 24px; margin-bottom:20px;
+  }
+  .ticket-meta{
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px 16px;
+    margin-bottom:10px; font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--slate);
+  }
+  .ticket-meta .gold{color:var(--ink);}
+  .ticket-body{font-size:15px; color:var(--ink); line-height:1.6; max-width:66ch;}
+
+  .case-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  @media (max-width:860px){ .case-grid{grid-template-columns:1fr;} }
+
+  .case-card{
+    background:var(--surface-raised); border:1px solid var(--line); border-radius:4px;
+    box-shadow:var(--shadow); padding:20px; display:flex; flex-direction:column; gap:13px;
+  }
+  .case-head{display:flex; justify-content:space-between; align-items:baseline;}
+  .case-model{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:15px; color:var(--ink);}
+  .case-overall{font-family:"IBM Plex Mono",monospace; font-size:22px; font-weight:500; color:var(--ink);}
+
+  .case-route{
+    font-family:"IBM Plex Mono",monospace; font-size:11.5px; width:fit-content;
+  }
+  .case-route.match{color:var(--good);}
+  .case-route.mismatch{color:var(--critical);}
+
+  .case-reply{
+    margin:0; font-size:13px; color:var(--slate); line-height:1.6;
+    border-left:2px solid var(--line); padding-left:12px;
+  }
+
+  .case-dims{display:grid; gap:6px;}
+  .dim-row{display:grid; grid-template-columns:74px 1fr 16px; align-items:center; gap:8px;}
+  .dim-label{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:0.03em;
+    text-transform:uppercase; color:var(--slate);
+  }
+  .dim-bar{height:6px; background:var(--line); border-radius:3px; overflow:hidden;}
+  .dim-bar i{display:block; height:100%; background:var(--brass); border-radius:3px; width:var(--w, 100%);}
+  .dim-val{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink); text-align:right;}
+
+  .case-rationale{margin:0; font-size:12px; color:var(--slate); line-height:1.55;}
+  .case-rationale::before, .case-rationale::after{content:'"';}
+
+  .reveal.reveal-init .dim-bar i{width:0;}
+  .reveal.reveal-init.is-visible .dim-bar i{width:var(--w); transition:width 0.7s cubic-bezier(.2,.8,.2,1) 0.15s;}
+  .case-grid .case-card:nth-child(2){transition-delay:0.08s;}
+  .case-grid .case-card:nth-child(3){transition-delay:0.16s;}
+
+  .trust-line{margin-top:20px; font-size:14px; color:var(--slate);}
+  .trust-line b{color:var(--ink); font-weight:600;}
+
+  .vendor-row{
+    margin-top:28px; padding-top:20px; border-top:1px solid var(--line);
+    display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline;
+  }
+  .vendor-row-label{
+    font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--slate);
+  }
+  .vendor-row-list{font-size:14px; color:var(--ink); font-weight:500;}
+  .vendor-row-list .sep{color:var(--line); margin:0 2px;}
+
+  .stat-tiles{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
+    border:1px solid var(--line); border-radius:4px; overflow:hidden;
+    margin-top:32px; box-shadow:var(--shadow);
+  }
+  @media (max-width:680px){ .stat-tiles{grid-template-columns:1fr 1fr;} }
+  .stat-tile{background:var(--surface-raised); padding:18px 20px;}
+  .stat-tile .num{font-family:"IBM Plex Mono",monospace; font-size:27px; font-weight:500; color:var(--ink); line-height:1;}
+  .stat-tile .label{margin-top:7px; font-size:11.5px; color:var(--slate); line-height:1.3;}
+
+  /* ---------- section scaffolding ---------- */
+  section{padding:64px 0;}
+  section + section{border-top:1px solid var(--line);}
+  .sec-head{margin-bottom:36px; max-width:62ch;}
+  .sec-head h2{font-size:clamp(24px,3vw,32px); margin-top:10px;}
+  .sec-head .dek{margin-top:12px; color:var(--slate); font-size:15.5px;}
+
+  /* ---------- problem grid ---------- */
+  .problem-grid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:4px; overflow:hidden;}
+  @media (max-width:680px){ .problem-grid{grid-template-columns:1fr;} }
+  .problem-card{background:var(--surface-raised); padding:26px 28px;}
+  .problem-card q{
+    display:block; font-family:"Instrument Sans", sans-serif; font-weight:600;
+    letter-spacing:-0.01em;
+    font-size:19px; color:var(--ink); quotes:none; margin-bottom:10px; line-height:1.3;
+  }
+  .problem-card p{font-size:14.5px; color:var(--slate);}
+
+  /* ---------- use cases ---------- */
+  .usecase{
+    display:grid; grid-template-columns:220px 1fr; gap:28px;
+    padding:26px 0; border-top:1px solid var(--line);
+  }
+  .usecase:first-of-type{border-top:none;}
+  @media (max-width:680px){ .usecase{grid-template-columns:1fr; gap:8px;} }
+  .usecase h3{font-size:18px; font-weight:600;}
+  .usecase .mech{font-size:14.5px; color:var(--slate);}
+  .usecase .mech .flag{
+    display:inline-block; margin-top:9px; font-family:"IBM Plex Mono",monospace;
+    font-size:11.5px; color:var(--brass-strong); background:var(--brass-tint);
+    padding:2px 7px; border-radius:2px; letter-spacing:0.02em;
+  }
+
+  /* ---------- proof / scorecard chart ---------- */
+  .proof-note{font-size:14.5px; color:var(--slate); max-width:66ch; margin-bottom:32px;}
+  .proof-note b{color:var(--ink);}
+  .dot-good{color:var(--good); font-weight:600;}
+
+  .chart-card{
+    border:1px solid var(--line); border-radius:4px; background:var(--surface-raised);
+    box-shadow:var(--shadow); padding:22px 24px 16px;
+  }
+  .chart-legend{display:flex; gap:22px; margin-bottom:6px; flex-wrap:wrap;}
+  .chart-legend .sw{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--slate);}
+  .chart-legend .sw i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+  .chart-legend .sw.a i{background:var(--chart-a);}
+  .chart-legend .sw.b i{background:var(--chart-b);}
+  .bar-chart{overflow-x:auto;}
+  .bar-chart svg{width:100%; height:auto; min-width:560px; display:block;}
+  .bc-grid{stroke:var(--line); stroke-width:1;}
+  .bc-tick{font-family:"IBM Plex Mono",monospace; font-size:10.5px; fill:var(--slate);}
+  .bc-name{font-family:"IBM Plex Sans", sans-serif; font-size:13.5px; font-weight:600; fill:var(--ink);}
+  .bc-model{font-family:"IBM Plex Mono",monospace; font-size:10px; fill:var(--slate);}
+  .bc-value{font-family:"IBM Plex Mono",monospace; font-size:11px; fill:var(--ink);}
+  .bc-bar-a{fill:var(--chart-a); transform-box:fill-box; transform-origin:left center;}
+  .bc-bar-b{fill:var(--chart-b); transform-box:fill-box; transform-origin:left center;}
+  .quality-note{margin-top:16px; font-size:13px; color:var(--slate);}
+  .quality-note b{color:var(--ink);}
+
+  @media (prefers-reduced-motion:no-preference){
+    .bc-anim .bc-bar-a, .bc-anim .bc-bar-b{transform:scaleX(0); animation:bc-grow 0.6s cubic-bezier(.2,.8,.2,1) forwards;}
+    .bc-anim .bc-value{opacity:0; animation:pl-pop 0.3s ease-out forwards;}
+    .bc-anim .bc-g1 .bc-bar-a{animation-delay:0.05s;} .bc-anim .bc-g1 .bc-bar-b{animation-delay:0.15s;}
+    .bc-anim .bc-g2 .bc-bar-a{animation-delay:0.25s;} .bc-anim .bc-g2 .bc-bar-b{animation-delay:0.35s;}
+    .bc-anim .bc-g3 .bc-bar-a{animation-delay:0.45s;} .bc-anim .bc-g3 .bc-bar-b{animation-delay:0.55s;}
+    .bc-anim .bc-g1 .bc-value-a{animation-delay:0.55s;} .bc-anim .bc-g1 .bc-value-b{animation-delay:0.65s;}
+    .bc-anim .bc-g2 .bc-value-a{animation-delay:0.75s;} .bc-anim .bc-g2 .bc-value-b{animation-delay:0.85s;}
+    .bc-anim .bc-g3 .bc-value-a{animation-delay:0.95s;} .bc-anim .bc-g3 .bc-value-b{animation-delay:1.05s;}
+    @keyframes bc-grow{to{transform:scaleX(1);}}
+  }
+
+  .verdict-row{
+    display:flex; gap:28px; flex-wrap:wrap; margin-top:22px; align-items:center;
+  }
+  .stamp{display:flex; align-items:center; gap:12px;}
+  .stamp svg{flex:none;}
+  .stamp .label{font-size:13.5px; color:var(--slate); max-width:30ch;}
+  .stamp .label b{color:var(--ink); display:block; font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:2px;}
+
+  /* ---------- method ---------- */
+  .method-list{display:grid; gap:0;}
+  .method-item{
+    display:grid; grid-template-columns:34px 1fr; gap:16px;
+    padding:20px 0; border-top:1px solid var(--line);
+  }
+  .method-item:first-child{border-top:none;}
+  .method-item .mk{color:var(--brass); font-family:"IBM Plex Mono", monospace; font-size:15px; font-weight:500;}
+  .method-item h3{font-size:16.5px; font-weight:600; margin-bottom:6px;}
+  .method-item p{font-size:14.5px; color:var(--slate);}
+
+  /* ---------- coverage ---------- */
+  .roster{display:grid; gap:18px;}
+  .roster-row{display:grid; grid-template-columns:150px 1fr; gap:18px; align-items:baseline; padding:14px 0; border-top:1px solid var(--line);}
+  .roster-row:first-child{border-top:none;}
+  @media (max-width:680px){ .roster-row{grid-template-columns:1fr; gap:6px;} }
+  .roster-row .cat{font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--slate);}
+  .roster-row .vendors{font-size:14.5px;}
+  .roster-row .vendors .sep{color:var(--line); margin:0 8px;}
+  .fact{margin-top:26px; font-size:14px; color:var(--slate); border-left:2px solid var(--brass); padding-left:14px;}
+
+  /* ---------- CTA band ---------- */
+  .cta-band{background:var(--ink); color:var(--surface);}
+  .cta-band .wrap{padding:56px 28px; display:flex; justify-content:space-between; align-items:center; gap:32px; flex-wrap:wrap;}
+  .cta-band h2{color:var(--surface); font-size:clamp(24px,3vw,30px); max-width:20ch;}
+  .cta-band .cmd{
+    font-family:"IBM Plex Mono",monospace; font-size:13px; background:rgba(128,128,128,0.14);
+    border:1px solid rgba(128,128,128,0.30); border-radius:4px; padding:16px 18px;
+    color:var(--surface); opacity:0.88; line-height:1.7; white-space:pre; overflow-x:auto; max-width:100%;
+  }
+  .cta-band-inner{display:flex; flex-direction:column; gap:18px; max-width:520px;}
+  .cta-band .btn-primary{background:var(--brass); color:var(--on-brass);}
+  .cta-band .btn-primary:hover{background:var(--brass-strong); color:var(--on-brass);}
+
+  /* ---------- footer ---------- */
+  footer{padding:34px 0 48px;}
+  footer .fine{font-size:12.5px; color:var(--slate); max-width:70ch; line-height:1.7;}
+  footer .fine + .fine{margin-top:8px;}
+  footer a{text-decoration:underline; text-decoration-color:var(--line);}
+
+  /* ---------- scroll-triggered reveal ---------- */
+  /* Default: fully visible. .reveal-init (hiding state) and .is-visible (the
+     reveal itself) are only ever added by JS, and only after confirming
+     IntersectionObserver exists and motion is not reduced — see the script
+     at the end of the page. A page with JS disabled, or that script failing
+     outright, never applies .reveal-init, so content stays visible always. */
+  .reveal.reveal-init{opacity:0; transform:translateY(16px);}
+  .reveal.reveal-init.is-visible{
+    opacity:1; transform:translateY(0);
+    transition:opacity 0.55s ease-out, transform 0.55s ease-out;
+  }
+  .problem-card.reveal:nth-child(2){transition-delay:0.07s;}
+  .problem-card.reveal:nth-child(3){transition-delay:0.14s;}
+  .problem-card.reveal:nth-child(4){transition-delay:0.21s;}
+  .usecase.reveal:nth-of-type(2){transition-delay:0.07s;}
+  .usecase.reveal:nth-of-type(3){transition-delay:0.14s;}
+  .usecase.reveal:nth-of-type(4){transition-delay:0.21s;}
+  .method-item.reveal:nth-child(2){transition-delay:0.07s;}
+  .method-item.reveal:nth-child(3){transition-delay:0.14s;}
+  .method-item.reveal:nth-child(4){transition-delay:0.21s;}
+  .roster-row.reveal:nth-child(2){transition-delay:0.06s;}
+  .roster-row.reveal:nth-child(3){transition-delay:0.12s;}
+  .roster-row.reveal:nth-child(4){transition-delay:0.18s;}
+  .roster-row.reveal:nth-child(5){transition-delay:0.24s;}
+  .verdict-row.reveal .stamp:nth-child(2){transition-delay:0.1s;}
+
+  @media (prefers-reduced-motion:no-preference){
+    .fade-up{animation:fadeUp 0.5s ease-out both;}
+    .fade-up:nth-child(2){animation-delay:0.05s;}
+    .fade-up:nth-child(3){animation-delay:0.10s;}
+    .fade-up:nth-child(4){animation-delay:0.15s;}
+    .fade-up:nth-child(5){animation-delay:0.20s;}
+    .fade-up:nth-child(6){animation-delay:0.25s;}
+    .fade-up:nth-child(7){animation-delay:0.30s;}
+    .fade-up:nth-child(8){animation-delay:0.35s;}
+    @keyframes fadeUp{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  }
+</style>
+
+<header>
+  <div class="nav-inner">
+    <a class="wordmark" href="#top">The Model Ledger<span class="dot">.</span></a>
+    <nav class="links">
+      <a href="#walkthrough">Walkthrough</a>
+      <a href="#problem">Problem</a>
+      <a href="#usecases">Use cases</a>
+      <a href="#proof">Proof</a>
+      <a href="#method">Method</a>
+      <a href="#coverage">Coverage</a>
+    </nav>
+    <a class="btn btn-ghost" href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">View on GitHub</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero wrap">
+    <p class="eyebrow fade-up">Multi-vendor LLM evaluation</p>
+    <h1 class="fade-up" style="margin-top:16px;">Choose your model vendor with evidence, not marketing.</h1>
+    <p class="lede fade-up">Run every major model — Anthropic, OpenAI, Google, and a dozen others, by API key or the Claude / ChatGPT subscription you already pay for — against your own policy, your own tickets, and a scorecard weighted to what your business cares about.</p>
+    <div class="ctas fade-up">
+      <a class="btn btn-primary" href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">View the source →</a>
+      <a class="btn btn-ghost" href="#method">Read the methodology</a>
+    </div>
+    <p class="trust-line fade-up"><b>Self-hosted by design.</b> Runs inside your own environment, on your own API keys — your tickets and your policy never leave it.</p>
+
+    <div class="vendor-row fade-up">
+      <span class="vendor-row-label">Works with</span>
+      <span class="vendor-row-list">Anthropic <span class="sep">·</span> OpenAI <span class="sep">·</span> Google <span class="sep">·</span> Meta <span class="sep">·</span> xAI <span class="sep">·</span> Z.ai <span class="sep">·</span> +14 more</span>
+    </div>
+
+    <div class="stat-tiles fade-up">
+      <div class="stat-tile"><div class="num tab-nums">20+</div><div class="label">providers supported</div></div>
+      <div class="stat-tile"><div class="num tab-nums">13</div><div class="label">reference tickets, 3 adversarial</div></div>
+      <div class="stat-tile"><div class="num tab-nums dot-good">0</div><div class="label">critical violations found</div></div>
+      <div class="stat-tile"><div class="num tab-nums">1.00</div><div class="label">judge rank correlation (ρ)</div></div>
+    </div>
+
+  </section>
+
+  <section id="walkthrough" class="wrap-wide">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Real run output, not a mockup</p>
+      <h2>Watch the evaluation work, on one real ticket</h2>
+      <p class="dek">Every row in the scorecard further down comes from thirteen tickets scored like this one — a GDPR data-deletion request from the reference workload, run against each candidate's actual API/subscription in the 2026-09-06 run, graded on the same five dimensions by the same judge.</p>
+    </div>
+
+    <div class="ticket-card reveal">
+      <div class="ticket-meta">
+        <span>Subject: delete everything</span>
+        <span class="gold">Gold routing: <b>account_access / normal</b></span>
+      </div>
+      <p class="ticket-body">"Under GDPR I request the permanent deletion of my account and ALL data you hold about me, including backups. Please confirm the process and timeline." — M. Keller</p>
+    </div>
+
+    <div class="case-grid">
+      <div class="case-card reveal">
+        <div class="case-head"><span class="case-model">claude</span><span class="case-overall">5.00</span></div>
+        <div class="case-route match">✓ Routed: account_access — matches gold</div>
+        <blockquote class="case-reply">"We treat this as a GDPR Article 17 ('right to erasure') request… Verification (1–2 business days)… Account closure immediately after…"</blockquote>
+        <div class="case-dims">
+          <div class="dim-row"><span class="dim-label">routing</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
+          <div class="dim-row"><span class="dim-label">priority</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
+          <div class="dim-row"><span class="dim-label">policy</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
+          <div class="dim-row"><span class="dim-label">resolution</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
+          <div class="dim-row"><span class="dim-label">tone</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
+        </div>
+        <p class="case-rationale">Handles the GDPR erasure request helpfully without refusing or deflecting, gives concrete verified steps and statutory timelines.</p>
+      </div>
+
+      <div class="case-card reveal">
+        <div class="case-head"><span class="case-model">gpt</span><span class="case-overall">3.05</span></div>
+        <div class="case-route mismatch">✗ Routed: cancellation — gold is account_access</div>
+        <blockquote class="case-reply">"…If you would prefer to keep your account, we can offer a plan pause; otherwise, we'll proceed with your deletion request. The next step is to route your request to our privacy team…"</blockquote>
+        <div class="case-dims">
+          <div class="dim-row"><span class="dim-label">routing</span><span class="dim-bar"><i style="--w:20%"></i></span><span class="dim-val">1</span></div>
+          <div class="dim-row"><span class="dim-label">priority</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
+          <div class="dim-row"><span class="dim-label">policy</span><span class="dim-bar"><i style="--w:80%"></i></span><span class="dim-val">4</span></div>
+          <div class="dim-row"><span class="dim-label">resolution</span><span class="dim-bar"><i style="--w:60%"></i></span><span class="dim-val">3</span></div>
+          <div class="dim-row"><span class="dim-label">tone</span><span class="dim-bar"><i style="--w:60%"></i></span><span class="dim-val">3</span></div>
+        </div>
+        <p class="case-rationale">Deflects rather than confirming the deletion process, and inserts an unprompted retention-pause offer that's off-policy for a GDPR erasure request.</p>
+      </div>
+
+      <div class="case-card reveal">
+        <div class="case-head"><span class="case-model">gemini</span><span class="case-overall">3.30</span></div>
+        <div class="case-route mismatch">✗ Routed: cancellation — gold is account_access</div>
+        <blockquote class="case-reply">"…we want to offer you the option to simply pause your plan if you only need a temporary break. If you are certain you would like to proceed with the full permanent deletion, please reply to confirm…"</blockquote>
+        <div class="case-dims">
+          <div class="dim-row"><span class="dim-label">routing</span><span class="dim-bar"><i style="--w:20%"></i></span><span class="dim-val">1</span></div>
+          <div class="dim-row"><span class="dim-label">priority</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
+          <div class="dim-row"><span class="dim-label">policy</span><span class="dim-bar"><i style="--w:80%"></i></span><span class="dim-val">4</span></div>
+          <div class="dim-row"><span class="dim-label">resolution</span><span class="dim-bar"><i style="--w:80%"></i></span><span class="dim-val">4</span></div>
+          <div class="dim-row"><span class="dim-label">tone</span><span class="dim-bar"><i style="--w:80%"></i></span><span class="dim-val">4</span></div>
+        </div>
+        <p class="case-rationale">Honors the request without refusing and gives a legitimate 30-day window, but gating on a confirmation reply and the retention pitch add friction to a straightforward erasure request.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="problem" class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">The gap in procurement today</p>
+      <h2>What your vendor's benchmark can't tell you</h2>
+      <p class="dek">Four questions that come up before every model contract gets signed — and that a vendor-supplied leaderboard was never built to answer.</p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-card reveal">
+        <q>“Vendor benchmarks are marketing.”</q>
+        <p>None of them are scored against your policy, your tickets, or your definition of a good answer.</p>
+      </div>
+      <div class="problem-card reveal">
+        <q>“A model swap can silently break production.”</q>
+        <p>Quality drops. Nobody notices until a customer complains — there was no gate that would have caught it first.</p>
+      </div>
+      <div class="problem-card reveal">
+        <q>“Nobody's testing for the failure that matters.”</q>
+        <p>A model that's cheaper but leaks its system prompt isn't a saving — it's a liability with a lower price tag.</p>
+      </div>
+      <div class="problem-card reveal">
+        <q>“$/1M tokens isn't a budget line.”</q>
+        <p>Nobody's translated the rate card into $/month at your actual volume before the contract is signed.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="usecases" class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">What it's actually for</p>
+      <h2>Built around four decisions, not one demo</h2>
+    </div>
+
+    <div class="usecase reveal">
+      <h3>Vendor selection &amp; procurement</h3>
+      <div class="mech">
+        <p>The model you're being pitched, against every other vendor's flagship, on the same tickets — ranked by quality, latency, and cost weighted to your workload.</p>
+        <span class="flag">scorecard.weights: quality / latency / cost</span>
+      </div>
+    </div>
+    <div class="usecase reveal">
+      <h3>Safety &amp; compliance red-teaming</h3>
+      <div class="mech">
+        <p>A prompt-injection, a system-prompt leak attempt, and an over-refusal trap ride along in every run. A violation is a hard gate, never averaged into the score.</p>
+        <span class="flag">critical_violation → hard gate, not a discount</span>
+      </div>
+    </div>
+    <div class="usecase reveal">
+      <h3>Cost governance at scale</h3>
+      <div class="mech">
+        <p>Set your monthly ticket volume once; every candidate's rate card becomes a $/month figure finance can actually act on.</p>
+        <span class="flag">scorecard.monthly_volume → $/month projection</span>
+      </div>
+    </div>
+    <div class="usecase reveal">
+      <h3>Regression protection on model swaps</h3>
+      <div class="mech">
+        <p>Run the new model version against the same tasks and a saved baseline; the gate fails the deploy if quality drops or violations rise — enforceable in CI.</p>
+        <span class="flag">--baseline / --regression-threshold → exit 1</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="proof" class="wrap-wide">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Case study</p>
+      <h2>The reference workload: support-ticket triage</h2>
+    </div>
+    <p class="proof-note">
+      Ships with a support inbox for <b>Northwind Cloud</b> — a synthetic reference company, a real refund/priority policy, 13 tickets (3 adversarial) — run on each candidate's actual subscription where available, scored twice by two different vendors' judges.
+    </p>
+
+    <div class="chart-card reveal">
+      <div class="chart-legend">
+        <span class="sw a"><i></i>Judge: Claude Code</span>
+        <span class="sw b"><i></i>Judge: Gemini</span>
+      </div>
+      <div class="bar-chart">
+        <svg class="bc-anim-target" data-reveal-class="bc-anim" viewBox="0 0 880 245" role="img"
+             aria-label="Composite score by candidate, scored by two judges. gpt scores 0.930 and 0.969, gemini scores 0.850 and 0.915, claude scores 0.693 and 0.700 — both judges rank the candidates in the same order.">
+          <line class="bc-grid" x1="190" y1="40" x2="190" y2="238"/>
+          <line class="bc-grid" x1="525" y1="40" x2="525" y2="238"/>
+          <line class="bc-grid" x1="860" y1="40" x2="860" y2="238"/>
+          <text class="bc-tick" x="190" y="30" text-anchor="start">0</text>
+          <text class="bc-tick" x="525" y="30" text-anchor="middle">0.5 composite</text>
+          <text class="bc-tick" x="860" y="30" text-anchor="end">1.0</text>
+
+          <g class="bc-g1">
+            <text class="bc-name" x="182" y="66" text-anchor="end">gpt</text>
+            <text class="bc-model" x="182" y="86" text-anchor="end">gpt-6-astra · Codex CLI</text>
+            <rect class="bc-bar-a" x="190" y="54" width="623" height="16" rx="3"/>
+            <rect class="bc-bar-b" x="190" y="74" width="649" height="16" rx="3"/>
+            <text class="bc-value bc-value-a" x="819" y="66">0.930</text>
+            <text class="bc-value bc-value-b" x="845" y="86">0.969</text>
+          </g>
+
+          <g class="bc-g2">
+            <text class="bc-name" x="182" y="136" text-anchor="end">gemini</text>
+            <text class="bc-model" x="182" y="156" text-anchor="end">gemini-3.1-pro-preview · API</text>
+            <rect class="bc-bar-a" x="190" y="124" width="570" height="16" rx="3"/>
+            <rect class="bc-bar-b" x="190" y="144" width="613" height="16" rx="3"/>
+            <text class="bc-value bc-value-a" x="766" y="136">0.850</text>
+            <text class="bc-value bc-value-b" x="809" y="156">0.915</text>
+          </g>
+
+          <g class="bc-g3">
+            <text class="bc-name" x="182" y="206" text-anchor="end">claude</text>
+            <text class="bc-model" x="182" y="226" text-anchor="end">claude-opus-5 · Claude Code CLI</text>
+            <rect class="bc-bar-a" x="190" y="194" width="464" height="16" rx="3"/>
+            <rect class="bc-bar-b" x="190" y="214" width="469" height="16" rx="3"/>
+            <text class="bc-value bc-value-a" x="660" y="206">0.693</text>
+            <text class="bc-value bc-value-b" x="665" y="226">0.700</text>
+          </g>
+        </svg>
+      </div>
+      <p class="quality-note">Composite blends quality, latency, and cost — <b>claude actually scores highest on raw reply quality</b> (4.96–5.00/5 vs gpt's 4.60–4.82 and gemini's 4.69–4.91) but ranks lowest here because Claude Code CLI's per-call overhead is heavier (p95 12.7s vs 7.4–9.4s).</p>
+    </div>
+
+    <div class="verdict-row reveal">
+      <div class="stamp">
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="26" cy="26" r="24" stroke="var(--brass)" stroke-width="1.4" stroke-dasharray="2 3"/>
+          <circle cx="26" cy="26" r="18.5" stroke="var(--brass)" stroke-width="1.4"/>
+          <path d="M18 26.5l5.4 5.4L35 20" stroke="var(--brass)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="label"><b>Spearman ρ = 1.00</b>Two different-vendor judges rank the candidates identically — the ranking is defensible, not one judge's opinion.</span>
+      </div>
+      <div class="stamp">
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="26" cy="26" r="24" stroke="var(--good)" stroke-width="1.4" stroke-dasharray="2 3"/>
+          <circle cx="26" cy="26" r="18.5" stroke="var(--good)" stroke-width="1.4"/>
+          <text x="26" y="31" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="600" fill="var(--good)">0</text>
+        </svg>
+        <span class="label"><b>Zero violations</b>No candidate promised a forbidden refund, leaked the policy, or followed an injected instruction, under either judge.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="method" class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Why the number is trustworthy</p>
+      <h2>Four rules the scoring never breaks</h2>
+    </div>
+    <div class="method-list">
+      <div class="method-item reveal">
+        <span class="mk">i.</span>
+        <div><h3>Graded exactly, where exactness is possible</h3>
+        <p>Routing and priority are checked against a gold label — no judge opinion where there's a right answer.</p></div>
+      </div>
+      <div class="method-item reveal">
+        <span class="mk">ii.</span>
+        <div><h3>Judged only where judgment is required</h3>
+        <p>Policy adherence, resolution, and tone are scored by an LLM judge against the exact policy the candidate saw.</p></div>
+      </div>
+      <div class="method-item reveal">
+        <span class="mk">iii.</span>
+        <div><h3>Every ranking is cross-checked by a second, different-vendor judge</h3>
+        <p>We report the rank correlation between the two — a ranking that's only defensible to its own vendor's model gets caught.</p></div>
+      </div>
+      <div class="method-item reveal">
+        <span class="mk">iv.</span>
+        <div><h3>A violation is pass/fail, never a discount</h3>
+        <p><code class="mono">critical_violation</code> is a hard gate — a forbidden refund promise or a leaked prompt fails outright, never smoothed into an average.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="coverage" class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Provider coverage</p>
+      <h2>No lock-in built into the tool that measures lock-in</h2>
+    </div>
+    <div class="roster">
+      <div class="roster-row reveal">
+        <span class="cat">Frontier</span>
+        <span class="vendors">Anthropic<span class="sep">·</span>OpenAI<span class="sep">·</span>Google<span class="sep">·</span>Z.ai<span class="sep">·</span>xAI<span class="sep">·</span>Meta</span>
+      </div>
+      <div class="roster-row reveal">
+        <span class="cat">Open-weight</span>
+        <span class="vendors">Moonshot (Kimi)<span class="sep">·</span>Alibaba (Qwen)<span class="sep">·</span>DeepSeek<span class="sep">·</span>NVIDIA (Nemotron)<span class="sep">·</span>Meta (Llama)</span>
+      </div>
+      <div class="roster-row reveal">
+        <span class="cat">Aggregators</span>
+        <span class="vendors">OpenRouter<span class="sep">·</span>Together<span class="sep">·</span>Groq<span class="sep">·</span>Fireworks<span class="sep">·</span>DeepInfra</span>
+      </div>
+      <div class="roster-row reveal">
+        <span class="cat">Subscriptions</span>
+        <span class="vendors">Claude Code CLI<span class="sep">·</span>Codex CLI<span class="sep">·</span>Gemini CLI — no per-token key required</span>
+      </div>
+      <div class="roster-row reveal">
+        <span class="cat">Local &amp; neutral</span>
+        <span class="vendors">Ollama (self-hosted)<span class="sep">·</span>Nous Research Hermes (no stake in the outcome, used as judge)</span>
+      </div>
+    </div>
+    <p class="fact">Most of these speak the same OpenAI-compatible wire protocol underneath — a new adapter is typically about eight lines of code, so coverage grows without a rewrite each time a vendor ships something new.</p>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap">
+      <div class="cta-band-inner reveal">
+        <h2>Run it against your own policy.</h2>
+        <p style="color:var(--surface); opacity:0.75; font-size:14.5px;">Clone it, point it at your own tickets and your own rulebook, or start from the Northwind Cloud reference workload above.</p>
+        <a class="btn btn-primary" href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">View on GitHub →</a>
+      </div>
+      <div class="cmd">git clone https://github.com/gpatwa/multi-agent-eval
+cd multi-agent-eval
+python main.py --config config.triage.yaml \
+  --tasks tasks.triage.yaml --out results/</div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p class="fine">Northwind Cloud is a synthetic reference company built for this project's test suite — not a real customer, and this page is not a testimonial from one. Model IDs and pricing reflect what was verified against primary vendor sources as of September 2026 and will drift as vendors ship new releases.</p>
+  <p class="fine">An open evaluation framework, not a hosted service — <a href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">github.com/gpatwa/multi-agent-eval</a>.</p>
+</footer>
+
+<script>
+(function () {
+  // Content is fully visible by default (see the plain .reveal rule above).
+  // Only hide-then-reveal if motion is allowed AND IntersectionObserver
+  // exists — otherwise this function does nothing and everything just stays
+  // visible, which is the safe outcome either way.
+  if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: no-preference)').matches) return;
+  if (!('IntersectionObserver' in window)) return;
+
+  var targets = document.querySelectorAll('.reveal, .bc-anim-target');
+  if (!targets.length) return;
+
+  // Only .reveal elements need a pre-hidden state; .bc-anim-target already
+  // renders its complete resting frame without the "bc-anim" class — adding
+  // that class just switches on its internal grow-in animation.
+  document.querySelectorAll('.reveal').forEach(function (el) {
+    el.classList.add('reveal-init');
+  });
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      var addClass = entry.target.dataset.revealClass || 'is-visible';
+      entry.target.classList.add(addClass);
+      io.unobserve(entry.target);
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+
+  targets.forEach(function (el) { io.observe(el); });
+
+  // Safety net: nothing stays hidden longer than this no matter what.
+  setTimeout(function () {
+    targets.forEach(function (el) {
+      el.classList.add(el.classList.contains('bc-anim-target') ? 'bc-anim' : 'is-visible');
+    });
+  }, 5000);
+})();
+</script>
