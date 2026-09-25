@@ -6,12 +6,17 @@ the base URL, API-key env var, and token-cap parameter name.
 """
 from __future__ import annotations
 
+import json
 import os
 
-from .base import ChatMessage, ModelResponse, Provider
+from .base import ChatMessage, ModelResponse, Provider, ToolCall, ToolHistory, ToolSpec, ToolTurn
 
 
 class OpenAIProvider(Provider):
+    # Chat Completions function calling. OpenAI-compatible subclasses inherit
+    # this; an endpoint that doesn't implement `tools` fails that candidate's
+    # run with the endpoint's error rather than silently answering in text.
+    supports_tools = True
     api_key_env = "OPENAI_API_KEY"
     base_url: str | None = None
     # gpt-5-family models reject `max_tokens`; compatible endpoints (GLM)
@@ -51,3 +56,59 @@ class OpenAIProvider(Provider):
             output_tokens=getattr(usage, "completion_tokens", 0) or 0,
             raw=resp,
         )
+
+    def complete_with_tools(
+        self,
+        history: ToolHistory,
+        tools: list[ToolSpec],
+        system: str | None = None,
+        max_tokens: int = 4096,
+    ) -> ToolTurn:
+        msgs: list[dict] = [{"role": "system", "content": system}] if system else []
+        for item in history:
+            if isinstance(item, ChatMessage):
+                msgs.append({"role": item.role, "content": item.content})
+            elif isinstance(item, ToolTurn):
+                msgs.append(item.native)
+            else:  # list[ToolResult]
+                msgs.extend(
+                    {"role": "tool", "tool_call_id": r.call_id, "content": r.content} for r in item
+                )
+
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            messages=msgs,
+            tools=[
+                {"type": "function", "function": {"name": t.name, "description": t.description, "parameters": t.parameters}}
+                for t in tools
+            ],
+            **{self.token_param: max_tokens},
+        )
+        message = resp.choices[0].message
+        raw_calls = message.tool_calls or []
+        native: dict = {"role": "assistant", "content": message.content or ""}
+        if raw_calls:
+            native["tool_calls"] = [
+                {"id": c.id, "type": "function", "function": {"name": c.function.name, "arguments": c.function.arguments}}
+                for c in raw_calls
+            ]
+        usage = resp.usage
+        return ToolTurn(
+            text=message.content or "",
+            model=resp.model,
+            tool_calls=[ToolCall(id=c.id, name=c.function.name, arguments=_parse_args(c.function.arguments)) for c in raw_calls],
+            input_tokens=getattr(usage, "prompt_tokens", 0) or 0,
+            output_tokens=getattr(usage, "completion_tokens", 0) or 0,
+            native=native,
+        )
+
+
+def _parse_args(raw: str | None) -> dict:
+    """Tool arguments arrive as a JSON string; malformed JSON becomes an
+    arguments dict the sandbox rejects (reported back to the model as an
+    error result), rather than crashing the run."""
+    try:
+        args = json.loads(raw or "{}")
+    except json.JSONDecodeError:
+        return {"_invalid_json": raw}
+    return args if isinstance(args, dict) else {"_invalid_json": raw}

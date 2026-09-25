@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 from .agents import WORKER_SYSTEM, Agent
 from .judge import JUDGE_SYSTEM, generic_scorer
 from .registry import MissingCredentials, create_provider
-from .runner import Scorer, Task
+from .runner import Executor, Scorer, Task
+from .usecases import EXECUTORS
 from .usecases import REGISTRY as USE_CASES
 
 # Load provider API keys from .env regardless of the caller's cwd or how the
@@ -38,6 +39,12 @@ def select_use_case(config: dict) -> tuple[str, Scorer]:
     return system, scorer
 
 
+def select_executor(config: dict) -> Executor | None:
+    """The use case's candidate executor (a tool loop), or None for the
+    default single completion."""
+    return EXECUTORS.get(config.get("use_case"))
+
+
 def load_agents(config: dict) -> tuple[list[Agent], Agent]:
     """Build candidate and judge agents from a parsed config dict.
 
@@ -45,6 +52,7 @@ def load_agents(config: dict) -> tuple[list[Agent], Agent]:
     raises RuntimeError if none remain.
     """
     candidate_system, _ = select_use_case(config)
+    needs_tools = select_executor(config) is not None
 
     candidates: list[Agent] = []
     for spec in config["candidates"]:
@@ -52,6 +60,13 @@ def load_agents(config: dict) -> tuple[list[Agent], Agent]:
             provider = create_provider(spec["provider"], spec["model"])
         except MissingCredentials as exc:
             print(f"skipping candidate {spec['name']!r}: {exc}", file=sys.stderr)
+            continue
+        if needs_tools and not provider.supports_tools:
+            print(
+                f"skipping candidate {spec['name']!r}: provider {spec['provider']!r} has no tool-use "
+                "support (the vendor CLIs run their own agent loop)",
+                file=sys.stderr,
+            )
             continue
         candidates.append(Agent(name=spec["name"], provider=provider, system=candidate_system))
 

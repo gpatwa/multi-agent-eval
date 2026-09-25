@@ -1,0 +1,41 @@
+# TOOL-USE triage tier: each candidate works the ticket through the sandbox
+# tools (lookup_account, set_triage, issue_refund, escalate, offer_pause,
+# cancel_subscription, send_reply) and is graded on the end state.
+#
+#   python main.py --config config.triage.tools.yaml --out results-triage-tools-runN
+#
+# Candidates must be API providers with tool support (anthropic, openai,
+# gemini, and the OpenAI-compatible adapters). The subscription CLIs
+# (claude-code, codex-cli, gemini-cli) run their own agent loop and can't
+# call these tools, so they're skipped here — but any provider works as the
+# JUDGE, which only grades text. Missing API keys skip that candidate.
+
+use_case: support_triage_tools
+tasks: tasks.triage.tools.yaml
+
+candidates:
+  - name: claude
+    provider: anthropic
+    model: claude-opus-5
+  - name: gpt
+    provider: openai
+    model: gpt-6-astra
+  - name: gemini
+    provider: gemini
+    model: gemini-3.1-pro-preview
+
+judge:
+  provider: claude-code
+  model: opus
+
+scorecard:
+  monthly_volume: 5000
+  weights:
+    quality: 0.7
+    latency: 0.15
+    cost: 0.15
+  # USD per 1M tokens [input, output] — same verified rates as config.triage.yaml.
+  pricing:
+    claude: [5.00, 25.00]    # claude-opus-5
+    gpt: [10.00, 50.00]       # gpt-6-astra
+    gemini: [2.00, 12.00]    # gemini-3.1-pro-preview (<=200k prompts)

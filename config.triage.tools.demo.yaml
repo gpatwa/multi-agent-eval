@@ -1,0 +1,22 @@
+# Offline demo of the TOOL-USE triage tier — mock providers, no API keys.
+# The mock candidates run a scripted tool loop against the sandbox.
+#
+#   python main.py --config config.triage.tools.demo.yaml --out results-triage-tools-demo
+
+use_case: support_triage_tools
+tasks: tasks.triage.tools.yaml
+
+candidates:
+  - name: mock-alpha
+    provider: mock
+    model: mock-tools-alpha
+  - name: mock-beta
+    provider: mock
+    model: mock-tools-beta
+
+judge:
+  provider: mock
+  model: mock-judge
+
+scorecard:
+  weights: {quality: 0.7, latency: 0.3, cost: 0.0}

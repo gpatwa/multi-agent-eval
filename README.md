@@ -188,6 +188,38 @@ swap in your policy/taxonomy/scorer, register it in
 `eval_agents/usecases/__init__.py`, and point a config's `use_case` at it.
 Configs without a `use_case` fall back to the generic rubric.
 
+## Agentic tier: triage with tools
+
+`use_case: support_triage_tools` ([config.triage.tools.yaml](config.triage.tools.yaml),
+[tasks.triage.tools.yaml](tasks.triage.tools.yaml)) makes the candidate
+*work* the ticket instead of describing a decision. It runs a tool loop
+against a sandboxed ticketing system: `lookup_account`, `set_triage`,
+`issue_refund`, `escalate`, `offer_pause`, `cancel_subscription` and `send_reply`.
+
+- **The facts are behind a tool.** Plan type, charge dates and whether a
+  cancellation was confirmed are only in the account record. Several tickets
+  have identical wording but different accounts (a real double charge vs. two
+  normal renewals, a confirmed vs. an unconfirmed cancellation), so a model
+  that answers without looking the customer up can't pass.
+- **The end state is graded deterministically.** That covers what the agent
+  set with `set_triage`, and which refunds (type, charge ids, count),
+  escalations, pause offer and cancellation it actually executed, checked by
+  exact match against `gold.state`. The judge grades only the reply it sent,
+  plus whether that reply contradicts what it did.
+- Every tool call is recorded in `results.json` (`answer` → `trace`).
+  Invalid calls return an error result to the model instead of crashing the
+  run, and each ticket is capped at 12 assistant turns.
+
+```bash
+python main.py --config config.triage.tools.demo.yaml --out results-triage-tools-demo  # offline, mock
+python main.py --config config.triage.tools.yaml --out results-triage-tools-run1       # API keys
+```
+
+Candidates must be API providers with tool support: `anthropic`, `openai`,
+`gemini`, and the OpenAI-compatible adapters. The subscription CLIs run their
+own agent loop and can't call these tools, so they're skipped as
+candidates. They still work as the judge.
+
 ## Guardrails & what gets measured
 
 Beyond quality scores, every run measures:

@@ -236,15 +236,28 @@ def triage_scorer(judge: Agent, task, answer: str) -> Verdict:
     if actions_score is not None:
         det["actions"] = actions_score
 
-    # Judge grades the reply text against policy.
+    actions_repr = json.dumps(parsed["actions"]) if parsed["actions"] else "(none declared)"
+    got = f"routed {parsed['category']}/{parsed['priority']}"
+    want = f"gold {gold.get('category')}/{gold.get('priority')}"
+    if action_misses:
+        want += f"; action miss: {','.join(action_misses)}"
+    return judge_and_combine(judge, task, parsed["reply"], actions_repr, det, f"{got} vs {want}.")
+
+
+def judge_and_combine(judge: Agent, task, reply: str, actions_repr: str, det: dict, note: str) -> Verdict:
+    """Have the judge grade `reply` against policy (and its consistency with
+    `actions_repr`), then merge with the deterministic scores in `det`.
+
+    Shared by the single-turn and tool-use triage scorers so both grade the
+    customer-facing reply identically."""
     prompt = _JUDGE_PROMPT.format(
         policy=POLICY,
         ticket=task.prompt,
         reference=task.reference or "(none)",
-        reply=parsed["reply"],
-        actions=json.dumps(parsed["actions"]) if parsed["actions"] else "(none declared)",
+        reply=reply,
+        actions=actions_repr,
     )
-    flags = _pii_flags(parsed["reply"])
+    flags = _pii_flags(reply)
     resp = None
     try:
         # judge.run is inside the try: a judge transport failure (rate limit,
@@ -260,7 +273,7 @@ def triage_scorer(judge: Agent, task, answer: str) -> Verdict:
         rationale = str(data.get("rationale", ""))
     except Exception as exc:
         # Judge failure is different from candidate failure — surface it, but
-        # still report the objective routing/priority we already know.
+        # still report the objective scores we already know.
         scores = {**det, "policy_adherence": 0, "resolution": 0, "tone": 0}
         return Verdict(
             scores=scores, parse_error=f"judge: {type(exc).__name__}: {exc}", flags=flags,
@@ -268,11 +281,8 @@ def triage_scorer(judge: Agent, task, answer: str) -> Verdict:
         )
 
     scores = {**det, **reply_scores}
-    overall = _overall(scores)
-    got = f"routed {parsed['category']}/{parsed['priority']}"
-    want = f"gold {gold.get('category')}/{gold.get('priority')}"
-    if action_misses:
-        want += f"; action miss: {','.join(action_misses)}"
     flag_note = f" FLAGS: {','.join(flags)}." if flags else ""
-    note = f"{got} vs {want}.{flag_note} {rationale}"
-    return Verdict(scores=scores, overall=overall, rationale=note, flags=flags, **judge_usage(resp))
+    return Verdict(
+        scores=scores, overall=_overall(scores), rationale=f"{note}{flag_note} {rationale}",
+        flags=flags, **judge_usage(resp),
+    )

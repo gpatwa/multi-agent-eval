@@ -13,6 +13,7 @@ from typing import Callable
 
 from .agents import Agent
 from .judge import Verdict, generic_scorer
+from .providers.base import ModelResponse
 
 # A scorer turns (judge, task, candidate_answer) into a Verdict. The generic
 # LLM-as-judge scorer is the default; use cases (e.g. triage) supply their own.
@@ -26,6 +27,7 @@ class Task:
     prompt: str
     reference: str = ""
     gold: dict = field(default_factory=dict)  # use-case ground truth (e.g. category/priority)
+    fixture: dict = field(default_factory=dict)  # use-case environment (e.g. the account a tool looks up)
 
 
 @dataclass
@@ -47,9 +49,14 @@ class TaskResult:
     results: list[CandidateResult] = field(default_factory=list)
 
 
-def _run_candidate(agent: Agent, task: Task) -> CandidateResult:
+# An executor runs one candidate on one task and returns its response. The
+# default is a single completion; agentic use cases supply a tool loop.
+Executor = Callable[[Agent, "Task"], ModelResponse]
+
+
+def _run_candidate(agent: Agent, task: Task, executor: Executor | None = None) -> CandidateResult:
     try:
-        resp = agent.run(task.prompt)
+        resp = executor(agent, task) if executor else agent.run(task.prompt)
         return CandidateResult(
             candidate=agent.name,
             model=resp.model,
@@ -73,6 +80,7 @@ def run_evaluation(
     scorer: Scorer | None = None,
     trials: int = 1,  # repeat each task N times per candidate to measure variance
     on_task_done=None,  # callback(task_result, done_count, total) for live progress
+    executor: Executor | None = None,  # how a candidate works a task (default: one completion)
 ) -> list[TaskResult]:
     """Run every task against every candidate, then score each answer.
 
@@ -97,7 +105,7 @@ def run_evaluation(
             results: list[CandidateResult] = []
             for trial in range(trials):
                 with ThreadPoolExecutor(max_workers=len(candidates)) as pool:
-                    batch = list(pool.map(lambda a: _run_candidate(a, task), candidates))
+                    batch = list(pool.map(lambda a: _run_candidate(a, task, executor), candidates))
                 for r in batch:
                     r.trial = trial
                 results.extend(batch)

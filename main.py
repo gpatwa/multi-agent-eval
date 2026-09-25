@@ -16,7 +16,7 @@ import sys
 
 import json
 
-from eval_agents.config import load_agents, load_config, load_tasks, select_use_case
+from eval_agents.config import load_agents, load_config, load_tasks, select_executor, select_use_case
 from eval_agents.report import summarize, to_json, to_markdown, to_summary_json
 from eval_agents.runner import run_evaluation
 
@@ -74,7 +74,9 @@ def main() -> None:
     # .partial_results on any failure (including Ctrl-C), so a crash still
     # leaves usable artifacts instead of losing the whole run.
     try:
-        results = run_evaluation(tasks, candidates, judge, scorer=scorer, trials=args.trials)
+        results = run_evaluation(
+            tasks, candidates, judge, scorer=scorer, trials=args.trials, executor=select_executor(config)
+        )
     except (Exception, KeyboardInterrupt) as exc:
         results = getattr(exc, "partial_results", None) or []
         if not results:
