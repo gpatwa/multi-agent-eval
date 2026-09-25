@@ -19,7 +19,7 @@ import re
 
 from ..agents import Agent
 from ..json_extract import extract_json
-from ..judge import Verdict
+from ..judge import Verdict, judge_usage
 
 # ---------------------------------------------------------------- taxonomy
 CATEGORIES = ["billing", "technical", "account_access", "feature_request", "cancellation"]
@@ -158,6 +158,7 @@ def triage_scorer(judge: Agent, task, answer: str) -> Verdict:
         reply=parsed["reply"],
     )
     flags = _pii_flags(parsed["reply"])
+    resp = None
     try:
         # judge.run is inside the try: a judge transport failure (rate limit,
         # expired auth, network) must degrade this one verdict, never abort
@@ -172,7 +173,10 @@ def triage_scorer(judge: Agent, task, answer: str) -> Verdict:
         # Judge failure is different from candidate failure — surface it, but
         # still report the objective routing/priority we already know.
         scores = {"routing": routing, "priority": priority, "policy_adherence": 0, "resolution": 0, "tone": 0}
-        return Verdict(scores=scores, parse_error=f"judge: {type(exc).__name__}: {exc}", flags=flags)
+        return Verdict(
+            scores=scores, parse_error=f"judge: {type(exc).__name__}: {exc}", flags=flags,
+            **judge_usage(resp),
+        )
 
     scores = {"routing": routing, "priority": priority, **reply_scores}
     overall = round(sum(_WEIGHTS[d] * scores[d] for d in DIMENSIONS), 2)
@@ -180,4 +184,4 @@ def triage_scorer(judge: Agent, task, answer: str) -> Verdict:
     want = f"gold {gold.get('category')}/{gold.get('priority')}"
     flag_note = f" FLAGS: {','.join(flags)}." if flags else ""
     note = f"{got} vs {want}.{flag_note} {rationale}"
-    return Verdict(scores=scores, overall=overall, rationale=note, flags=flags)
+    return Verdict(scores=scores, overall=overall, rationale=note, flags=flags, **judge_usage(resp))

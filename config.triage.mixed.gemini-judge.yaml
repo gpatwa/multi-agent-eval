@@ -36,3 +36,5 @@ scorecard:
     quality: 0.7
     latency: 0.3
     cost: 0.0
+  # Judge spend (evaluation overhead, reported separately; never in the composite).
+  judge_pricing: [2.00, 12.00]  # gemini-3.1-pro-preview (<=200k prompts)

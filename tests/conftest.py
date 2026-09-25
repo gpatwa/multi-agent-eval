@@ -12,17 +12,29 @@ class FakeProvider(Provider):
     """A Provider stub that returns a scripted response (or raises a
     scripted exception) instead of calling a real vendor."""
 
-    def __init__(self, model: str = "fake", response_text: str = "{}", raises: Exception | None = None):
+    def __init__(
+        self,
+        model: str = "fake",
+        response_text: str = "{}",
+        raises: Exception | None = None,
+        input_tokens: int = 0,
+        output_tokens: int = 0,
+    ):
         super().__init__(model)
         self.response_text = response_text
         self.raises = raises
+        self.input_tokens = input_tokens
+        self.output_tokens = output_tokens
         self.calls: list[list[ChatMessage]] = []
 
     def complete(self, messages, system=None, max_tokens=4096):
         self.calls.append(messages)
         if self.raises:
             raise self.raises
-        return ModelResponse(text=self.response_text, model=self.model)
+        return ModelResponse(
+            text=self.response_text, model=self.model,
+            input_tokens=self.input_tokens, output_tokens=self.output_tokens,
+        )
 
 
 @pytest.fixture

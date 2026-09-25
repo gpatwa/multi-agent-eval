@@ -49,3 +49,14 @@ def test_config_pricing_map_covers_priced_candidates(path):
     candidate_names = {c["name"] for c in config["candidates"]}
     stale = set(pricing) - candidate_names
     assert not stale, f"{path.name}: pricing map has entries for non-candidates: {stale}"
+
+
+@pytest.mark.parametrize("path", CONFIG_FILES, ids=lambda p: p.name)
+def test_judge_pricing_shape(path):
+    """scorecard.judge_pricing, if present, is [input_per_1M, output_per_1M]."""
+    config = yaml.safe_load(path.read_text())
+    jp = (config.get("scorecard") or {}).get("judge_pricing")
+    if jp is None:
+        pytest.skip("no judge_pricing")
+    assert isinstance(jp, list) and len(jp) == 2, f"{path.name}: judge_pricing must be [in, out]"
+    assert all(isinstance(x, (int, float)) and x >= 0 for x in jp), f"{path.name}: bad judge_pricing {jp}"

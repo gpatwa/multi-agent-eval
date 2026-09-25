@@ -50,6 +50,8 @@ scorecard:
     glm: [1.40, 4.40]        # glm-5.3
     grok: [2.00, 6.00]       # grok-4.6 (<200k context)
     meta: [1.25, 4.25]      # muse-spark-1.3
+  # Judge spend (evaluation overhead, reported separately; never in the composite).
+  judge_pricing: [5.00, 25.00]   # claude-opus-5
 
 # Task suite that goes with this config (used when --tasks/UI value is not overridden)
 tasks: tasks.triage.yaml

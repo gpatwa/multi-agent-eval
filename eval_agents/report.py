@@ -6,6 +6,11 @@ without changes here). When a `scorecard` config is supplied, candidates are
 ranked by a balanced composite of quality + latency + cost; otherwise by
 quality alone. Guardrail flags are counted as hard events, separate from the
 1-5 quality averages.
+
+Judge spend is reported separately from candidate cost: it's evaluation
+overhead (the same judge scores every candidate), so it never feeds the
+composite ranking or the --baseline gate — it answers "what does running
+this eval cost?", priced via `scorecard.judge_pricing: [in, out]`.
 """
 from __future__ import annotations
 
@@ -55,11 +60,13 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
     scorecard = scorecard or {}
     weights = scorecard.get("weights", {"quality": 1.0})
     pricing = scorecard.get("pricing", {})
+    judge_price = scorecard.get("judge_pricing")  # [in_per_1M, out_per_1M] or None
 
     raw: dict[str, dict] = defaultdict(
         lambda: {
             "model": "", "quality": [], "latency": [], "in_tokens": [], "out_tokens": [],
             "in_cost": [], "out_cost": [], "violations": 0, "flags": defaultdict(int), "errors": 0,
+            "judge_in": 0, "judge_out": 0,
         }
     )
     for tr in results:
@@ -76,6 +83,8 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
             e["in_cost"].append(r.input_tokens * price[0] / 1e6 if price else 0.0)
             e["out_cost"].append(r.output_tokens * price[1] / 1e6 if price else 0.0)
             if r.verdict:
+                e["judge_in"] += r.verdict.judge_input_tokens
+                e["judge_out"] += r.verdict.judge_output_tokens
                 if not r.verdict.parse_error:
                     e["quality"].append(r.verdict.overall)
                 if r.verdict.flags:
@@ -90,9 +99,13 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
     wsum = (wq + wl + wc) or 1
     wq, wl, wc = wq / wsum, wl / wsum, wc / wsum
 
+    def judge_cost(tok_in: int, tok_out: int) -> float:
+        return (tok_in * judge_price[0] + tok_out * judge_price[1]) / 1e6 if judge_price else 0.0
+
     stats: dict[str, dict] = {}
     for name, e in raw.items():
         cost_task = _avg(e["in_cost"]) + _avg(e["out_cost"])
+        n = len(e["latency"])
         stats[name] = {
             "model": e["model"],
             "n_samples": len(e["latency"]),
@@ -106,6 +119,11 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
             "input_cost_avg": round(_avg(e["in_cost"]), 6),
             "output_cost_avg": round(_avg(e["out_cost"]), 6),
             "cost_per_task": round(cost_task, 6),
+            "candidate_cost_total": round(sum(e["in_cost"]) + sum(e["out_cost"]), 6),
+            "judge_input_tokens_total": e["judge_in"],
+            "judge_output_tokens_total": e["judge_out"],
+            "judge_cost_total": round(judge_cost(e["judge_in"], e["judge_out"]), 6),
+            "judge_cost_per_task": round(judge_cost(e["judge_in"], e["judge_out"]) / n, 6) if n else 0.0,
             "priced": bool(pricing.get(name)),
             "critical_violations": e["violations"],
             "flag_counts": dict(e["flags"]),
@@ -126,12 +144,24 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
         s["composite"] = round(wq * q_norm + wl * l_norm[name] + wc * c_norm[name], 4)
 
     ranking = sorted(stats, key=lambda n: stats[n]["composite"], reverse=True)
+    judge_in = sum(e["judge_in"] for e in raw.values())
+    judge_out = sum(e["judge_out"] for e in raw.values())
+    candidate_total = sum(s["candidate_cost_total"] for s in stats.values())
+    judge_total = judge_cost(judge_in, judge_out)
     return {
         "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "weights": {"quality": wq, "latency": wl, "cost": wc},
         "monthly_volume": scorecard.get("monthly_volume"),
         "ranking": ranking,
         "candidates": stats,
+        "evaluation_cost": {
+            "judge_priced": bool(judge_price),
+            "judge_input_tokens": judge_in,
+            "judge_output_tokens": judge_out,
+            "judge_cost_total": round(judge_total, 6),
+            "candidate_cost_total": round(candidate_total, 6),
+            "run_cost_total": round(candidate_total + judge_total, 6),
+        },
     }
 
 
@@ -227,6 +257,33 @@ def to_markdown(results: list[TaskResult], scorecard: dict | None = None) -> str
             if volume:
                 row += f" ${s['cost_per_task'] * volume:,.2f} |"
             lines.append(row)
+
+    # ---- evaluation (run) cost -------------------------------------------
+    ev = summary["evaluation_cost"]
+    if ev["judge_input_tokens"] or ev["judge_output_tokens"] or any_priced:
+        judge_cost_cell = f"${ev['judge_cost_total']:.4f}" if ev["judge_priced"] else "flat-rate / unpriced"
+        lines += [
+            "",
+            "## Evaluation cost",
+            "",
+            "What this run cost end to end. Judge spend is evaluation overhead and "
+            "is not part of any candidate's cost/task or the composite.",
+            "",
+            "| Candidate | Judge in tokens | Judge out tokens | Judge cost | Candidate cost |",
+            "|---|---|---|---|---|",
+        ]
+        for name in summary["ranking"]:
+            s = stats[name]
+            jc = f"${s['judge_cost_total']:.4f}" if ev["judge_priced"] else "—"
+            cc = f"${s['candidate_cost_total']:.4f}" if s["priced"] else "flat-rate"
+            lines.append(
+                f"| {name} | {s['judge_input_tokens_total']:,} | {s['judge_output_tokens_total']:,} | {jc} | {cc} |"
+            )
+        lines += [
+            "",
+            f"**Judge total:** {ev['judge_input_tokens']:,} in / {ev['judge_output_tokens']:,} out tokens, "
+            f"{judge_cost_cell}. **Run total (priced parts):** ${ev['run_cost_total']:.4f}.",
+        ]
 
     # ---- per-task detail ------------------------------------------------
     multi_trial = any(r.trial > 0 for tr in results for r in tr.results)

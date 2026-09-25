@@ -152,6 +152,9 @@ The final ranking is a **balanced scorecard** — a weighted blend of quality,
 latency, and cost per task (weights and per-model pricing in
 [config.triage.yaml](config.triage.yaml)), because the cheapest
 acceptable-quality model is often the right production answer.
+Judge tokens are tracked too: the report's **Evaluation cost** section shows
+what the run itself cost (priced via `scorecard.judge_pricing`). Judge spend is
+overhead shared by all candidates, so it never affects the ranking.
 
 ```bash
 # offline demo of the triage benchmark (mock providers, no keys)

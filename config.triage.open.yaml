@@ -57,3 +57,5 @@ scorecard:
     qwen:     [2.00,  6.00]     # qwen3.8-max-0902
     deepseek: [0.435, 0.87]     # deepseek-v4-pro (cache-miss input)
     nemotron: [0.50,  2.20]     # nemotron-3-ultra-550b-a55b
+  # Judge spend (evaluation overhead, reported separately; never in the composite).
+  judge_pricing: [5.00, 25.00]  # claude-opus-5

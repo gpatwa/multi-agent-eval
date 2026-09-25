@@ -114,3 +114,26 @@ def test_malformed_judge_output_degrades_verdict(fake_judge):
     verdict = triage_scorer(judge, task, _candidate_answer(category="billing", priority="normal"))
     assert verdict.parse_error is not None
     assert verdict.scores["routing"] == 5  # deterministic part still known
+
+
+# ---------------------------------------------------------------- judge cost
+
+
+def test_judge_tokens_recorded_on_verdict(fake_judge):
+    judge = fake_judge(response_text=_judge_json(), input_tokens=1200, output_tokens=80)
+    verdict = triage_scorer(judge, _task(category="billing", priority="normal"), _candidate_answer())
+    assert (verdict.judge_input_tokens, verdict.judge_output_tokens) == (1200, 80)
+
+
+def test_judge_tokens_kept_when_judge_output_malformed(fake_judge):
+    """The call happened and was billed even though we couldn't parse it."""
+    judge = fake_judge(response_text="not json", input_tokens=900, output_tokens=40)
+    verdict = triage_scorer(judge, _task(category="billing", priority="normal"), _candidate_answer())
+    assert verdict.parse_error is not None
+    assert (verdict.judge_input_tokens, verdict.judge_output_tokens) == (900, 40)
+
+
+def test_no_judge_tokens_when_judge_not_called(fake_judge):
+    judge = fake_judge(response_text=_judge_json(), input_tokens=999, output_tokens=99)
+    verdict = triage_scorer(judge, _task(category="billing", priority="normal"), "not valid json")
+    assert (verdict.judge_input_tokens, verdict.judge_output_tokens) == (0, 0)

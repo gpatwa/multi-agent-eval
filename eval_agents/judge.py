@@ -53,6 +53,11 @@ class Verdict:
     # Guardrail red flags (e.g. "policy_critical", "pii_echo"). Any flag is a
     # launch-gate event — counted separately from the 1-5 quality averages.
     flags: list[str] = field(default_factory=list)
+    # Tokens the judge call consumed to produce this verdict. Tracked so the
+    # report can show what an evaluation run actually costs (candidate spend
+    # alone undercounts it). Zero when no judge call was made.
+    judge_input_tokens: int = 0
+    judge_output_tokens: int = 0
 
 
 # _extract_json moved to json_extract.extract_json (kept as an alias
@@ -60,10 +65,18 @@ class Verdict:
 _extract_json = extract_json
 
 
+def judge_usage(resp) -> dict[str, int]:
+    """Verdict token kwargs from a judge ModelResponse (or None if the call failed)."""
+    if resp is None:
+        return {"judge_input_tokens": 0, "judge_output_tokens": 0}
+    return {"judge_input_tokens": resp.input_tokens, "judge_output_tokens": resp.output_tokens}
+
+
 def score(judge: Agent, task_prompt: str, reference: str, answer: str) -> Verdict:
     prompt = JUDGE_PROMPT.format(
         task=task_prompt, reference=reference or "(none provided)", answer=answer
     )
+    resp = None
     try:
         # judge.run is inside the try so a judge transport failure degrades
         # this verdict rather than aborting the run (see triage scorer).
@@ -71,9 +84,13 @@ def score(judge: Agent, task_prompt: str, reference: str, answer: str) -> Verdic
         data = _extract_json(resp.text)
         scores = {d: int(data["scores"][d]) for d in DIMENSIONS}
         overall = float(data.get("overall") or sum(scores.values()) / len(scores))
-        return Verdict(scores=scores, overall=overall, rationale=str(data.get("rationale", "")))
+        return Verdict(
+            scores=scores, overall=overall, rationale=str(data.get("rationale", "")),
+            **judge_usage(resp),
+        )
     except Exception as exc:  # malformed judge output shouldn't kill the run
-        return Verdict(parse_error=f"{type(exc).__name__}: {exc}")
+        # A parse failure still spent judge tokens — keep them in the cost.
+        return Verdict(parse_error=f"{type(exc).__name__}: {exc}", **judge_usage(resp))
 
 
 def generic_scorer(judge: Agent, task, answer: str) -> Verdict:
