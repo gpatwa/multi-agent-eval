@@ -4,3 +4,4 @@ __pycache__/
 runs/
 results*/
 .env
+tasks.triage.private.yaml

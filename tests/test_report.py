@@ -156,3 +156,23 @@ def test_unpriced_judge_still_counts_tokens():
     md = to_markdown(results, scorecard={})
     assert "## Evaluation cost" in md
     assert "flat-rate / unpriced" in md
+
+
+def test_ci95_uses_tasks_not_trials_as_samples():
+    """Repeating a task N times must not shrink the interval — trials of one
+    ticket aren't independent evidence about the suite."""
+    def results(trials):
+        out = []
+        for i, q in enumerate([3.0, 4.0, 5.0]):
+            out.append(TaskResult(task=_task(i), results=[_result("a", q, 1.0) for _ in range(trials)]))
+        return out
+    one = summarize(results(1))["candidates"]["a"]
+    five = summarize(results(5))["candidates"]["a"]
+    assert one["n_tasks_scored"] == five["n_tasks_scored"] == 3
+    # per-task means [3, 4, 5]: sd 1.0, n 3, t(df=2) 4.30 -> 4.30 / sqrt(3)
+    assert one["quality_ci95"] == five["quality_ci95"] == round(4.30 / 3 ** 0.5, 3)
+
+
+def test_ci95_zero_for_single_task():
+    results = [TaskResult(task=_task(0), results=[_result("a", 4.0, 1.0)])]
+    assert summarize(results)["candidates"]["a"]["quality_ci95"] == 0.0

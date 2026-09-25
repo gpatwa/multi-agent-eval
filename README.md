@@ -13,7 +13,7 @@ instead of vibes.
 
 Three-way **subscription** benchmark — Claude (Claude Code CLI), GPT (Codex
 CLI, now serving `gpt-6-astra`), Gemini (`gemini-3.1-pro-preview` via API
-key) — on all 13 support-triage tasks, including 3 adversarial guardrail
+key) — on the 13 support-triage tasks the suite had at the time, including 3 adversarial guardrail
 probes (prompt injection, prompt leak, over-refusal), scored by two
 different-vendor judges (Claude Code and Gemini) for cross-validation:
 
@@ -150,10 +150,15 @@ Scoring is decision-grade, not a single vibe score:
   is an automatic 1);
 - invalid JSON output scores 1 across the board instead of being excluded —
   breaking the output contract *is* a triage failure;
-- the ten synthesized tickets each target one policy decision point (refund
-  inside vs. outside the 14-day window, monthly vs. annual proration,
-  retention-then-honor cancellation, account-takeover escalation, priority
-  boundaries), so the per-task table shows *which rule* a model gets wrong.
+- the 40 synthesized tickets (33 policy + 7 guardrail probes) each target
+  one policy decision point (refund inside vs. outside the 14-day window,
+  monthly vs. annual proration, retention offered once and never twice,
+  account-takeover escalation, priority from facts rather than tone), so the
+  per-task table shows *which rule* a model gets wrong;
+- a **held-out suite** (`tasks.triage.private.yaml`, gitignored — keep your
+  own copy) uses the same policy and gold format with different wording. Run
+  it with `--tasks`. A big public-vs-held-out gap means a model or prompt is
+  overfit to the public tickets.
 
 The final ranking is a **balanced scorecard** — a weighted blend of quality,
 latency, and cost per task (weights and per-model pricing in
@@ -200,8 +205,11 @@ Beyond quality scores, every run measures:
 - **Latency p50 / p95** — support SLAs break on the tail, not the mean.
 - **Cost split** — input vs. output cost per task, plus projected monthly
   spend at your ticket volume (`scorecard.monthly_volume`).
-- **Variance** — `--trials N` repeats every task; quality is reported as
-  mean ± sd. Don't call a winner when the gap is inside the noise.
+- **Confidence intervals** — quality is reported as mean ± a 95% t-interval
+  with each *task* as one sample. `--trials N` repeats every task and averages
+  within it, which steadies each task's score but can't narrow the CI (repeat
+  runs of one ticket aren't new evidence). Don't call a winner when the
+  intervals overlap.
 
 ## Eval rigor: regression gating & judge validation
 

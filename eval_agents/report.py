@@ -47,6 +47,23 @@ def _sd(xs):
     return statistics.stdev(xs) if len(xs) > 1 else 0.0
 
 
+# Two-sided 95% Student-t critical values by degrees of freedom; 1.96 beyond.
+_T95 = {1: 12.71, 2: 4.30, 3: 3.18, 4: 2.78, 5: 2.57, 6: 2.45, 7: 2.36, 8: 2.31, 9: 2.26,
+        10: 2.23, 12: 2.18, 15: 2.13, 20: 2.09, 25: 2.06, 30: 2.04, 40: 2.02, 60: 2.00}
+
+
+def _ci95(per_task_means: list[float]) -> float:
+    """Half-width of a 95% t-interval for the mean, treating each TASK as one
+    sample (trials are averaged within a task first — repeat trials of the
+    same ticket aren't independent evidence, so they must not narrow the CI)."""
+    n = len(per_task_means)
+    if n < 2:
+        return 0.0
+    df = n - 1
+    t = next((v for k, v in sorted(_T95.items()) if df <= k), 1.96)
+    return t * statistics.stdev(per_task_means) / n ** 0.5
+
+
 def _pct(xs, p):
     if not xs:
         return 0.0
@@ -66,7 +83,7 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
         lambda: {
             "model": "", "quality": [], "latency": [], "in_tokens": [], "out_tokens": [],
             "in_cost": [], "out_cost": [], "violations": 0, "flags": defaultdict(int), "errors": 0,
-            "judge_in": 0, "judge_out": 0,
+            "judge_in": 0, "judge_out": 0, "quality_by_task": defaultdict(list),
         }
     )
     for tr in results:
@@ -87,6 +104,7 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
                 e["judge_out"] += r.verdict.judge_output_tokens
                 if not r.verdict.parse_error:
                     e["quality"].append(r.verdict.overall)
+                    e["quality_by_task"][tr.task.id].append(r.verdict.overall)
                 if r.verdict.flags:
                     e["violations"] += 1
                     for f in r.verdict.flags:
@@ -111,6 +129,8 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
             "n_samples": len(e["latency"]),
             "quality_mean": round(_avg(e["quality"]), 3),
             "quality_sd": round(_sd(e["quality"]), 3),
+            "n_tasks_scored": len(e["quality_by_task"]),
+            "quality_ci95": round(_ci95([_avg(v) for v in e["quality_by_task"].values()]), 3),
             "latency_p50": round(_pct(e["latency"], 0.50), 2),
             "latency_p95": round(_pct(e["latency"], 0.95), 2),
             "latency_mean": round(_avg(e["latency"]), 2),
@@ -169,6 +189,13 @@ def to_summary_json(results: list[TaskResult], scorecard: dict | None = None) ->
     return json.dumps(summarize(results, scorecard), indent=2)
 
 
+def _quality_cell(s: dict) -> str:
+    q = f"{s['quality_mean']:.2f}"
+    if s["quality_ci95"]:
+        q += f" ± {s['quality_ci95']:.2f}"
+    return q
+
+
 def to_markdown(results: list[TaskResult], scorecard: dict | None = None) -> str:
     scorecard = scorecard or {}
     summary = summarize(results, scorecard)
@@ -196,14 +223,12 @@ def to_markdown(results: list[TaskResult], scorecard: dict | None = None) -> str
             "**Critical violations are a launch gate, not a weighted score — treat any "
             "non-zero count as disqualifying regardless of rank.**",
             "",
-            "| Rank | Candidate | Model | Composite | Quality (1-5) | ⚠ Violations | Latency p50/p95 | Cost/task | Errors |",
+            "| Rank | Candidate | Model | Composite | Quality (1-5, ±95% CI) | ⚠ Violations | Latency p50/p95 | Cost/task | Errors |",
             "|---|---|---|---|---|---|---|---|---|",
         ]
         for rank, name in enumerate(summary["ranking"], 1):
             s = stats[name]
-            q = f"{s['quality_mean']:.2f}"
-            if s["quality_sd"]:
-                q += f" ± {s['quality_sd']:.2f}"
+            q = _quality_cell(s)
             cost = f"${s['cost_per_task']:.5f}" if s["priced"] else "flat-rate"
             viol = f"**{s['critical_violations']}**" if s["critical_violations"] else "0"
             lines.append(
@@ -214,14 +239,12 @@ def to_markdown(results: list[TaskResult], scorecard: dict | None = None) -> str
         lines += [
             "## Leaderboard",
             "",
-            "| Rank | Candidate | Model | Quality (1-5) | ⚠ Violations | Latency p50/p95 | Avg output tokens | Errors |",
+            "| Rank | Candidate | Model | Quality (1-5, ±95% CI) | ⚠ Violations | Latency p50/p95 | Avg output tokens | Errors |",
             "|---|---|---|---|---|---|---|---|",
         ]
         for rank, name in enumerate(summary["ranking"], 1):
             s = stats[name]
-            q = f"{s['quality_mean']:.2f}"
-            if s["quality_sd"]:
-                q += f" ± {s['quality_sd']:.2f}"
+            q = _quality_cell(s)
             lines.append(
                 f"| {rank} | {name} | `{s['model']}` | {q} | {s['critical_violations']} "
                 f"| {s['latency_p50']:.1f}s / {s['latency_p95']:.1f}s | {s['output_tokens_avg']} | {s['errors']} |"
