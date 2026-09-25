@@ -1,4 +1,6 @@
-# Exact versions this project is tested against (Python 3.12).
+# Exact versions this project is tested against (Python 3.13).
+# The optional AutomationBench lane is pinned separately in
+# requirements-automationbench.txt (its dependency tree is large).
 # Regenerate: pip install -U -r requirements-dev.txt, run `pytest`, then
 #   pip freeze | grep -viE '^-e|pkg-resources' >> /tmp/new-lock.txt
 #   and paste the result below this header (keep the header).

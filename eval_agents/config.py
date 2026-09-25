@@ -11,7 +11,7 @@ from .agents import WORKER_SYSTEM, Agent
 from .judge import JUDGE_SYSTEM, generic_scorer
 from .registry import MissingCredentials, create_provider
 from .runner import Executor, Scorer, Task
-from .usecases import EXECUTORS
+from .usecases import EXECUTORS, automationbench
 from .usecases import REGISTRY as USE_CASES
 
 # Load provider API keys from .env regardless of the caller's cwd or how the
@@ -94,5 +94,12 @@ def load_config(path: str | pathlib.Path) -> dict:
 
 
 def load_tasks(path: str | pathlib.Path) -> list[Task]:
+    # `automationbench:<domain>[:<n>]` loads tasks from the pinned
+    # AutomationBench package instead of a YAML file. Callers may have joined
+    # it onto a directory (the web UI does ROOT / tasks_file), so match the
+    # last path component.
+    spec = str(path).replace("\\", "/").rsplit("/", 1)[-1]
+    if spec.startswith(automationbench.TASK_PREFIX):
+        return automationbench.load_tasks(spec)
     data = yaml.safe_load(pathlib.Path(path).read_text())
     return [Task(**t) for t in data["tasks"]]

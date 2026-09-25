@@ -176,3 +176,19 @@ def test_ci95_uses_tasks_not_trials_as_samples():
 def test_ci95_zero_for_single_task():
     results = [TaskResult(task=_task(0), results=[_result("a", 4.0, 1.0)])]
     assert summarize(results)["candidates"]["a"]["quality_ci95"] == 0.0
+
+
+def test_pass_rate_only_for_pass_fail_rubrics():
+    def res(candidate, passed):
+        r = _result(candidate, 5.0 if passed else 3.0, 1.0)
+        r.verdict.passed = passed
+        return r
+    results = [
+        TaskResult(task=_task(0), results=[res("a", True), _result("b", 4.0, 1.0)]),
+        TaskResult(task=_task(1), results=[res("a", False), _result("b", 4.0, 1.0)]),
+    ]
+    summary = summarize(results)
+    assert summary["candidates"]["a"]["pass_rate"] == 0.5
+    assert summary["candidates"]["b"]["pass_rate"] is None
+    md = to_markdown(results)
+    assert "## Pass rate" in md and "| a | 50.0% | 2 |" in md

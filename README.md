@@ -220,6 +220,36 @@ Candidates must be API providers with tool support: `anthropic`, `openai`,
 own agent loop and can't call these tools, so they're skipped as
 candidates. They still work as the judge.
 
+## AutomationBench lane (Zapier's public benchmark, same scorecard)
+
+[AutomationBench](https://github.com/zapier/AutomationBench) (MIT, Zapier) is
+a benchmark of multi-app business workflows, graded by deterministic
+assertions. `use_case: automationbench` runs its **support** domain (100
+public tasks) through this harness's providers and tool loop. AutomationBench
+supplies everything that defines a task: the simulated app state, the
+per-task tools, the system prompt, and its unmodified `partial_credit`
+scorer. You get its numbers alongside your own policy suite, with the same
+latency, cost, confidence-interval and regression reporting.
+
+```bash
+pip install -r requirements-automationbench.txt   # optional extra, pinned commit
+python main.py --config config.automationbench.support.yaml --out results-ab-support-run1
+```
+
+- `tasks: automationbench:support:20` takes a fixed-seed 20-task sample, and
+  `automationbench:support` runs all 100. These tasks are long, often 50k–150k
+  input tokens each, so sample first.
+- Quality is AutomationBench's partial credit on the 1–5 scale, and the report
+  adds its strict **pass rate** (every assertion must pass). No judge is called.
+- **Directional, not leaderboard-comparable.** This is the public set, while
+  the official leaderboard uses a harder private one, and our loop replaces
+  their runner. Treat gaps between models as signal, and don't expect the
+  absolute numbers to match zapier.com/benchmarks.
+- **How the two lanes differ.** AutomationBench measures generic workflow
+  execution breadth. The triage suites measure *your* policy, the quality of
+  the customer-facing text, and guardrails (injection, leaks, over-refusal),
+  none of which AutomationBench grades.
+
 ## Guardrails & what gets measured
 
 Beyond quality scores, every run measures:
@@ -304,7 +334,7 @@ REST API (usable without the frontend):
 
 ```bash
 cd multi-agent-eval
-python3 -m venv .venv && source .venv/bin/activate
+python3.13 -m venv .venv && source .venv/bin/activate   # Python 3.13+
 pip install -r requirements.txt
 
 # 1. Prove the pipeline offline — no API keys needed
@@ -554,7 +584,7 @@ internal consistency — valid providers, non-stale pricing maps
 CLI including `--baseline` regression gating (`tests/test_main_cli.py`).
 
 CI (`.github/workflows/ci.yml`) runs this on every push/PR against Python
-3.11 and 3.12. Add tests alongside any new provider or scorer — the registry
+3.13, with the optional AutomationBench extra installed. Add tests alongside any new provider or scorer — the registry
 and config-validity tests in particular are parametrized over "everything
 currently registered," so a new provider or config file gets covered
 automatically the moment it's added, no test-file edit required.

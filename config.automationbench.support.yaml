@@ -1,0 +1,48 @@
+# AutomationBench support domain (public set) as a lane in this harness.
+# Needs the optional extra (Python >= 3.13): pip install -r requirements-automationbench.txt
+#
+#   python main.py --config config.automationbench.support.yaml --out results-ab-support-runN
+#   python main.py --config config.automationbench.support.yaml --tasks automationbench:support   # all 100
+#
+# Scoring is AutomationBench's own (deterministic assertions): quality is
+# partial credit on the 1-5 scale, and the report adds their strict pass
+# rate. Numbers are directional — the official leaderboard uses a harder
+# private set and their own runner (see eval_agents/usecases/automationbench.py).
+#
+# Cost: tasks are long multi-app workflows (often 50k-150k input tokens
+# each), so the default is a fixed 20-task sample. Candidates need tool
+# support: API providers only; missing keys skip that candidate.
+
+use_case: automationbench
+tasks: automationbench:support:20
+
+candidates:
+  - name: claude
+    provider: anthropic
+    model: claude-opus-5
+  - name: gpt
+    provider: openai
+    model: gpt-6-astra
+  - name: gemini
+    provider: gemini
+    model: gemini-3.1-pro-preview
+
+# Not called: AutomationBench grading is fully deterministic. A judge is still
+# required by the config schema, so use the free offline mock.
+judge:
+  provider: mock
+  model: mock-judge
+
+scorecard:
+  monthly_volume: 5000
+  weights:
+    quality: 0.7
+    latency: 0.15
+    cost: 0.15
+  # USD per 1M tokens [input, output] — same verified rates as config.triage.yaml.
+  pricing:
+    claude: [5.00, 25.00]    # claude-opus-5
+    gpt: [10.00, 50.00]       # gpt-6-astra
+    gemini: [2.00, 12.00]    # gemini-3.1-pro-preview (<=200k prompts)
+  # Caveat: history grows every turn, and long tasks can push single requests past
+  # Gemini's 200k-token tier, which bills at a higher rate — cost may undercount.

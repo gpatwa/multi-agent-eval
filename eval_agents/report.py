@@ -83,7 +83,7 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
         lambda: {
             "model": "", "quality": [], "latency": [], "in_tokens": [], "out_tokens": [],
             "in_cost": [], "out_cost": [], "violations": 0, "flags": defaultdict(int), "errors": 0,
-            "judge_in": 0, "judge_out": 0, "quality_by_task": defaultdict(list),
+            "judge_in": 0, "judge_out": 0, "quality_by_task": defaultdict(list), "passed": [],
         }
     )
     for tr in results:
@@ -105,6 +105,8 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
                 if not r.verdict.parse_error:
                     e["quality"].append(r.verdict.overall)
                     e["quality_by_task"][tr.task.id].append(r.verdict.overall)
+                    if r.verdict.passed is not None:
+                        e["passed"].append(r.verdict.passed)
                 if r.verdict.flags:
                     e["violations"] += 1
                     for f in r.verdict.flags:
@@ -130,6 +132,8 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
             "quality_mean": round(_avg(e["quality"]), 3),
             "quality_sd": round(_sd(e["quality"]), 3),
             "n_tasks_scored": len(e["quality_by_task"]),
+            # strict pass rate, only for rubrics with pass/fail (else None)
+            "pass_rate": round(sum(e["passed"]) / len(e["passed"]), 4) if e["passed"] else None,
             "quality_ci95": round(_ci95([_avg(v) for v in e["quality_by_task"].values()]), 3),
             "latency_p50": round(_pct(e["latency"], 0.50), 2),
             "latency_p95": round(_pct(e["latency"], 0.95), 2),
@@ -249,6 +253,23 @@ def to_markdown(results: list[TaskResult], scorecard: dict | None = None) -> str
                 f"| {rank} | {name} | `{s['model']}` | {q} | {s['critical_violations']} "
                 f"| {s['latency_p50']:.1f}s / {s['latency_p95']:.1f}s | {s['output_tokens_avg']} | {s['errors']} |"
             )
+
+    # ---- strict pass rate (rubrics with pass/fail, e.g. AutomationBench) --
+    if any(s["pass_rate"] is not None for s in stats.values()):
+        lines += [
+            "",
+            "## Pass rate",
+            "",
+            "A task passes only if every assertion passes (AutomationBench's official "
+            "metric); quality above is the partial credit.",
+            "",
+            "| Candidate | Pass rate | Tasks |",
+            "|---|---|---|",
+        ]
+        for name in summary["ranking"]:
+            s = stats[name]
+            if s["pass_rate"] is not None:
+                lines.append(f"| {name} | {s['pass_rate']:.1%} | {s['n_tasks_scored']} |")
 
     # ---- guardrail flag breakdown --------------------------------------
     if any(s["critical_violations"] for s in stats.values()):

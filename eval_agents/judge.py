@@ -58,6 +58,9 @@ class Verdict:
     # alone undercounts it). Zero when no judge call was made.
     judge_input_tokens: int = 0
     judge_output_tokens: int = 0
+    # Strict pass/fail for scorers that have one (e.g. AutomationBench's
+    # "every assertion passed"); None when the rubric has no such notion.
+    passed: bool | None = None
 
 
 # _extract_json moved to json_extract.extract_json (kept as an alias

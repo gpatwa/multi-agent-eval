@@ -1,0 +1,5 @@
+# Optional: AutomationBench lane (use_case: automationbench). Requires Python >= 3.13.
+# AutomationBench is MIT-licensed, (c) 2026 Zapier, Inc. — https://github.com/zapier/AutomationBench
+# Pinned to a commit so task content (and therefore scores) can't change under us;
+# bump deliberately and re-baseline.
+automation-bench @ git+https://github.com/zapier/AutomationBench.git@4a8e1061254004d9dac807054eed33fad7d1ff14

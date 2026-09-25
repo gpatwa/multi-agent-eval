@@ -10,12 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -r requirements-lock.txt
+      # Optional AutomationBench lane, so tests/test_automationbench.py runs in CI
+      # (it skips locally when the extra isn't installed).
+      - run: pip install -r requirements-automationbench.txt
       - run: python -m compileall -q eval_agents webapp main.py scripts
       - run: pytest -q
