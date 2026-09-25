@@ -42,6 +42,7 @@ class MockProvider(Provider):
             }
             if "policy_adherence" in prompt:
                 payload["critical_violation"] = seed % 9 == 0  # occasional flag for demo
+                payload["contradicts_actions"] = seed % 13 == 0
             text = json.dumps(payload)
         elif system and '"category"' in system:
             # Triage-shaped worker output: pick pseudorandom labels so the
@@ -52,6 +53,11 @@ class MockProvider(Provider):
                 {
                     "category": categories[seed % len(categories)],
                     "priority": priorities[(seed // 7) % len(priorities)],
+                    "actions": {
+                        "refund": ["none", "full", "prorated", "duplicate_charge"][(seed // 11) % 4],
+                        "escalate": ["none", "security", "engineering"][(seed // 13) % 3],
+                        "offer_pause": bool((seed // 17) % 2),
+                    },
                     "reply": f"[{self.model}] Thanks for reaching out — here's what we'll do next.",
                 }
             )

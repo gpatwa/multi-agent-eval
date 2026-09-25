@@ -32,7 +32,7 @@ def export(results_path: str, out_csv: str) -> None:
             v = r.get("verdict")
             if not v or v.get("parse_error") or r.get("error"):
                 continue
-            judged = {k: s for k, s in v["scores"].items() if k not in ("routing", "priority")}
+            judged = {k: s for k, s in v["scores"].items() if k not in ("routing", "priority", "actions")}  # deterministic, not judged
             for k in judged:
                 if k not in dims:
                     dims.append(k)

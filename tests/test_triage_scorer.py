@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 
 from eval_agents.runner import Task
-from eval_agents.usecases.triage import parse_response, triage_scorer
+from eval_agents.usecases.triage import grade_actions, parse_response, triage_scorer
 
 
 def _task(**gold) -> Task:
@@ -34,7 +34,7 @@ def _judge_json(policy_adherence=5, resolution=5, tone=5, critical_violation=Fal
 
 def test_parse_response_extracts_fields():
     parsed = parse_response(_candidate_answer(category="technical", priority="urgent"))
-    assert parsed == {"category": "technical", "priority": "urgent", "reply": "Thanks for reaching out."}
+    assert parsed == {"category": "technical", "priority": "urgent", "actions": {}, "reply": "Thanks for reaching out."}
 
 
 def test_parse_response_returns_none_on_invalid_json():
@@ -137,3 +137,72 @@ def test_no_judge_tokens_when_judge_not_called(fake_judge):
     judge = fake_judge(response_text=_judge_json(), input_tokens=999, output_tokens=99)
     verdict = triage_scorer(judge, _task(category="billing", priority="normal"), "not valid json")
     assert (verdict.judge_input_tokens, verdict.judge_output_tokens) == (0, 0)
+
+
+# ---------------------------------------------------------------- structured actions
+
+
+def _answer_with_actions(actions, reply="We'll take care of it."):
+    return json.dumps({"category": "billing", "priority": "normal", "actions": actions, "reply": reply})
+
+
+def test_parse_response_normalizes_actions():
+    parsed = parse_response(_answer_with_actions({"refund": "Duplicate-Charge", "escalate": "NONE", "offer_pause": "true"}))
+    assert parsed["actions"] == {"refund": "duplicate_charge", "escalate": "none", "offer_pause": True}
+
+
+def test_parse_response_drops_invalid_action_values():
+    parsed = parse_response(_answer_with_actions({"refund": "partial", "escalate": "manager", "offer_pause": "maybe"}))
+    assert parsed["actions"] == {}
+
+
+def test_grade_actions_exact_match_and_partial():
+    assert grade_actions({"refund": "none", "escalate": "security"}, {"refund": "none", "escalate": "security"}) == (5, [])
+    score, misses = grade_actions({"refund": "full", "escalate": "security"}, {"refund": "none", "escalate": "security"})
+    assert (score, misses) == (3, ["refund"])
+    # missing declaration grades as a miss, not a pass
+    assert grade_actions({}, {"refund": "none"}) == (1, ["refund"])
+
+
+def test_grade_actions_ungraded_when_no_gold():
+    assert grade_actions({"refund": "full"}, {}) == (None, [])
+    assert grade_actions({"refund": "full"}, None) == (None, [])
+
+
+def test_actions_dimension_scored_and_weighted(fake_judge):
+    judge = fake_judge(response_text=_judge_json())
+    task = _task(category="billing", priority="normal", actions={"refund": "none"})
+    good = triage_scorer(judge, task, _answer_with_actions({"refund": "none"}))
+    bad = triage_scorer(judge, task, _answer_with_actions({"refund": "full"}))
+    assert good.scores["actions"] == 5 and good.overall == 5.0
+    assert bad.scores["actions"] == 1
+    assert bad.overall < good.overall
+    assert "action miss: refund" in bad.rationale
+
+
+def test_actions_dimension_absent_without_gold_actions(fake_judge):
+    """Task files without gold.actions (e.g. a user's own suite) still score
+    on the remaining dimensions, renormalized — a perfect answer is 5.0."""
+    judge = fake_judge(response_text=_judge_json())
+    verdict = triage_scorer(judge, _task(category="billing", priority="normal"), _candidate_answer())
+    assert "actions" not in verdict.scores
+    assert verdict.overall == 5.0
+
+
+def test_contradiction_between_reply_and_actions_is_flagged(fake_judge):
+    judge_text = json.dumps({
+        "scores": {"policy_adherence": 2, "resolution": 4, "tone": 5},
+        "critical_violation": False, "contradicts_actions": True, "rationale": "promises refund",
+    })
+    task = _task(category="billing", priority="normal", actions={"refund": "none"})
+    verdict = triage_scorer(fake_judge(response_text=judge_text), task,
+                            _answer_with_actions({"refund": "none"}, reply="Your full refund is on the way!"))
+    assert "action_contradiction" in verdict.flags
+
+
+def test_declared_actions_are_shown_to_judge(fake_judge):
+    judge = fake_judge(response_text=_judge_json())
+    task = _task(category="billing", priority="normal", actions={"refund": "none"})
+    triage_scorer(judge, task, _answer_with_actions({"refund": "prorated"}))
+    prompt = judge.provider.calls[0][-1].content
+    assert '"refund": "prorated"' in prompt

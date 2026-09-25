@@ -138,6 +138,13 @@ Scoring is decision-grade, not a single vibe score:
 
 - **routing** & **priority** are graded *deterministically* against gold
   labels — a mis-route is objectively wrong, the judge doesn't get a vote;
+- **actions** — the agent also declares the actions its reply commits to
+  (`refund`: none/full/prorated/duplicate_charge, `escalate`:
+  none/security/engineering, `offer_pause`), graded by exact match against
+  `gold.actions`. Together, deterministic checks carry 70% of the score;
+- the judge also flags an **action_contradiction** when the reply tells the
+  customer something the declared actions don't do (e.g. promises a refund
+  while declaring `refund: none`);
 - **policy_adherence**, **resolution**, and **tone** of the reply are graded
   by the LLM judge against the policy (promising a refund the policy forbids
   is an automatic 1);
@@ -221,7 +228,7 @@ python scripts/judge_agreement.py score labels.csv
 
 Rule of thumb: within-1 agreement ≥ 80% and Pearson r ≥ 0.6 means the judge
 is usable; below that, fix the rubric or judge model before trusting
-rankings. Note routing/priority never depend on the judge — they're graded
+rankings. Note routing/priority/actions never depend on the judge — they're graded
 deterministically against gold labels.
 
 ## Web UI
