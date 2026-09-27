@@ -81,6 +81,11 @@ def test_executor_runs_loop_with_their_system_prompt_and_scores():
     record = json.loads(resp.text)
     assert provider.system_seen == row["system"]  # AutomationBench's prompt, not ours
     assert record["tool_calls"] == 1 and record["cut_off"] is False
+    assert record["steps"] == 2 and record["final_text"] == "done"
+    [entry] = record["trace"]
+    assert entry["step"] == 1 and entry["tool"] == row["info"]["zapier_tools"][0]
+    assert entry["args"] == "{}" and isinstance(entry["error"], bool) and len(entry["result"]) <= 200
+    assert record["trace_truncated"] is False
     assert (resp.input_tokens, resp.output_tokens) == (200, 10)
     v = ab.automationbench_scorer(None, task, resp.text)
     assert v.passed is False
@@ -157,3 +162,14 @@ def test_sandbox_records_external_messages_from_successful_sends():
     box.execute(ToolCall(id="2", name="gmail_send_email",
                          arguments={"to": "team@company.example.com", "subject": "FYI", "body": "internal"}))
     assert [m["to"] for m in box.messages] == ["amy@acme.com"]
+
+
+def test_trace_is_capped_and_clipped(monkeypatch):
+    monkeypatch.setattr(ab, "_MAX_TRACE_ENTRIES", 3)
+    _, row = _row()
+    box = ab.ABSandbox(row["info"])
+    tool = row["info"]["zapier_tools"][0]
+    for i in range(5):
+        box.execute(ToolCall(id=str(i), name=tool, arguments={"q": "x" * 1000}))
+    assert box.calls == 5 and len(box.trace) == 3
+    assert len(box.trace[0]["args"]) == ab._TRACE_ARGS_CHARS and box.trace[0]["args"].endswith("…")

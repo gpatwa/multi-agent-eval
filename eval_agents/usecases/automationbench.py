@@ -57,6 +57,13 @@ _MAX_FAILED_SHOWN = 8  # failed assertions kept in the answer record
 MESSAGE_WEIGHT = 0.25  # share of `overall` from judged message quality (when any were sent)
 _MAX_MESSAGES_JUDGED = 8
 _MAX_BODY_CHARS = 4000
+# Diagnostics kept in the answer record (results.json): enough to see why a
+# run failed or stopped early without bloating 100-task result files.
+_MAX_TRACE_ENTRIES = 200
+_TRACE_ARGS_CHARS = 300
+_TRACE_RESULT_CHARS = 200
+_FINAL_TEXT_CHARS = 2000
+_EARLY_STOP_CALLS = 5  # an unfinished task with this few tool calls gets its final text in the rationale
 
 # AutomationBench's convention for the company's own addresses (staff, team
 # aliases): x@company.example.com, x@ourcompany.example.com. Email to anyone
@@ -152,6 +159,11 @@ def load_tasks(spec: str) -> list:
     ]
 
 
+def _clip(text: str, limit: int) -> str:
+    text = str(text)
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
 def _bool(value, default: bool) -> bool:
     if value is None:
         return default
@@ -228,8 +240,24 @@ class ABSandbox:
         self._allowed = set(self.info["zapier_tools"])
         self.calls = self.errors = 0
         self.messages: list[dict] = []  # external-facing messages actually sent
+        self.trace: list[dict] = []  # compact per-call log for diagnosis
+        self.step = 0  # assistant turn the current calls belong to (set by run_candidate)
+
+    def _record(self, call, result: ToolResult) -> ToolResult:
+        if len(self.trace) < _MAX_TRACE_ENTRIES:
+            self.trace.append({
+                "step": self.step,
+                "tool": call.name,
+                "args": _clip(json.dumps(call.arguments, default=str), _TRACE_ARGS_CHARS),
+                "error": result.is_error,
+                "result": _clip(result.content, _TRACE_RESULT_CHARS),
+            })
+        return result
 
     def execute(self, call) -> ToolResult:
+        return self._record(call, self._execute(call))
+
+    def _execute(self, call) -> ToolResult:
         self.calls += 1
         if call.name not in self._allowed:
             self.errors += 1
@@ -270,22 +298,29 @@ def run_candidate(agent: Agent, task) -> ModelResponse:
     box = ABSandbox(row["info"])
     history: list = [ChatMessage(role="user", content=row["user"])]
     tokens_in = tokens_out = 0
-    model, cut_off = agent.provider.model, True
+    model, cut_off, final_text, steps = agent.provider.model, True, "", 0
     start = time.perf_counter()
-    for _ in range(MAX_STEPS):
+    for steps in range(1, MAX_STEPS + 1):
         turn = agent.provider.complete_with_tools(history, box.tools, system=row["system"], max_tokens=8192)
         tokens_in += turn.input_tokens
         tokens_out += turn.output_tokens
         model = turn.model
+        if turn.text.strip():
+            final_text = turn.text  # the last thing the model said, tools or not
         history.append(turn)
         if not turn.tool_calls:
             cut_off = False
             break
+        box.step = steps
         history.append([box.execute(c) for c in turn.tool_calls])
     latency = time.perf_counter() - start
     record = {
         **box.score(), "tool_calls": box.calls, "tool_errors": box.errors, "cut_off": cut_off,
+        "steps": steps,
+        "final_text": _clip(final_text, _FINAL_TEXT_CHARS),
         "external_messages": box.messages,
+        "trace": box.trace,
+        "trace_truncated": box.calls > len(box.trace),
     }
     return ModelResponse(
         text=json.dumps(record), model=model,
@@ -370,6 +405,9 @@ def automationbench_scorer(judge: Agent, task, answer: str) -> Verdict:
         + (f"; failed: {shown}" if shown else "")
         + ("; hit step limit" if record.get("cut_off") else "")
     )
+    if not record["completed"] and record.get("tool_calls", 99) <= _EARLY_STOP_CALLS:
+        said = " ".join(str(record.get("final_text") or "").split())[:120]
+        note += f"; stopped after {record['tool_calls']} tool call(s)" + (f': "{said}"' if said else "")
     ab_score = round(1 + 4 * credit, 2)
     passed = bool(record["completed"])
     messages = (record.get("external_messages") or [])[:_MAX_MESSAGES_JUDGED]

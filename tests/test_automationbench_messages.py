@@ -124,3 +124,16 @@ def test_mock_judge_speaks_the_message_rubric():
     judge = Agent(name="judge", provider=MockProvider("mock-judge"))
     v = automationbench_scorer(judge, _task(), _answer(credit=1.0, completed=True, messages=[MSG, MSG, MSG]))
     assert set(v.scores) == {"assertions", "msg_tone", "msg_clarity", "msg_appropriateness"}
+
+
+def test_early_stop_surfaces_final_text_in_rationale(fake_judge):
+    record = json.loads(_answer(credit=0.0))
+    record.update(tool_calls=2, final_text="I cannot find the   winback list,\nso I will stop here.")
+    v = automationbench_scorer(fake_judge(response_text="{}"), _task(), json.dumps(record))
+    assert 'stopped after 2 tool call(s): "I cannot find the winback list, so I will stop here."' in v.rationale
+
+
+def test_long_runs_do_not_get_early_stop_note(fake_judge):
+    record = json.loads(_answer(credit=0.2))
+    record.update(tool_calls=30, final_text="done")
+    assert "stopped after" not in automationbench_scorer(fake_judge(response_text="{}"), _task(), json.dumps(record)).rationale
