@@ -145,3 +145,15 @@ def test_tool_schemas_match_automationbench_env():
     for name, t in theirs.items():
         assert ours[name].parameters == t.parameters, name
         assert ours[name].description == t.description, name
+
+
+def test_sandbox_records_external_messages_from_successful_sends():
+    task = next(t for t in load_tasks("automationbench:support")
+                if "gmail_send_email" in ab._dataset("support")[t.fixture["automationbench"]["example_id"]]["info"]["zapier_tools"])
+    box = ab.ABSandbox(ab._dataset("support")[task.fixture["automationbench"]["example_id"]]["info"])
+    ok = box.execute(ToolCall(id="1", name="gmail_send_email",
+                              arguments={"to": "amy@acme.com", "subject": "Update", "body": "Hi Amy, all set."}))
+    assert not ok.is_error
+    box.execute(ToolCall(id="2", name="gmail_send_email",
+                         arguments={"to": "team@company.example.com", "subject": "FYI", "body": "internal"}))
+    assert [m["to"] for m in box.messages] == ["amy@acme.com"]

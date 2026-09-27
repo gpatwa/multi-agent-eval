@@ -240,15 +240,28 @@ python main.py --config config.automationbench.support.yaml --out results-ab-sup
   `automationbench:support` runs all 100. These tasks are long, often 50k–150k
   input tokens each, so sample first.
 - Quality is AutomationBench's partial credit on the 1–5 scale, and the report
-  adds its strict **pass rate** (every assertion must pass). No judge is called.
+  adds its strict **pass rate** (every assertion must pass).
+- **Message quality, which AutomationBench doesn't grade.** Every
+  external-facing message the agent sends (public helpdesk replies, and emails
+  to anyone outside the company's `*company.example.com` addresses, such as
+  customers, vendors and partners) is graded by the judge. Scores cover
+  `msg_tone`, `msg_clarity` and `msg_appropriateness` for that recipient.
+  There are three flags:
+  - `internal_leak`, set by the judge, for internal info the recipient shouldn't see;
+  - `placeholder`, a deterministic check for unfilled template text such as `{{first_name}}`;
+  - `pii_echo`, a deterministic check for card- or SSN-shaped numbers.
+
+  Message quality blends into `overall` at 25%. AutomationBench's own pass/fail
+  is never changed, and tasks where the agent sends nothing external never
+  call the judge.
 - **Directional, not leaderboard-comparable.** This is the public set, while
   the official leaderboard uses a harder private one, and our loop replaces
   their runner. Treat gaps between models as signal, and don't expect the
   absolute numbers to match zapier.com/benchmarks.
 - **How the two lanes differ.** AutomationBench measures generic workflow
-  execution breadth. The triage suites measure *your* policy, the quality of
-  the customer-facing text, and guardrails (injection, leaks, over-refusal),
-  none of which AutomationBench grades.
+  execution breadth. The triage suites measure *your* policy and guardrails
+  (injection, leaks, over-refusal), none of which AutomationBench grades.
+  Grading the text quality of external messages applies to both lanes.
 
 ## Guardrails & what gets measured
 

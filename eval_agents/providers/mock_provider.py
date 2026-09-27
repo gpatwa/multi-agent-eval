@@ -27,7 +27,16 @@ class MockProvider(Provider):
         seed = int(hashlib.sha256((self.model + prompt).encode()).hexdigest(), 16)
         time.sleep(0.05)  # simulate a little latency
 
-        if "judge" in self.model:
+        if "judge" in self.model and "EXTERNAL-FACING messages" in prompt:
+            # AutomationBench message grading: one entry per "[n] channel:" block.
+            n = len(re.findall(r"^\[\d+\] channel:", prompt, re.MULTILINE))
+            graded = [
+                {"index": i, "tone": 3 + (seed >> i) % 3, "clarity": 3 + (seed >> (i + 3)) % 3,
+                 "appropriateness": 3 + (seed >> (i + 6)) % 3, "leaks_internal": False}
+                for i in range(1, n + 1)
+            ]
+            text = json.dumps({"messages": graded, "rationale": f"Mock evaluation by {self.model}."})
+        elif "judge" in self.model:
             # Match the rubric the prompt asks for (triage reply rubric vs generic).
             if "policy_adherence" in prompt:
                 dims = ("policy_adherence", "resolution", "tone")

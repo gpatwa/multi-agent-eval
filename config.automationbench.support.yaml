@@ -4,10 +4,12 @@
 #   python main.py --config config.automationbench.support.yaml --out results-ab-support-runN
 #   python main.py --config config.automationbench.support.yaml --tasks automationbench:support   # all 100
 #
-# Scoring is AutomationBench's own (deterministic assertions): quality is
-# partial credit on the 1-5 scale, and the report adds their strict pass
-# rate. Numbers are directional — the official leaderboard uses a harder
-# private set and their own runner (see eval_agents/usecases/automationbench.py).
+# Scoring: AutomationBench's own deterministic assertions (partial credit on
+# the 1-5 scale; the report adds their strict pass rate), plus our judge's
+# grade of any external-facing messages (customers, vendors, partners),
+# blended in at 25% of `overall`.
+# Numbers are directional — the official leaderboard uses a harder private
+# set and their own runner (see eval_agents/usecases/automationbench.py).
 #
 # Cost: tasks are long multi-app workflows (often 50k-150k input tokens
 # each), so the default is a fixed 20-task sample. Candidates need tool
@@ -27,11 +29,13 @@ candidates:
     provider: gemini
     model: gemini-3.1-pro-preview
 
-# Not called: AutomationBench grading is fully deterministic. A judge is still
-# required by the config schema, so use the free offline mock.
+# The judge grades only the external-facing messages the agent sends (tone,
+# clarity, appropriateness for the recipient, internal-info leaks) — the part AutomationBench's
+# deterministic assertions don't cover. Any provider works; the subscription
+# CLI keeps it flat-rate. Tasks with no external-facing message never call it.
 judge:
-  provider: mock
-  model: mock-judge
+  provider: claude-code
+  model: opus
 
 scorecard:
   monthly_volume: 5000

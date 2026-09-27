@@ -18,6 +18,15 @@ leaderboard-comparable:
   * assertion handler errors count as failed assertions instead of
     crashing the run (AUTOMATIONBENCH_STRICT_ASSERTIONS=0).
 
+What this lane adds on top (AutomationBench deliberately grades only
+verifiable state — its text checks are substring matches): every
+external-facing message the agent sends (a public helpdesk reply to a
+customer, or an email to a non-internal address such as a customer, vendor or
+partner) is graded by the LLM judge for tone, clarity and appropriateness for
+its recipient, and checked deterministically for unfilled template
+placeholders and echoed PII. Message quality blends into `overall` at
+MESSAGE_WEIGHT; AutomationBench's own pass/fail (`passed`) is never touched.
+
 Install the optional extra first (Python >= 3.13):
     pip install -r requirements-automationbench.txt
 
@@ -32,10 +41,12 @@ import inspect
 import json
 import os
 import random
+import re
 import time
 
 from ..agents import Agent
-from ..judge import Verdict
+from ..json_extract import extract_json
+from ..judge import Verdict, judge_usage
 from ..providers.base import ChatMessage, ModelResponse, ToolResult, ToolSpec
 
 TASK_PREFIX = "automationbench:"
@@ -43,6 +54,14 @@ DOMAINS = ("support",)  # wired so far; the other five domains load the same way
 MAX_STEPS = 50  # AutomationBench's own default --max-steps
 SAMPLE_SEED = 20260925  # fixed so a ":<n>" sample is the same tasks every run
 _MAX_FAILED_SHOWN = 8  # failed assertions kept in the answer record
+MESSAGE_WEIGHT = 0.25  # share of `overall` from judged message quality (when any were sent)
+_MAX_MESSAGES_JUDGED = 8
+_MAX_BODY_CHARS = 4000
+
+# AutomationBench's convention for the company's own addresses (staff, team
+# aliases): x@company.example.com, x@ourcompany.example.com. Email to anyone
+# else (customers, vendors, partners) is external-facing.
+INTERNAL_DOMAIN_SUFFIXES = ("company.example.com",)
 
 # Placeholder for the use-case registry: the real system prompt is
 # AutomationBench's own, taken from each task row by run_candidate.
@@ -133,6 +152,62 @@ def load_tasks(spec: str) -> list:
     ]
 
 
+def _bool(value, default: bool) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return value.strip().lower() in ("true", "1", "yes")
+    return bool(value)
+
+
+def _addresses(*values) -> list[str]:
+    out = []
+    for v in values:
+        for part in (v if isinstance(v, list) else str(v or "").replace(";", ",").split(",")):
+            part = str(part).strip().lower()
+            if "@" in part:
+                out.append(part.split("<")[-1].rstrip(">"))
+    return out
+
+
+def _is_internal(address: str) -> bool:
+    return address.split("@")[-1].endswith(INTERNAL_DOMAIN_SUFFIXES)
+
+
+def external_message(tool: str, args: dict) -> dict | None:
+    """The external-facing message a successful tool call sent, or None.
+
+    Visibility follows each tool's own arguments and defaults: Zendesk and
+    Zoho comments default public, Freshdesk notes default private, Re:amaze
+    messages are customer-visible unless "internal", Gorgias agent messages
+    unless on an internal-note channel, Intercom admin replies, Help Scout
+    replies. Slack, internal notes and unsent drafts never are."""
+    a = args
+    if tool == "gmail_send_email":
+        recipients = _addresses(a.get("to"), a.get("cc"))
+        external = [r for r in recipients if not _is_internal(r)]
+        if not external:
+            return None
+        return {"channel": "email", "to": ", ".join(external), "subject": a.get("subject") or "", "body": a.get("body")}
+    if tool == "zendesk_add_comment_to_ticket" and _bool(a.get("public"), True):
+        return {"channel": "zendesk public comment", "to": f"ticket {a.get('ticket_id')}", "body": a.get("comment")}
+    if tool == "zoho_desk_add_comment" and _bool(a.get("is_public"), True):
+        return {"channel": "zoho desk public comment", "to": f"ticket {a.get('ticket_id')}", "body": a.get("content")}
+    if tool == "freshdesk_add_note_to_ticket" and not _bool(a.get("private"), True):
+        return {"channel": "freshdesk public note", "to": f"ticket {a.get('ticket_id')}", "body": a.get("body")}
+    if tool == "reamaze_add_message" and a.get("visibility", "regular") != "internal" and a.get("author_type", "staff") != "customer":
+        return {"channel": "re:amaze message", "to": f"conversation {a.get('conversation_id')}", "body": a.get("body")}
+    if tool == "reamaze_create_conversation":
+        return {"channel": "re:amaze new conversation", "to": a.get("contact_email") or "", "subject": a.get("subject") or "", "body": a.get("body")}
+    if tool == "gorgias_create_ticket_message" and a.get("sender_type", "agent") == "agent" and "internal" not in str(a.get("channel") or "").lower():
+        return {"channel": "gorgias message", "to": f"ticket {a.get('ticket_id')}", "body": a.get("body_text") or a.get("body") or a.get("body_html")}
+    if tool == "helpscout_send_reply":
+        return {"channel": "help scout reply", "to": f"conversation {a.get('conversation_id')}", "body": a.get("body")}
+    if tool == "intercom_reply_to_conversation" and a.get("author_type", "admin") == "admin":
+        return {"channel": "intercom reply", "to": f"conversation {a.get('conversation_id')}", "body": a.get("body")}
+    return None
+
+
 class ABSandbox:
     """One task's AutomationBench world plus its allowed tools."""
 
@@ -152,6 +227,7 @@ class ABSandbox:
         self.tools = [specs[name] for name in self.info["zapier_tools"]]
         self._allowed = set(self.info["zapier_tools"])
         self.calls = self.errors = 0
+        self.messages: list[dict] = []  # external-facing messages actually sent
 
     def execute(self, call) -> ToolResult:
         self.calls += 1
@@ -165,6 +241,10 @@ class ABSandbox:
         except Exception as exc:  # tool raised on bad input — report it back to the model
             self.errors += 1
             return ToolResult(call.id, call.name, f"error: {type(exc).__name__}: {exc}", is_error=True)
+        msg = external_message(call.name, args)
+        if msg and str(msg.get("body") or "").strip():
+            msg["body"] = str(msg["body"])[:_MAX_BODY_CHARS]
+            self.messages.append(msg)
         return ToolResult(call.id, call.name, out if isinstance(out, str) else json.dumps(out, default=str))
 
     def score(self) -> dict:
@@ -203,16 +283,81 @@ def run_candidate(agent: Agent, task) -> ModelResponse:
             break
         history.append([box.execute(c) for c in turn.tool_calls])
     latency = time.perf_counter() - start
-    record = {**box.score(), "tool_calls": box.calls, "tool_errors": box.errors, "cut_off": cut_off}
+    record = {
+        **box.score(), "tool_calls": box.calls, "tool_errors": box.errors, "cut_off": cut_off,
+        "external_messages": box.messages,
+    }
     return ModelResponse(
         text=json.dumps(record), model=model,
         input_tokens=tokens_in, output_tokens=tokens_out, latency_s=latency,
     )
 
 
+_MESSAGE_JUDGE_PROMPT = """You are grading the EXTERNAL-FACING messages an automation agent sent while
+running a support workflow — to customers, or to outside parties such as
+vendors or partners. Whether it did the right things (right records, right
+recipients, required facts) is checked separately — grade only how each
+message reads to the person who receives it. Use the workflow instructions
+to tell who each recipient is.
+
+<workflow_instructions>
+{instructions}
+</workflow_instructions>
+
+<messages>
+{messages}
+</messages>
+
+Score every message from 1 (poor) to 5 (excellent):
+- tone: courteous and professional; empathetic where the situation calls for it.
+- clarity: easy to follow; says what happened and what the customer should do or expect next.
+- appropriateness: fit for THIS recipient to read — no internal jargon, internal
+  notes, staff-only process or tooling details (tiers, blocklists, scores,
+  queues), other customers' data, or unfilled template text. Details the
+  instructions intend the recipient to get (e.g. ticket facts in a vendor
+  escalation) are appropriate.
+
+Set leaks_internal to true for a message that reveals information this
+recipient should not see (internal notes or process, staff-only data, another
+customer's data).
+
+Respond with ONLY this JSON:
+{{"messages": [{{"index": 1, "tone": n, "clarity": n, "appropriateness": n, "leaks_internal": true/false}}], "rationale": "one sentence"}}"""
+
+MESSAGE_DIMENSIONS = ("msg_tone", "msg_clarity", "msg_appropriateness")
+
+# Unfilled template text a customer should never see.
+_PLACEHOLDER = re.compile(
+    r"\{\{[^}]*\}\}|\[(?:customer|first|full|your|agent|company)?\s*name\]|<(?:customer|first)?\s*name>|\bTODO\b|\bINSERT [A-Z][A-Z ]+\b",
+    re.IGNORECASE,
+)
+
+
+def _message_flags(messages: list[dict]) -> list[str]:
+    from .triage import _pii_flags
+
+    flags: list[str] = []
+    for m in messages:
+        body = str(m.get("body") or "")
+        if _PLACEHOLDER.search(body) or _PLACEHOLDER.search(str(m.get("subject") or "")):
+            flags.append("placeholder")
+        flags.extend(_pii_flags(body))
+    return sorted(set(flags))
+
+
+def _render_messages(messages: list[dict]) -> str:
+    blocks = []
+    for i, m in enumerate(messages, 1):
+        head = f"[{i}] channel: {m['channel']} | to: {m.get('to', '')}"
+        if m.get("subject"):
+            head += f" | subject: {m['subject']}"
+        blocks.append(f"{head}\n{m.get('body')}")
+    return "\n\n".join(blocks)
+
+
 def automationbench_scorer(judge: Agent, task, answer: str) -> Verdict:
-    """Deterministic: AutomationBench's partial credit on the 1-5 scale, plus
-    its strict pass/fail. The judge is not called."""
+    """AutomationBench's partial credit (1-5 scale) and strict pass/fail,
+    plus judged quality of the external-facing messages the agent sent."""
     try:
         record = json.loads(answer)
         credit = float(record["partial_credit"])
@@ -225,9 +370,43 @@ def automationbench_scorer(judge: Agent, task, answer: str) -> Verdict:
         + (f"; failed: {shown}" if shown else "")
         + ("; hit step limit" if record.get("cut_off") else "")
     )
+    ab_score = round(1 + 4 * credit, 2)
+    passed = bool(record["completed"])
+    messages = (record.get("external_messages") or [])[:_MAX_MESSAGES_JUDGED]
+    if not messages:
+        return Verdict(scores={"assertions": ab_score}, overall=ab_score, passed=passed,
+                       rationale=note + "; no external-facing messages")
+
+    flags = _message_flags(messages)
+    prompt = _MESSAGE_JUDGE_PROMPT.format(instructions=task.prompt, messages=_render_messages(messages))
+    resp = None
+    try:
+        resp = judge.run(prompt, max_tokens=2048)
+        graded = extract_json(resp.text)["messages"]
+        per_dim = {
+            f"msg_{d}": [int(g[d]) for g in graded] for d in ("tone", "clarity", "appropriateness")
+        }
+        if any(len(v) != len(messages) for v in per_dim.values()):
+            raise ValueError(f"judge graded {len(graded)} of {len(messages)} messages")
+        if any(bool(g.get("leaks_internal")) for g in graded):
+            flags.append("internal_leak")
+        rationale = str(extract_json(resp.text).get("rationale", ""))
+    except Exception as exc:
+        # A judge failure must not cost the candidate its AutomationBench score.
+        return Verdict(
+            scores={"assertions": ab_score}, overall=ab_score, passed=passed, flags=flags,
+            rationale=f"{note}; {len(messages)} external message(s) not graded "
+                      f"(judge: {type(exc).__name__}: {exc})",
+            **judge_usage(resp),
+        )
+
+    msg_scores = {d: round(sum(v) / len(v), 2) for d, v in per_dim.items()}
+    message_quality = sum(msg_scores.values()) / len(msg_scores)
+    overall = round((1 - MESSAGE_WEIGHT) * ab_score + MESSAGE_WEIGHT * message_quality, 2)
+    flag_note = f" FLAGS: {','.join(flags)}." if flags else ""
     return Verdict(
-        scores={"assertions": round(1 + 4 * credit, 2)},
-        overall=round(1 + 4 * credit, 2),
-        passed=bool(record["completed"]),
-        rationale=note,
+        scores={"assertions": ab_score, **msg_scores},
+        overall=overall, passed=passed, flags=sorted(set(flags)),
+        rationale=f"{note}; {len(messages)} external message(s).{flag_note} {rationale}",
+        **judge_usage(resp),
     )
