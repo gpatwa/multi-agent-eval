@@ -83,7 +83,7 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
         lambda: {
             "model": "", "quality": [], "latency": [], "in_tokens": [], "out_tokens": [],
             "in_cost": [], "out_cost": [], "violations": 0, "flags": defaultdict(int), "errors": 0,
-            "judge_in": 0, "judge_out": 0, "quality_by_task": defaultdict(list), "passed": [],
+            "judge_in": 0, "judge_out": 0, "quality_by_task": defaultdict(list), "passed": [], "passed_by_task": defaultdict(list),
         }
     )
     for tr in results:
@@ -107,6 +107,7 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
                     e["quality_by_task"][tr.task.id].append(r.verdict.overall)
                     if r.verdict.passed is not None:
                         e["passed"].append(r.verdict.passed)
+                        e["passed_by_task"][tr.task.id].append(r.verdict.passed)
                 if r.verdict.flags:
                     e["violations"] += 1
                     for f in r.verdict.flags:
@@ -134,6 +135,12 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
             "n_tasks_scored": len(e["quality_by_task"]),
             # strict pass rate, only for rubrics with pass/fail (else None)
             "pass_rate": round(sum(e["passed"]) / len(e["passed"]), 4) if e["passed"] else None,
+            # with repeated trials: share of tasks passed on EVERY trial (a
+            # consistency floor; pass_rate alone hides flaky passes)
+            "pass_all_trials": (
+                round(sum(all(v) for v in e["passed_by_task"].values()) / len(e["passed_by_task"]), 4)
+                if any(len(v) > 1 for v in e["passed_by_task"].values()) else None
+            ),
             "quality_ci95": round(_ci95([_avg(v) for v in e["quality_by_task"].values()]), 3),
             "latency_p50": round(_pct(e["latency"], 0.50), 2),
             "latency_p95": round(_pct(e["latency"], 0.95), 2),
@@ -263,13 +270,24 @@ def to_markdown(results: list[TaskResult], scorecard: dict | None = None) -> str
             "A task passes only if every assertion passes (AutomationBench's official "
             "metric); quality above is the partial credit.",
             "",
-            "| Candidate | Pass rate | Tasks |",
-            "|---|---|---|",
         ]
+        multi = any(s["pass_all_trials"] is not None for s in stats.values())
+        if multi:
+            lines += [
+                "With repeated trials, *pass rate* counts every run; *passed every trial* is the share "
+                "of tasks that passed on all of them.",
+                "",
+                "| Candidate | Pass rate | Passed every trial | Tasks |",
+                "|---|---|---|---|",
+            ]
+        else:
+            lines += ["| Candidate | Pass rate | Tasks |", "|---|---|---|"]
         for name in summary["ranking"]:
             s = stats[name]
-            if s["pass_rate"] is not None:
-                lines.append(f"| {name} | {s['pass_rate']:.1%} | {s['n_tasks_scored']} |")
+            if s["pass_rate"] is None:
+                continue
+            every = f" {s['pass_all_trials']:.1%} |" if s["pass_all_trials"] is not None else (" — |" if multi else "")
+            lines.append(f"| {name} | {s['pass_rate']:.1%} |{every} {s['n_tasks_scored']} |")
 
     # ---- guardrail flag breakdown --------------------------------------
     if any(s["critical_violations"] for s in stats.values()):

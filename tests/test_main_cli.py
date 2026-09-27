@@ -68,3 +68,28 @@ def test_baseline_regression_gate_fails_on_synthetic_drop(tmp_path):
 def test_missing_config_file_exits_nonzero(tmp_path):
     proc = _run_cli("--config", "does_not_exist.yaml", "--out", str(tmp_path / "out"), cwd=ROOT)
     assert proc.returncode != 0
+
+
+def _trial_counts(out: pathlib.Path) -> set[int]:
+    results = json.loads((out / "results.json").read_text())
+    return {len([r for r in tr["results"] if r["candidate"] == "mock-alpha"]) for tr in results}
+
+
+def test_config_trials_used_and_cli_flag_overrides(tmp_path):
+    import yaml
+
+    config = yaml.safe_load((ROOT / "config.demo.yaml").read_text())
+    config["trials"] = 2
+    cfg = tmp_path / "config.trials.yaml"
+    cfg.write_text(yaml.safe_dump(config))
+    tasks = ROOT / (config.get("tasks") or "tasks.yaml")
+
+    out = tmp_path / "from-config"
+    proc = _run_cli("--config", str(cfg), "--tasks", str(tasks), "--out", str(out), cwd=ROOT)
+    assert proc.returncode == 0, proc.stderr
+    assert _trial_counts(out) == {2}
+
+    out = tmp_path / "from-flag"
+    proc = _run_cli("--config", str(cfg), "--tasks", str(tasks), "--out", str(out), "--trials", "1", cwd=ROOT)
+    assert proc.returncode == 0, proc.stderr
+    assert _trial_counts(out) == {1}

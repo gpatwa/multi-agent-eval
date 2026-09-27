@@ -45,6 +45,19 @@ def select_executor(config: dict) -> Executor | None:
     return EXECUTORS.get(config.get("use_case"))
 
 
+def select_trials(config: dict, override: int | None = None) -> int:
+    """Trials per task: an explicit override (e.g. --trials) wins, then the
+    config's `trials:`, else 1."""
+    value = override if override is not None else config.get("trials", 1)
+    try:
+        trials = int(value)
+    except (TypeError, ValueError):
+        raise RuntimeError(f"`trials` must be a positive integer, got {value!r}") from None
+    if trials < 1:
+        raise RuntimeError(f"`trials` must be a positive integer, got {trials}")
+    return trials
+
+
 def load_agents(config: dict) -> tuple[list[Agent], Agent]:
     """Build candidate and judge agents from a parsed config dict.
 

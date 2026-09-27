@@ -237,7 +237,10 @@ python main.py --config config.automationbench.support.yaml --out results-ab-sup
 ```
 
 - `tasks: automationbench:support:20` takes a fixed-seed 20-task sample, and
-  `automationbench:support` runs all 100. These tasks are long, often 50k–150k
+  `automationbench:support` runs all 100. `trials: 3` repeats each task,
+  because single runs vary a lot. The report then adds **passed every
+  trial**, the share of tasks passed on all runs, which exposes flaky passes.
+  Use `--trials 1` for a cheap smoke run. These tasks are long, often 50k–150k
   input tokens each, so sample first.
 - Quality is AutomationBench's partial credit on the 1–5 scale, and the report
   adds its strict **pass rate** (every assertion must pass).
@@ -281,7 +284,8 @@ Beyond quality scores, every run measures:
 - **Cost split** — input vs. output cost per task, plus projected monthly
   spend at your ticket volume (`scorecard.monthly_volume`).
 - **Confidence intervals** — quality is reported as mean ± a 95% t-interval
-  with each *task* as one sample. `--trials N` repeats every task and averages
+  with each *task* as one sample. `--trials N` (or `trials:` in a config)
+  repeats every task and averages
   within it, which steadies each task's score but can't narrow the CI (repeat
   runs of one ticket aren't new evidence). Don't call a winner when the
   intervals overlap.

@@ -64,3 +64,17 @@ def test_load_agents_raises_when_judge_missing_credentials(monkeypatch):
     config = _config(judge={"provider": "zai", "model": "glm-5.3"})
     with pytest.raises(RuntimeError, match="Judge unavailable"):
         load_agents(config)
+
+
+def test_select_trials_precedence_and_validation():
+    import pytest
+
+    from eval_agents.config import select_trials
+
+    assert select_trials({}) == 1
+    assert select_trials({"trials": 3}) == 3
+    assert select_trials({"trials": 3}, override=1) == 1  # --trials wins
+    assert select_trials({"trials": "2"}) == 2
+    for bad in (0, -1, "many", None):
+        with pytest.raises(RuntimeError, match="positive integer"):
+            select_trials({"trials": bad})

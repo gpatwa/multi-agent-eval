@@ -16,7 +16,14 @@ import sys
 
 import json
 
-from eval_agents.config import load_agents, load_config, load_tasks, select_executor, select_use_case
+from eval_agents.config import (
+    load_agents,
+    load_config,
+    load_tasks,
+    select_executor,
+    select_trials,
+    select_use_case,
+)
 from eval_agents.report import summarize, to_json, to_markdown, to_summary_json
 from eval_agents.runner import run_evaluation
 
@@ -50,7 +57,10 @@ def main() -> None:
     parser.add_argument("--config", default="config.yaml")
     parser.add_argument("--tasks", default=None, help="task file (default: config's `tasks:` or tasks.yaml)")
     parser.add_argument("--out", default="results")
-    parser.add_argument("--trials", type=int, default=1, help="repeat each task N times to measure variance")
+    parser.add_argument(
+        "--trials", type=int, default=None,
+        help="repeat each task N times to measure variance (default: the config's `trials:`, else 1)",
+    )
     parser.add_argument("--baseline", default=None, help="previous --out dir; exit 1 if quality regresses vs it")
     parser.add_argument("--regression-threshold", type=float, default=0.3,
                         help="max allowed quality-mean drop vs baseline (default 0.3)")
@@ -75,7 +85,8 @@ def main() -> None:
     # leaves usable artifacts instead of losing the whole run.
     try:
         results = run_evaluation(
-            tasks, candidates, judge, scorer=scorer, trials=args.trials, executor=select_executor(config)
+            tasks, candidates, judge, scorer=scorer, trials=select_trials(config, args.trials),
+            executor=select_executor(config),
         )
     except (Exception, KeyboardInterrupt) as exc:
         results = getattr(exc, "partial_results", None) or []

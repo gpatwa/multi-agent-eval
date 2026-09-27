@@ -12,11 +12,18 @@
 # set and their own runner (see eval_agents/usecases/automationbench.py).
 #
 # Cost: tasks are long multi-app workflows (often 50k-150k input tokens
-# each), so the default is a fixed 20-task sample. Candidates need tool
+# each), so the default is a fixed 20-task sample (x3 trials: ~$10 on Gemini). Candidates need tool
 # support: API providers only; missing keys skip that candidate.
 
 use_case: automationbench
 tasks: automationbench:support:20
+
+# Runs per task. AutomationBench is high-variance run to run (the same model
+# swung 17/19 -> 4/26 on one task, and stopped after 4 calls then finished the
+# workflow on another), so single runs can't separate models. With 3 trials
+# the report's CI is over per-task means, and "passed every trial" shows
+# consistency. Cost scales linearly: ~3x a single-trial run. Override with --trials.
+trials: 3
 
 candidates:
   - name: claude

@@ -27,7 +27,14 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from eval_agents.config import load_agents, load_config, load_tasks, select_executor, select_use_case
+from eval_agents.config import (
+    load_agents,
+    load_config,
+    load_tasks,
+    select_executor,
+    select_trials,
+    select_use_case,
+)
 from eval_agents.report import to_json, to_markdown, to_summary_json
 from eval_agents.runner import run_evaluation
 
@@ -160,7 +167,7 @@ def _execute(run: Run) -> None:
 
         results = run_evaluation(
             tasks, candidates, judge, scorer=scorer, on_task_done=on_task_done,
-            executor=select_executor(config),
+            executor=select_executor(config), trials=select_trials(config),
         )
 
         out = run.dir

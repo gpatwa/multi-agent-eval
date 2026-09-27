@@ -192,3 +192,29 @@ def test_pass_rate_only_for_pass_fail_rubrics():
     assert summary["candidates"]["b"]["pass_rate"] is None
     md = to_markdown(results)
     assert "## Pass rate" in md and "| a | 50.0% | 2 |" in md
+
+
+def test_pass_all_trials_exposes_flaky_passes():
+    def res(passed):
+        r = _result("a", 5.0 if passed else 3.0, 1.0)
+        r.verdict.passed = passed
+        return r
+    results = [
+        TaskResult(task=_task(0), results=[res(True), res(True)]),    # solid
+        TaskResult(task=_task(1), results=[res(True), res(False)]),   # flaky
+        TaskResult(task=_task(2), results=[res(False), res(False)]),  # fails
+    ]
+    c = summarize(results)["candidates"]["a"]
+    assert c["pass_rate"] == 0.5          # 3 of 6 runs
+    assert c["pass_all_trials"] == round(1 / 3, 4)  # only task 0 passed every time
+    md = to_markdown(results)
+    assert "| Candidate | Pass rate | Passed every trial | Tasks |" in md
+    assert "| a | 50.0% | 33.3% | 3 |" in md
+
+
+def test_single_trial_has_no_consistency_column():
+    r = _result("a", 5.0, 1.0)
+    r.verdict.passed = True
+    results = [TaskResult(task=_task(0), results=[r])]
+    assert summarize(results)["candidates"]["a"]["pass_all_trials"] is None
+    assert "Passed every trial" not in to_markdown(results)
