@@ -27,6 +27,10 @@ def to_json(results: list[TaskResult]) -> str:
     return json.dumps([asdict(r) for r in results], indent=2, default=str)
 
 
+# Share of unjudged verdicts above which a run's quality/ranking shouldn't be trusted.
+JUDGE_FAILURE_WARN = 0.10
+
+
 def _dimensions(results: list[TaskResult]) -> list[str]:
     """Ordered union of score keys across all verdicts (rubric-agnostic)."""
     seen: list[str] = []
@@ -83,7 +87,7 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
         lambda: {
             "model": "", "quality": [], "latency": [], "in_tokens": [], "out_tokens": [],
             "in_cost": [], "out_cost": [], "violations": 0, "flags": defaultdict(int), "errors": 0,
-            "judge_in": 0, "judge_out": 0, "quality_by_task": defaultdict(list), "passed": [], "passed_by_task": defaultdict(list),
+            "judge_in": 0, "judge_out": 0, "judge_failures": 0, "judged": 0, "quality_by_task": defaultdict(list), "passed": [], "passed_by_task": defaultdict(list),
         }
     )
     for tr in results:
@@ -100,6 +104,9 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
             e["in_cost"].append(r.input_tokens * price[0] / 1e6 if price else 0.0)
             e["out_cost"].append(r.output_tokens * price[1] / 1e6 if price else 0.0)
             if r.verdict:
+                e["judged"] += 1
+                if r.verdict.parse_error:
+                    e["judge_failures"] += 1
                 e["judge_in"] += r.verdict.judge_input_tokens
                 e["judge_out"] += r.verdict.judge_output_tokens
                 if not r.verdict.parse_error:
@@ -157,6 +164,11 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
             "judge_cost_per_task": round(judge_cost(e["judge_in"], e["judge_out"]) / n, 6) if n else 0.0,
             "priced": bool(pricing.get(name)),
             "critical_violations": e["violations"],
+            # verdicts the judge failed to produce (transport/quota errors or
+            # unparseable output) — excluded from quality, so a high count
+            # means quality_mean rests on a subset of the answers
+            "judge_failures": e["judge_failures"],
+            "judge_failure_rate": round(e["judge_failures"] / e["judged"], 4) if e["judged"] else 0.0,
             "flag_counts": dict(e["flags"]),
             "errors": e["errors"],
         }
@@ -222,6 +234,20 @@ def to_markdown(results: list[TaskResult], scorecard: dict | None = None) -> str
         f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
         "",
     ]
+
+    # ---- judge coverage warning ----------------------------------------
+    failed = {n: s for n, s in stats.items() if s["judge_failures"]}
+    if failed:
+        worst = max(s["judge_failure_rate"] for s in failed.values())
+        lines += [
+            f"> **{'⚠ ' if worst > JUDGE_FAILURE_WARN else ''}Judge coverage:** "
+            + ", ".join(f"{n} {s['judge_failures']} unjudged ({s['judge_failure_rate']:.0%})" for n, s in failed.items())
+            + ". Unjudged answers are excluded from quality"
+            + (" — above the {:.0%} threshold, so quality and ranking rest on a subset; "
+               "re-judge before trusting them.".format(JUDGE_FAILURE_WARN) if worst > JUDGE_FAILURE_WARN else ".")
+            ,
+            "",
+        ]
 
     # ---- scorecard / leaderboard --------------------------------------
     if balanced:

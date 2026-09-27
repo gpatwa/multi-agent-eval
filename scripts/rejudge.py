@@ -27,7 +27,7 @@ from eval_agents.config import load_config, select_use_case  # noqa: E402
 from eval_agents.judge import JUDGE_SYSTEM  # noqa: E402
 from eval_agents.agents import Agent  # noqa: E402
 from eval_agents.registry import create_provider  # noqa: E402
-from eval_agents.report import to_json, to_markdown, to_summary_json  # noqa: E402
+from eval_agents.report import JUDGE_FAILURE_WARN, summarize, to_json, to_markdown, to_summary_json  # noqa: E402
 from eval_agents.runner import CandidateResult, Task, TaskResult  # noqa: E402
 
 
@@ -79,6 +79,13 @@ def main(argv=None) -> int:
     (args.out / "report.md").write_text(to_markdown(results, scorecard=scorecard))
     (args.out / "rejudged_from.txt").write_text(f"{args.source}\njudge: {spec['provider']}/{spec['model']}\n")
     print(f"Re-judged report written to {args.out / 'report.md'}", file=sys.stderr)
+    rates = {n: s["judge_failure_rate"] for n, s in summarize(results, scorecard)["candidates"].items()}
+    bad = {n: r for n, r in rates.items() if r > JUDGE_FAILURE_WARN}
+    if bad:
+        print("ERROR: judge failed on " + ", ".join(f"{n} {r:.0%}" for n, r in bad.items())
+              + f" of verdicts (> {JUDGE_FAILURE_WARN:.0%}); this re-judge is not usable for comparison "
+              "(check the judge's quota/credentials and re-run)", file=sys.stderr)
+        return 3
     return 0
 
 

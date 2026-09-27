@@ -218,3 +218,21 @@ def test_single_trial_has_no_consistency_column():
     results = [TaskResult(task=_task(0), results=[r])]
     assert summarize(results)["candidates"]["a"]["pass_all_trials"] is None
     assert "Passed every trial" not in to_markdown(results)
+
+
+def test_judge_failures_counted_and_bannered():
+    ok = _result("a", 5.0, 1.0)
+    bad = _result("a", 5.0, 1.0)
+    bad.verdict.parse_error = "judge: ClientError: 429 RESOURCE_EXHAUSTED"
+    results = [TaskResult(task=_task(0), results=[ok]), TaskResult(task=_task(1), results=[bad])]
+    c = summarize(results)["candidates"]["a"]
+    assert c["judge_failures"] == 1 and c["judge_failure_rate"] == 0.5
+    md = to_markdown(results)
+    assert "⚠ Judge coverage:** a 1 unjudged (50%)" in md and "re-judge before trusting" in md
+
+
+def test_small_judge_failure_rate_is_noted_without_alarm():
+    results = [TaskResult(task=_task(i), results=[_result("a", 5.0, 1.0)]) for i in range(20)]
+    results[0].results[0].verdict.parse_error = "judge: truncated"
+    md = to_markdown(results)
+    assert "**Judge coverage:** a 1 unjudged (5%)" in md and "⚠" not in md.split("## ")[0]

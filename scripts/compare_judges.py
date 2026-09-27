@@ -17,6 +17,7 @@ import json
 import sys
 
 QUALITY_DISAGREEMENT = 0.5  # judged-quality delta worth reading transcripts for
+MAX_JUDGE_FAILURE_RATE = 0.10  # beyond this, a run's quality rests on a subset — no valid comparison
 
 
 def _spearman(order_a: list[str], order_b: list[str]) -> float:
@@ -38,6 +39,17 @@ def main(path_a: str, path_b: str) -> None:
         sys.exit("No common candidates between the two runs.")
 
     print(f"A: {path_a}\nB: {path_b}\n")
+    partial = [
+        (label, c, s.get("judge_failure_rate", 0.0))
+        for label, cands in (("A", ca), ("B", cb)) for c, s in cands.items()
+        if s.get("judge_failure_rate", 0.0) > MAX_JUDGE_FAILURE_RATE
+    ]
+    if partial:
+        for label, c, rate in partial:
+            print(f"INVALID: run {label} left {rate:.0%} of {c}'s verdicts unjudged "
+                  f"(> {MAX_JUDGE_FAILURE_RATE:.0%}).")
+        print("A judge comparison needs both runs fully judged — re-run the incomplete one first.")
+        sys.exit(2)
     print(f"{'candidate':<12} {'rank A':>6} {'rank B':>6} {'qual A':>7} {'qual B':>7} {'Δqual':>6}  verdict")
     disagreements = []
     for c in common:
