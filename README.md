@@ -343,6 +343,29 @@ REST API (usable without the frontend):
 | `GET` | `/api/runs` | run summaries with progress |
 | `GET` | `/api/runs/{id}` | full results (partial while running) |
 
+## Landing page: eval.aveto.com
+
+`docs/` is the landing page. It deploys itself on every push to `main` that
+touches it ([deploy-site.yml](.github/workflows/deploy-site.yml) runs
+[scripts/deploy_site.py](scripts/deploy_site.py)). Each run is idempotent:
+
+1. ensure the Cloudflare Pages project exists;
+2. upload `docs/`;
+3. attach `eval.aveto.com`;
+4. make sure the `eval` CNAME at NIC.RU (aveto.com's DNS host) points at
+   Pages, replacing a stale record and committing the zone;
+5. wait until the live URL serves the page.
+
+It needs credentials, stored once as GitHub secrets. They're prompted for
+with hidden input and never written to disk:
+
+```bash
+python scripts/deploy_site.py bootstrap
+```
+
+Until those exist, the workflow skips with a notice instead of failing. Use
+`deploy --dry-run` for a read-only plan, and `status` to check the live site.
+
 ## Quick start
 
 ```bash
