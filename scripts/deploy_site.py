@@ -81,9 +81,14 @@ def log(msg: str) -> None:
 # ---------------------------------------------------------------- HTTP
 
 
+# Cloudflare's bot protection rejects Python's default User-Agent (HTTP 403, error 1010) on the very sites it
+# serves, so every request identifies itself.
+USER_AGENT = "multi-agent-eval-deploy/1.0 (+https://github.com/gpatwa/multi-agent-eval)"
+
+
 def http(method: str, url: str, *, headers=None, data: bytes | None = None, timeout=30):
     """Returns (status, body_text). Never raises on HTTP error statuses."""
-    req = urllib.request.Request(url, method=method, data=data, headers=headers or {})
+    req = urllib.request.Request(url, method=method, data=data, headers={"User-Agent": USER_AGENT, **(headers or {})})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.status, resp.read().decode("utf-8", "replace")
@@ -295,6 +300,7 @@ def verify(cf: Cloudflare, url: str | None = None, check_domain: bool = True, ti
     url = url or f"https://{DOMAIN}/"
     deadline = time.time() + timeout_s
     domain_state = page_ok = None
+    status = None
     while time.time() < deadline:
         domain_state = cf.domain_status() if check_domain else "n/a"
         if domain_state in ("active", "n/a"):
@@ -303,7 +309,8 @@ def verify(cf: Cloudflare, url: str | None = None, check_domain: bool = True, ti
             if page_ok:
                 log(f"live: {url} serves the landing page")
                 return True
-        log(f"waiting: domain {domain_state or 'unknown'}, page {'ok' if page_ok else 'not yet'} …")
+        log(f"waiting: domain {domain_state or 'unknown'}, {url} -> HTTP {status if status is not None else 'not requested'}"
+            f"{' (marker missing)' if status == 200 else ''} …")
         time.sleep(30)
     log(f"not live yet (domain {domain_state}); DNS/TLS can take longer on first setup — "
         "the next run re-verifies")

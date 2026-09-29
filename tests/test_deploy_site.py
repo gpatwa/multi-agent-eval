@@ -230,3 +230,31 @@ def test_deploy_without_a_configured_domain_touches_no_domain_or_dns(monkeypatch
     monkeypatch.setattr(ds, "ensure_indexnow_key_file", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no domain, no IndexNow")))
     assert ds.main(["deploy"]) == 0
     assert seen == ["upload", ("https://model-ledger.pages.dev/", False)]  # the domain route isn't even faked: it must not be called
+
+
+def test_every_request_identifies_itself_because_cloudflare_blocks_the_default_user_agent(monkeypatch):
+    """Cloudflare answers Python's default User-Agent with HTTP 403 / error 1010, on the sites it serves."""
+    import urllib.request
+
+    seen = {}
+
+    class Resp:
+        status = 200
+
+        def read(self, n=-1):
+            return b"ok"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def fake_urlopen(req, timeout=None):
+        seen.update({k.lower(): v for k, v in req.header_items()})
+        return Resp()
+
+    monkeypatch.undo()  # this test exercises the real `http`, which the autouse fixture replaced
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert ds.http("GET", "https://example.com/", headers={"Authorization": "Bearer x"})[0] == 200
+    assert seen["user-agent"].startswith("multi-agent-eval-deploy/") and seen["authorization"] == "Bearer x"

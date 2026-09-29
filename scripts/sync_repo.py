@@ -21,6 +21,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 MARKER = "The Model Ledger"
+USER_AGENT = "multi-agent-eval-sync/1.0 (+https://github.com/gpatwa/multi-agent-eval)"
 
 
 def gh(args: list[str], stdin: str | None = None) -> tuple[int, str]:
@@ -30,7 +31,8 @@ def gh(args: list[str], stdin: str | None = None) -> tuple[int, str]:
 
 def site_is_live(url: str) -> bool:
     try:
-        with urllib.request.urlopen(url, timeout=10) as r:
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})  # Cloudflare blocks the default one
+        with urllib.request.urlopen(req, timeout=10) as r:
             return r.status == 200 and MARKER in r.read(200_000).decode("utf-8", "replace")
     except (urllib.error.URLError, OSError, ValueError):
         return False

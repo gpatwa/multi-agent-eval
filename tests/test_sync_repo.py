@@ -56,3 +56,27 @@ def test_in_sync_makes_no_writes_and_dry_run_makes_none_either():
     sr.sync(DESIRED, gh_fn=gh3, live_fn=lambda u: True)
     put = next(c for c in gh3.calls if c[0][:3] == ["api", "-X", "PUT"])
     assert json.loads(put[1]) == {"names": ["llm-evaluation", "ai-evals"]}
+
+
+def test_site_check_sends_a_real_user_agent(monkeypatch):
+    seen = {}
+
+    class Resp:
+        status = 200
+
+        def read(self, n=-1):
+            return b"<title>The Model Ledger</title>"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def fake_urlopen(req, timeout=None):
+        seen.update({k.lower(): v for k, v in req.header_items()})
+        return Resp()
+
+    monkeypatch.setattr(sr.urllib.request, "urlopen", fake_urlopen)
+    assert sr.site_is_live("https://example.com/") is True
+    assert seen["user-agent"].startswith("multi-agent-eval-sync/")
