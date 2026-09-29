@@ -52,6 +52,17 @@ def test_merges_candidates_and_renormalizes_across_the_union(tmp_path):
     assert "matched — `low` for every candidate" in (out / "report.md").read_text()
 
 
+def test_can_take_only_named_candidates_from_a_run(tmp_path):
+    both = _run(tmp_path, "both", "good", 1.0)
+    # a run whose second candidate is unusable (e.g. hit a usage limit): take only "good" from it
+    a = mr.load_results(both, with_verdicts=True)
+    picked, settings = mr.pick_candidates(a, mr.load_settings(both), ["good"], "both")
+    assert [r.candidate for tr in picked for r in tr.results] == ["good", "good"] and list(settings["candidates"]) == ["good"]
+    with pytest.raises(mr.MergeError, match="has no candidate"):
+        mr.pick_candidates(a, mr.load_settings(both), ["nope"], "both")
+    assert mr.parse_spec("runs/a:x,y") == (pathlib.Path("runs/a"), ["x", "y"]) and mr.parse_spec("runs/a") == (pathlib.Path("runs/a"), None)
+
+
 def test_refuses_runs_over_different_tasks(tmp_path):
     a, b = _run(tmp_path, "a", "x", 1.0), _run(tmp_path, "b", "y", 1.0, tasks=("t1", "t3"))
     with pytest.raises(mr.MergeError, match="different tasks"):

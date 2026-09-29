@@ -25,6 +25,7 @@ PROVIDER_LABEL = {
 }
 DIM_LABEL = {"policy_adherence": "policy"}
 MAX_HELDOUT_GAP_OK = 0.25  # quality gap between suites that still reads as "consistent"
+RESULTS_URL = "https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results"  # rendered reports behind the numbers
 
 
 def esc(text) -> str:
@@ -225,7 +226,10 @@ def proof(data: dict) -> str:
         f'\n        <span class="sw b"><i></i>Judge: {esc(_judge_name(ag["judge_second"]))}</span>' if ag else "")
     chart = (f'\n    <div class="chart-card reveal">\n      <div class="chart-legend">\n        {legend}\n      </div>\n'
              f'      <div class="bar-chart">\n        {_chart(rows, bool(ag))}\n      </div>\n'
-             f'      <p class="quality-note">{_quality_note(public)}</p>\n    </div>\n')
+             f'      <p class="quality-note">{_quality_note(public)}</p>\n'
+             f'      <p class="quality-note">Check the numbers: <a href="{RESULTS_URL}/{first}/report.md">full per-ticket report and run settings</a>'
+             + "".join(f' · <a href="{RESULTS_URL}/{n}/summary.json">{esc(n)} suite aggregates</a>' for n in rest)
+             + '.</p>\n    </div>\n')
     stamps = []
     if ag and ag["rank_rho"] is not None:
         same = ag["rank_rho"] == 1.0

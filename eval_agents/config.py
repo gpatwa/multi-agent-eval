@@ -18,7 +18,25 @@ from .usecases import REGISTRY as USE_CASES
 # process was launched (both main.py and webapp/server.py import this module
 # before constructing any provider) — previously every run needed a manual
 # `source .env` first, which the web UI's dev-server launcher couldn't do.
-load_dotenv(pathlib.Path(__file__).resolve().parent.parent / ".env")
+def _dotenv_files() -> list[pathlib.Path]:
+    """This checkout's .env, then the main checkout's when running from a git worktree
+    (a worktree never has the untracked .env, and nobody should have to copy it in)."""
+    root = pathlib.Path(__file__).resolve().parent.parent
+    files = [root / ".env"]
+    try:
+        import subprocess
+
+        common = subprocess.run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=root,
+                                capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL).stdout.strip()
+        if common:
+            files.append(pathlib.Path(common).parent / ".env")
+    except Exception:
+        pass
+    return files
+
+
+for _env_file in _dotenv_files():
+    load_dotenv(_env_file)  # never overrides values already set, so the first file wins
 
 
 def select_use_case(config: dict) -> tuple[str, Scorer]:

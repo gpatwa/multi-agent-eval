@@ -1,0 +1,19 @@
+# The results release: which runs make up the published numbers, and how they must be judged.
+# scripts/pipeline.py reads this; eval_agents/publish.py gates it; docs/data/results.json is what it produces.
+
+name: triage-reference
+config: config.triage.mixed.yaml               # candidates, matched effort, primary judge, scorecard
+second_judge_config: config.triage.mixed.codex-judge.yaml   # a different vendor re-scores the same answers
+require_second_judge: true                     # don't publish a "cross-checked" ranking without it
+walkthrough_task: legit-but-scary-data-deletion # the real public ticket quoted on the page
+min_judge_coverage: 0.9                        # fraction of answers that must be judged, per candidate
+
+suites:
+  public:  {tasks: tasks.triage.yaml}
+  heldout: {tasks: tasks.triage.private.yaml, private: true}   # aggregates only; ticket text is never published
+
+# The Claude desktop app injects these for its own session. Left set, the Claude Code CLI and
+# the SDK talk through the app's proxy instead of using your subscription / API key.
+env_unset: [ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL]
+
+commit_trailer: "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"

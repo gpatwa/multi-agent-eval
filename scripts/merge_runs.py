@@ -37,6 +37,27 @@ class MergeError(RuntimeError):
     pass
 
 
+def parse_spec(spec: str) -> tuple[pathlib.Path, list[str] | None]:
+    """`DIR` (every candidate) or `DIR:cand1,cand2` (only those candidates)."""
+    path, _, names = spec.partition(":")
+    return pathlib.Path(path), ([n for n in names.split(",") if n] or None) if names else None
+
+
+def pick_candidates(results: list[TaskResult], settings: dict | None, names: list[str] | None, label: str):
+    """Restrict a run (results and its settings) to the named candidates."""
+    if names is None:
+        return results, settings
+    present = {r.candidate for tr in results for r in tr.results}
+    missing = [n for n in names if n not in present]
+    if missing:
+        raise MergeError(f"{label} has no candidate(s) {missing} (it has {sorted(present)})")
+    picked = [TaskResult(task=tr.task, results=[r for r in tr.results if r.candidate in names]) for tr in results]
+    if settings:
+        settings = {**settings, "candidates": {n: c for n, c in settings["candidates"].items() if n in names},
+                    "effort_by_candidate": {n: e for n, e in settings["effort_by_candidate"].items() if n in names}}
+    return picked, settings
+
+
 def merge_results(runs: list[list[TaskResult]], names: list[str]) -> list[TaskResult]:
     """Combine per-run results task by task (tasks must match exactly)."""
     base = runs[0]
@@ -89,7 +110,7 @@ def merge_settings(all_settings: list[dict | None], names: list[str], allow_judg
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("runs", nargs="+", type=pathlib.Path, help="run directories to combine (2 or more)")
+    ap.add_argument("runs", nargs="+", help="run directories to combine (2 or more); DIR:cand1,cand2 takes only those candidates")
     ap.add_argument("--config", required=True, help="config whose scorecard (weights, pricing) to apply")
     ap.add_argument("--out", required=True, type=pathlib.Path)
     ap.add_argument("--allow-judge-mismatch", action="store_true")
@@ -99,8 +120,12 @@ def main(argv=None) -> int:
 
     names = [str(r) for r in args.runs]
     try:
-        merged = merge_results([load_results(r, with_verdicts=True) for r in args.runs], names)
-        settings = merge_settings([load_settings(r) for r in args.runs], names, args.allow_judge_mismatch)
+        loaded = []
+        for spec in args.runs:
+            path, only = parse_spec(spec)
+            loaded.append(pick_candidates(load_results(path, with_verdicts=True), load_settings(path), only, spec))
+        merged = merge_results([r for r, _ in loaded], names)
+        settings = merge_settings([s for _, s in loaded], names, args.allow_judge_mismatch)
     except MergeError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

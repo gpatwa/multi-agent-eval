@@ -6,3 +6,4 @@ results*/
 .env
 tasks.triage.private.yaml
 .abvenv/
+.pipeline/

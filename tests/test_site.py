@@ -73,6 +73,8 @@ def test_published_page_with_two_judges(tmp_path):
     assert r.count('class="case-card') == 3 and 'Spearman <span class="rho">ρ</span> = 1.00' in r and "on every one of" in r and "cross-checked by a second, different-vendor judge" in r
     assert r.count("bc-bar-a") == 3 and r.count("bc-bar-b") == 3  # two bars per candidate
     assert "Zero violations" in r and "Held-out gap" in r
+    assert 'href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results/public/report.md"' in r
+    assert 'docs/results/heldout/summary.json"' in r and "heldout/report.md" not in r  # held-out: aggregates only
     assert "aria-label=\"Composite score by candidate, scored by two judges." in r
     assert_well_formed(r)
 
