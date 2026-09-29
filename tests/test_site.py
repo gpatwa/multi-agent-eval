@@ -222,3 +222,18 @@ def test_composite_description_names_only_what_was_weighted(tmp_path):
     with_cost["suites"]["public"]["weights"] = {"quality": 0.7, "latency": 0.15, "cost": 0.15}
     r = regions(render(PAGE, with_cost))
     assert "Composite is 70% quality, 15% latency, 15% cost" in r and "Cost is not scored" not in r
+
+
+def test_hero_names_every_tested_model_with_version_path_and_effort(tmp_path):
+    data = _release(tmp_path)
+    out = regions(render(PAGE, data))
+    block = out.split("Models tested in the latest run")[1].split("</p>", 2)[1]
+    for cand in data["suites"]["public"]["candidates"].values():
+        assert f'<b class="mono">{cand["model"]}</b>' in block
+    assert "reasoning effort low" in out and "Judged by" in out
+    assert_well_formed(out)
+
+
+def test_pending_hero_names_no_models():
+    out = regions(render(PAGE, {**DATA, "status": "pending"}))
+    assert "Models tested in the latest run" not in out

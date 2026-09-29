@@ -185,6 +185,16 @@
   .history-table td, .history-table th{text-align:left; vertical-align:top;}
   .chg{display:inline-block; margin:0 6px 4px 0; padding:1px 8px; border-radius:99px; background:var(--brass-tint); color:var(--brass-strong); font-size:12px;}
   .chg.bad{background:color-mix(in srgb,var(--critical) 18%,transparent); color:var(--critical);}
+  .tested{margin-top:26px;}
+  .tested:not(:has(ul)){display:none;}
+  .tested-label{font-family:"Geist Mono",monospace; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--slate);}
+  .tested-models{list-style:none; margin:10px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px;}
+  .tested-models .model{display:grid; gap:2px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--surface-raised); min-width:0;}
+  .tested-models .vendor{font-size:12px; color:var(--brass-strong);}
+  .tested-models b{font-family:"Geist Mono",monospace; font-size:15px; font-weight:600; overflow-wrap:anywhere;}
+  .tested-models .via{font-size:12px; color:var(--slate);}
+  .tested-meta{margin-top:10px; font-size:13px; color:var(--slate);}
+  .tested-meta b{color:var(--ink); font-weight:500;}
   .prow .fl{color:var(--critical); font-size:11px; margin-left:4px; white-space:nowrap;}
   .prow .nm{overflow:visible; white-space:normal;}
   .pill{display:inline-block; padding:2px 9px; border-radius:99px; font-family:"Geist Mono",monospace; font-size:12px; font-weight:500; background:var(--brass-tint); color:var(--brass-strong);}
@@ -472,6 +482,15 @@
     <p class="eyebrow fade-up">Multi-vendor LLM evaluation</p>
     <h1 class="fade-up" style="margin-top:16px;">Choose your model vendor with evidence, not marketing.</h1>
     <p class="lede fade-up">Run every major model — Anthropic, OpenAI, Google, and a dozen others, by API key or the Claude / ChatGPT subscription you already pay for — against your own policy, your own tickets, and a scorecard weighted to what your business cares about.</p>
+    <div class="tested fade-up"><!-- AUTO:tested -->
+      <p class="tested-label">Models tested in the latest run</p>
+      <ul class="tested-models">
+        <li class="model"><span class="vendor">OpenAI</span><b class="mono">gpt-6-astra</b><span class="via">Codex CLI 0.153.4</span></li>
+        <li class="model"><span class="vendor">Google</span><b class="mono">gemini-3.1-pro-preview</b><span class="via">API</span></li>
+        <li class="model"><span class="vendor">Anthropic</span><b class="mono">claude-opus-5</b><span class="via">Claude Code CLI 2.1.263</span></li>
+      </ul>
+      <p class="tested-meta">Latest run 2026-09-29 · 60 tickets (20 held-out) · reasoning effort low. Judged by <b>Claude Code CLI (claude-opus-5)</b>, cross-checked by <b>Codex CLI (gpt-6-astra)</b>.</p>
+    <!-- /AUTO:tested --></div>
     <div class="ctas fade-up">
       <a class="btn btn-primary" href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">View the source →</a>
       <a class="btn btn-ghost" href="#method">Read the methodology</a>
@@ -479,7 +498,7 @@
     <p class="trust-line fade-up"><b>Self-hosted by design.</b> Runs inside your own environment, on your own API keys — your tickets and your policy never leave it.</p>
 
     <div class="vendor-row fade-up">
-      <span class="vendor-row-label">Works with</span>
+      <span class="vendor-row-label">Also supports</span>
       <span class="vendor-row-list">Anthropic <span class="sep">·</span> OpenAI <span class="sep">·</span> Google <span class="sep">·</span> Meta <span class="sep">·</span> xAI <span class="sep">·</span> Z.ai <span class="sep">·</span> +14 more</span>
     </div>
 

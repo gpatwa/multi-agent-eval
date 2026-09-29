@@ -79,6 +79,42 @@ def stats(data: dict) -> str:
         f'<div class="label">{esc(label)}</div></div>' for num, label, cls in tiles) + "\n      "
 
 
+# ---------------------------------------------------------------- tested models
+
+VENDOR_BY_PREFIX = (("claude", "Anthropic"), ("gpt", "OpenAI"), ("o1", "OpenAI"), ("gemini", "Google"), ("grok", "xAI"),
+                    ("glm", "Z.ai"), ("llama", "Meta"), ("deepseek", "DeepSeek"), ("qwen", "Alibaba"), ("kimi", "Moonshot"))
+
+
+def vendor_of(model: str, fallback: str) -> str:
+    return next((v for prefix, v in VENDOR_BY_PREFIX if model.lower().startswith(prefix)), fallback)
+
+
+def tested(data: dict) -> str:
+    """The exact models in the latest published run, with version, access path and effort, above the fold."""
+    if data["status"] != "published":
+        return ""
+    first, rest = _suites(data)
+    public = data["suites"][first]
+    cands = public["candidates"]
+    held = data["suites"][rest[0]]["n_tasks"] if rest else 0
+    efforts = sorted({c["effort"] for c in cands.values()})
+    items = []
+    for n in public["ranking"]:
+        c = cands[n]
+        version = re.sub(r"\s*\(.*?\)|^codex-cli\s+", "", c.get("cli_version") or "").strip()
+        via = _label(c["provider"]) + (f" {version}" if version else "")
+        items.append(f'<li class="model"><span class="vendor">{esc(vendor_of(c["model"], n))}</span>'
+                     f'<b class="mono">{esc(c["model"])}</b><span class="via">{esc(via)}</span></li>')
+    ag = (data.get("agreement") or {}).get(first)
+    judges = f"Judged by <b>{esc(_judge_name(public['judge']))}</b>" + (
+        f", cross-checked by <b>{esc(_judge_name(ag['judge_second']))}</b>" if ag else "")
+    effort = efforts[0] if len(efforts) == 1 else "mixed"
+    meta = (f"Latest run {esc(data['generated'][:10])} · {public['n_tasks'] + held} tickets"
+            + (f" ({held} held-out)" if held else "") + f" · reasoning effort {esc(effort)}")
+    return (f'\n      <p class="tested-label">Models tested in the latest run</p>\n      <ul class="tested-models">\n        '
+            + "\n        ".join(items) + f'\n      </ul>\n      <p class="tested-meta">{meta}. {judges}.</p>\n    ')
+
+
 # ---------------------------------------------------------------- history
 
 HISTORY_URL = "https://github.com/gpatwa/multi-agent-eval/blob/main/docs/data/history.json"
@@ -501,7 +537,7 @@ def robots(data: dict) -> str:
     return "User-agent: *\nAllow: /\n" + (f"\nSitemap: {base}/sitemap.xml\n" if base else "")
 
 
-RENDERERS = {"head": head, "stats": stats, "panels": panels, "history": history, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
+RENDERERS = {"head": head, "stats": stats, "panels": panels, "tested": tested, "history": history, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
 README_RENDERERS = {"readme_results": readme_results}
 
 
