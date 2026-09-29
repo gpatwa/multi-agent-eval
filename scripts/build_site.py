@@ -21,9 +21,10 @@ sys.path.insert(0, str(ROOT))
 from eval_agents.config import load_tasks  # noqa: E402
 from eval_agents.publish import pending_data  # noqa: E402
 from eval_agents.registry import _PROVIDERS  # noqa: E402
-from eval_agents.site import render  # noqa: E402
+from eval_agents.site import render, render_readme  # noqa: E402
 
 PAGE = ROOT / "docs" / "index.html"
+README = ROOT / "README.md"
 DATA = ROOT / "docs" / "data" / "results.json"
 SUITE_FILES = {"public": "tasks.triage.yaml", "heldout": "tasks.triage.private.yaml"}
 
@@ -47,18 +48,22 @@ def main(argv=None) -> int:
         DATA.parent.mkdir(parents=True, exist_ok=True)
         DATA.write_text(json.dumps(pending_from_tasks(args.pending), indent=2) + "\n")
     data = json.loads(DATA.read_text())
-    current = PAGE.read_text()
-    rendered = render(current, data)
-    if args.check:
+    stale = []
+    for path, fn in ((PAGE, render), (README, render_readme)):
+        current = path.read_text()
+        rendered = fn(current, data)
         if rendered == current:
-            return 0
-        diff = difflib.unified_diff(current.splitlines(), rendered.splitlines(), "committed", "rendered", lineterm="", n=1)
-        print("docs/index.html is not the render of docs/data/results.json (edited by hand, or data changed).\n"
-              "Run: python scripts/build_site.py\n" + "\n".join(list(diff)[:40]), file=sys.stderr)
+            continue
+        if args.check:
+            diff = difflib.unified_diff(current.splitlines(), rendered.splitlines(), "committed", "rendered", lineterm="", n=1)
+            stale.append(f"{path.relative_to(ROOT)}\n" + "\n".join(list(diff)[:30]))
+        else:
+            path.write_text(rendered)
+            print(f"updated {path.relative_to(ROOT)} ({data['status']})", file=sys.stderr)
+    if stale:
+        print("Generated regions are out of date with docs/data/results.json (edited by hand, or data changed).\n"
+              "Run: python scripts/build_site.py\n\n" + "\n\n".join(stale), file=sys.stderr)
         return 1
-    if rendered != current:
-        PAGE.write_text(rendered)
-        print(f"updated {PAGE.relative_to(ROOT)} ({data['status']})", file=sys.stderr)
     return 0
 
 

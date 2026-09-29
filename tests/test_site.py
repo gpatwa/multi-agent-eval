@@ -8,7 +8,7 @@ from html.parser import HTMLParser
 import pytest
 
 from eval_agents.judge import Verdict
-from eval_agents.site import REGION, render
+from eval_agents.site import REGION, render, render_readme
 from tests.test_publish import CANDS, JUDGE_B, _release, make_run
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -121,3 +121,18 @@ def test_value_labels_that_would_clip_go_inside_the_bar(tmp_path):
     r = regions(render(PAGE, data))
     assert r.count("bc-value-in") == 1  # only the 0.99 bar would run off the chart
     assert 'text-anchor="end">0.990<' in r and ">0.800<" in r
+
+
+README = (ROOT / "README.md").read_text()
+
+
+def test_committed_readme_is_the_render_of_the_committed_data():
+    assert render_readme(README, DATA) == README, "run: python scripts/build_site.py"
+
+
+def test_readme_states_only_what_the_data_supports(tmp_path):
+    pending = render_readme(README, {**DATA, "status": "pending"})
+    assert "being refreshed" in pending and "Zero guardrail flags" not in pending and "Spearman" not in pending
+    md = render_readme(README, _release(tmp_path))
+    assert "| claude |" in md and "Zero guardrail flags" in md and "Spearman ρ = 1.00" in md
+    assert "docs/results/public/report.md" in md and "**claude leads on both**" in md

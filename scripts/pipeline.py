@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import os
 import pathlib
 import sys
 import time
@@ -66,7 +67,8 @@ def main(argv=None) -> int:
     except OSError:
         print("another tick is running; nothing to do", file=sys.stderr)
         return EXIT_OK
-    deadline = time.time() + args.max_hours * 3600
+    # The deadline survives the re-exec below, so --max-hours bounds the whole loop.
+    deadline = float(os.environ.setdefault("PIPELINE_DEADLINE", str(time.time() + args.max_hours * 3600)))
     while True:
         # A fresh Pipeline each pass: state on disk is the truth, so a crash or edit between passes is harmless.
         pipe = Pipeline(Release.load(pathlib.Path(args.release)), ROOT)
@@ -79,6 +81,10 @@ def main(argv=None) -> int:
             print(f"[pipeline] still waiting after {args.max_hours}h; giving up (run tick again to continue)", file=sys.stderr)
             return result.exit_code
         time.sleep(args.interval)
+        # Re-exec so the next pass runs the code as it is on disk now (this process imported the old code);
+        # otherwise an unattended loop would keep publishing with whatever was checked out when it started.
+        lock.close()
+        os.execv(sys.executable, [sys.executable, *sys.argv])
 
 
 if __name__ == "__main__":

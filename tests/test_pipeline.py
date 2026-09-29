@@ -103,6 +103,7 @@ def world(tmp_path):
     (root / "docs" / "data").mkdir(parents=True)
     shutil.copy(REPO / "docs" / "index.html", root / "docs" / "index.html")
     shutil.copy(REPO / "docs" / "data" / "results.json", root / "docs" / "data" / "results.json")
+    shutil.copy(REPO / "README.md", root / "README.md")
     for cfg in ("config.triage.mixed.yaml", "config.triage.mixed.codex-judge.yaml"):
         shutil.copy(REPO / cfg, root / cfg)
     (root / "tasks.triage.private.yaml").write_text(yaml.safe_dump({"tasks": [
@@ -146,6 +147,8 @@ def test_runs_only_the_missing_candidate_then_publishes_everything(world):
     assert not (world.root / "docs" / "results" / "heldout" / "report.md").exists()  # report.md quotes ticket text
     page = (world.root / "docs" / "index.html").read_text()
     assert "being refreshed" not in page and "Spearman" in page
+    assert "Spearman ρ" in (world.root / "README.md").read_text() and "being refreshed" not in (world.root / "README.md").read_text()
+    assert ["add", "docs", "README.md"] in world.git.calls
     published_text = "".join(f.read_text() for f in (world.root / "docs").rglob("*") if f.is_file())
     assert "Body text for heldout-ticket-1" not in published_text and "heldout-ticket-1" not in published_text
     assert len(world.git.commits()) == 1 and "Co-Authored-By: Test" in world.git.commits()[0][-1]

@@ -276,22 +276,72 @@ def method_judges(data: dict) -> str:
             f'        <div><h3>{esc(h)}</h3>\n        <p>{esc(p)}</p></div>\n      </div>\n      ')
 
 
+def readme_results(data: dict) -> str:
+    """The README's results section, as markdown (same data and claims policy as the page)."""
+    when = data.get("generated", "")[:10]
+    if data["status"] != "published":
+        return ("\n## Latest result\n\nReference results are being refreshed at matched reasoning effort across all "
+                "candidates. This section is generated from [`docs/data/results.json`](docs/data/results.json) and fills in "
+                "automatically when a run completes and passes validation (`python scripts/pipeline.py tick`).\n")
+    first, rest = _suites(data)
+    public = data["suites"][first]
+    held = data["suites"][rest[0]] if rest else None
+    ag = (data.get("agreement") or {}).get(first)
+    effort = next(iter({c["effort"] for c in public["candidates"].values()}))
+    judged = f"judged by {_judge_name(public['judge'])}" + (f" and cross-checked by {_judge_name(ag['judge_second'])}" if ag else "")
+    lines = [f"\n## Latest result ({when})\n",
+             f"Support-triage benchmark on {public['n_tasks']} public tickets ({public['n_guardrail']} adversarial)"
+             + (f" plus {held['n_tasks']} held-out tickets kept out of this repo" if held else "")
+             + f", every candidate at matched **{effort}** reasoning effort, {judged}. Generated from "
+             "[`docs/data/results.json`](docs/data/results.json); reports: "
+             f"[public suite](docs/results/{first}/report.md)"
+             + "".join(f", [{n} aggregates](docs/results/{n}/summary.json)" for n in rest) + ".\n",
+             "| Candidate | Model | Composite | Quality (±95% CI) | Latency p50 / p95 | Guardrail flags |", "|---|---|---|---|---|---|"]
+    for n in public["ranking"]:
+        c = public["candidates"][n]
+        lines.append(f"| {n} | `{c['model']}` ({_label(c['provider'])}) | {c['composite']:.3f} | {c['quality_mean']:.2f} ± {c['quality_ci95']:.2f} "
+                     f"| {c['latency_p50']:.1f}s / {c['latency_p95']:.1f}s | {c['critical_violations']} |")
+    lines.append("")
+    if held:
+        lines.append("Held-out suite (same policy, different wording): " + "; ".join(
+            f"{n} {held['candidates'][n]['quality_mean']:.2f} (public {public['candidates'][n]['quality_mean']:.2f})"
+            for n in public["ranking"] if n in held["candidates"]) + " quality.\n")
+    bullets = []
+    if ag and ag["rank_rho"] is not None:
+        bullets.append(f"Two different-vendor judges agree on the ranking (Spearman ρ = {ag['rank_rho']:.2f}) across {ag['n_answers']} answers.")
+    all_c = [c for s_ in data["suites"].values() for c in s_["candidates"].values()]
+    flags = sum(c["critical_violations"] for c in all_c)
+    answers = sum(c["n_samples"] for c in all_c)
+    if flags == 0:
+        bullets.append(f"**Zero guardrail flags** in {answers} graded answers.")
+    else:
+        kinds = sorted({k for c in all_c for k in c["flag_counts"]})
+        bullets.append(f"**{flags} guardrail flag{'s' if flags != 1 else ''}** in {answers} graded answers ({', '.join(kinds)}); flags are reported as counts, never averaged away.")
+    bullets.append(html.unescape(re.sub(r"</?b>", "**", _quality_note(public))))
+    return "\n".join(lines + [f"* {b}" for b in bullets]) + "\n"
+
+
 RENDERERS = {"stats": stats, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
+README_RENDERERS = {"readme_results": readme_results}
 
 
-def render(page: str, data: dict) -> str:
+def render(page: str, data: dict, renderers: dict = RENDERERS) -> str:
     """Replace every AUTO region in `page` with its rendering of `data`."""
     seen = set()
 
     def sub(m):
         name = m.group(2)
-        if name not in RENDERERS:
+        if name not in renderers:
             raise KeyError(f"unknown AUTO region {name!r}")
         seen.add(name)
-        return f"{m.group(1)}{RENDERERS[name](data)}{m.group(4)}"
+        return f"{m.group(1)}{renderers[name](data)}{m.group(4)}"
 
     out = REGION.sub(sub, page)
-    missing = set(RENDERERS) - seen
+    missing = set(renderers) - seen
     if missing:
         raise KeyError(f"page is missing AUTO region(s): {sorted(missing)}")
     return out
+
+
+def render_readme(text: str, data: dict) -> str:
+    return render(text, data, README_RENDERERS)

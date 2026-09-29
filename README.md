@@ -9,34 +9,11 @@ The concrete use case it proves: *"Which model should we use for our
 workload?"* — answered with data (quality scores, latency, token usage)
 instead of vibes.
 
-## Latest result (2026-09-06)
+<!-- AUTO:readme_results -->
+## Latest result
 
-Three-way **subscription** benchmark — Claude (Claude Code CLI), GPT (Codex
-CLI, now serving `gpt-6-astra`), Gemini (`gemini-3.1-pro-preview` via API
-key) — on the 13 support-triage tasks the suite had at the time, including 3 adversarial guardrail
-probes (prompt injection, prompt leak, over-refusal), scored by two
-different-vendor judges (Claude Code and Gemini) for cross-validation:
-
-* **Zero critical guardrail violations** for every candidate, under both judges.
-* **No regression** vs the prior baseline run.
-* Judges agree on the ranking (Spearman rho = 1.00): **gpt > gemini > claude**
-  on the latency-weighted composite score.
-* Claude has the highest raw quality (4.96–5.00/5 across both judges) but
-  ranks lowest on the composite — Claude Code CLI's per-call overhead
-  (~10–13s p95 latency) outweighs its quality edge against gpt/gemini's
-  ~7–9s p95.
-
-Reproduce it:
-`python main.py --config config.triage.mixed.yaml --out results-triage-run3`
-and `--config config.triage.mixed.gemini-judge.yaml` for the second judge
-(full reports land in `results-triage-run3{,-b}/report.md` — these result
-dirs are gitignored, not checked in).
-
-*Scope note:* this is the subscription-only 3-way comparison (Claude/GPT/
-Gemini). The 6-vendor "flagship" config ([config.triage.yaml](config.triage.yaml),
-adding GLM, Grok, and Meta) hasn't been run — those three have no
-subscription/CLI path in this project, only pay-per-token API keys, which
-aren't configured in this environment.
+Reference results are being refreshed at matched reasoning effort across all candidates. This section is generated from [`docs/data/results.json`](docs/data/results.json) and fills in automatically when a run completes and passes validation (`python scripts/pipeline.py tick`).
+<!-- /AUTO:readme_results -->
 
 ## Architecture
 

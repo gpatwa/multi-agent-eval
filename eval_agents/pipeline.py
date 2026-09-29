@@ -39,7 +39,7 @@ import yaml
 from .config import load_config, load_tasks
 from .publish import build_release, check_gates, leak_probes
 from .results_io import load_results, load_settings
-from .site import render
+from .site import render, render_readme
 
 REPO = pathlib.Path(__file__).resolve().parent.parent  # where main.py and scripts/ live (may differ from `root` in tests)
 EXIT_OK, EXIT_ERROR, EXIT_BLOCKED, EXIT_WAITING = 0, 1, 2, 75
@@ -320,7 +320,10 @@ class Pipeline:
         data_path = docs / "data" / "results.json"
         strip = lambda d: {k: v for k, v in d.items() if k != "generated"}  # noqa: E731
         prior = json.loads(data_path.read_text()) if data_path.exists() else {}
-        changed = strip(prior) != strip(data) or any(not p.exists() or p.read_text() != t for p, t in artifacts.items())
+        page, readme = docs / "index.html", self.root / "README.md"
+        stale_text = (page.read_text() != render(page.read_text(), data)
+                      or (readme.exists() and readme.read_text() != render_readme(readme.read_text(), data)))
+        changed = strip(prior) != strip(data) or stale_text or any(not p.exists() or p.read_text() != t for p, t in artifacts.items())
         if not changed:
             self.result.state = "current"
             return True
@@ -329,12 +332,13 @@ class Pipeline:
         for p, text in artifacts.items():
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(text)
-        page = docs / "index.html"
         page.write_text(render(page.read_text(), data))
-        self.result.actions.append("published data + page")
+        if readme.exists():
+            readme.write_text(render_readme(readme.read_text(), data))
+        self.result.actions.append("published data + page + README")
         self.result.state = "published"
         if do_commit:
-            self.commit(["docs"], f"Publish {self.r.name} results (validated, effort-matched)")
+            self.commit(["docs", "README.md"], f"Publish {self.r.name} results (validated, effort-matched)")
         return True
 
     def commit(self, paths: list[str], message: str):
