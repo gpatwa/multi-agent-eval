@@ -211,3 +211,14 @@ def test_topics_are_labels_only_and_the_table_names_its_own_basis(tmp_path):
 
 def test_pending_page_has_no_topic_table():
     assert "Quality by topic" not in regions(render(PAGE, {**DATA, "status": "pending"}))
+
+
+def test_composite_description_names_only_what_was_weighted(tmp_path):
+    data = _release(tmp_path)  # weights are quality 0.7, latency 0.3: cost has no weight
+    r = regions(render(PAGE, data))
+    assert "Composite is 70% quality, 30% latency" in r and "Cost is not scored in this run" in r
+    assert "blends quality, latency, and cost" not in r
+    with_cost = json.loads(json.dumps(data))
+    with_cost["suites"]["public"]["weights"] = {"quality": 0.7, "latency": 0.15, "cost": 0.15}
+    r = regions(render(PAGE, with_cost))
+    assert "Composite is 70% quality, 15% latency, 15% cost" in r and "Cost is not scored" not in r

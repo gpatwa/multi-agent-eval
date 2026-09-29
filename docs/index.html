@@ -665,12 +665,12 @@
           </g>
         </svg>
       </div>
-      <p class="quality-note">Composite blends quality, latency, and cost — <b>claude has the highest raw reply quality</b> (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed.</p>
+      <p class="quality-note">Composite is 70% quality, 30% latency — <b>claude has the highest raw reply quality</b> (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed. Cost is not scored in this run: the subscription CLIs report no usable token counts.</p>
       <p class="quality-note">Check the numbers: <a href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results/public/report.md">full per-ticket report and run settings</a> · <a href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results/heldout/summary.json">heldout suite aggregates</a>.</p>
     </div>
 
     <div class="chart-card reveal">
-      <p class="quality-note"><b>Quality by topic</b> (1 to 5, judge score). The composite averages these; a leader can still be the weakest on one topic. Scored on 70% quality, 30% latency; cost is not part of it unless listed.</p>
+      <p class="quality-note"><b>Quality by topic</b> (1 to 5, judge score). The composite averages these; a leader can still be the weakest on one topic. Scored on 70% quality, 30% latency.</p>
       <div class="topic-table"><table>
         <thead><tr><th>Topic</th><th>Tasks</th><th>gemini</th><th>gpt</th><th>claude</th></tr></thead>
         <tbody>

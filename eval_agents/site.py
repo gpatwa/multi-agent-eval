@@ -281,13 +281,17 @@ def _quality_note(public: dict) -> str:
     best = max(cands, key=lambda n: cands[n]["quality_mean"])
     cli = any("CLI" in _label(c["provider"]) for c in cands.values())
     tail = " Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed." if cli else ""
+    basis = f"Composite is {score_basis(public)}"
+    if not (public.get("weights") or {}).get("cost"):
+        tail += (" Cost is not scored in this run: the subscription CLIs report no usable token counts."
+                 if cli else " Cost is not scored in this run.")
     if best == ranking[0]:
         b = cands[best]
-        return (f"Composite blends quality, latency, and cost — <b>{esc(best)} leads on both</b> raw reply quality "
+        return (f"{basis} — <b>{esc(best)} leads on both</b> raw reply quality "
                 f"({b['quality_mean']:.2f}/5) and the composite.{tail}")
     others = [c["latency_p95"] for n, c in cands.items() if n != best]
     b = cands[best]
-    return (f"Composite blends quality, latency, and cost — <b>{esc(best)} has the highest raw reply quality</b> "
+    return (f"{basis} — <b>{esc(best)} has the highest raw reply quality</b> "
             f"({b['quality_mean']:.2f}/5 vs {', '.join(f'{esc(n)}’s {c['quality_mean']:.2f}' for n, c in cands.items() if n != best)}) "
             f"but ranks {ordinal(ranking.index(best) + 1)} on the composite: its p95 latency is {b['latency_p95']:.1f}s vs "
             f"{min(others):.1f}–{max(others):.1f}s for the others.{tail}")
@@ -308,8 +312,7 @@ def _topics(public: dict) -> str:
                       for v in cells.values())
         rows.append(f'<tr><th scope="row">{esc(topic.replace("_", " "))}</th><td>{t["n_tasks"]}</td>{tds}</tr>')
     return ('\n    <div class="chart-card reveal">\n      <p class="quality-note"><b>Quality by topic</b> (1 to 5, judge score). '
-            f'The composite averages these; a leader can still be the weakest on one topic. Scored on {esc(score_basis(public))}; '
-            'cost is not part of it unless listed.</p>\n      <div class="topic-table"><table>\n        <thead><tr><th>Topic</th><th>Tasks</th>'
+            f'The composite averages these; a leader can still be the weakest on one topic. Scored on {esc(score_basis(public))}.</p>\n      <div class="topic-table"><table>\n        <thead><tr><th>Topic</th><th>Tasks</th>'
             f'{head}</tr></thead>\n        <tbody>\n          ' + "\n          ".join(rows) + '\n        </tbody>\n      </table></div>\n    </div>\n')
 
 

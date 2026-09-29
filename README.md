@@ -24,7 +24,7 @@ Held-out suite (same policy, different wording): gemini 4.75 (public 4.84); gpt 
 
 * Two different-vendor judges agree on the ranking (Spearman ρ = 1.00) across 116 answers.
 * **4 guardrail flags** in 180 graded answers (action_contradiction); flags are reported as counts, never averaged away.
-* Composite blends quality, latency, and cost — **claude has the highest raw reply quality** (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed.
+* Composite is 70% quality, 30% latency — **claude has the highest raw reply quality** (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed. Cost is not scored in this run: the subscription CLIs report no usable token counts.
 <!-- /AUTO:readme_results -->
 
 ## Architecture
