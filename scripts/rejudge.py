@@ -41,7 +41,7 @@ from eval_agents.judge import JUDGE_SYSTEM  # noqa: E402
 from eval_agents.agents import Agent  # noqa: E402
 from eval_agents.registry import create_provider  # noqa: E402
 from eval_agents.report import JUDGE_FAILURE_WARN, summarize, to_json, to_markdown, to_summary_json  # noqa: E402
-from eval_agents.results_io import load_results  # noqa: E402
+from eval_agents.results_io import load_results, load_settings  # noqa: E402
 from eval_agents.runner import CandidateResult, TaskResult  # noqa: E402
 
 
@@ -131,9 +131,14 @@ def main(argv=None) -> int:
           file=sys.stderr)
     args.out.mkdir(parents=True, exist_ok=True)
     scorecard = config.get("scorecard")
+    # Keep how the CANDIDATES ran (model, effort, CLI versions) from the source run;
+    # only the judge changed, so record the judge that produced these verdicts.
+    settings = load_settings(args.source)
+    if settings:
+        settings = {**settings, "judge": judge.provider.describe(), "rejudged_from": str(args.source)}
     (args.out / "results.json").write_text(to_json(results))
-    (args.out / "summary.json").write_text(to_summary_json(results, scorecard=scorecard))
-    (args.out / "report.md").write_text(to_markdown(results, scorecard=scorecard))
+    (args.out / "summary.json").write_text(to_summary_json(results, scorecard=scorecard, settings=settings))
+    (args.out / "report.md").write_text(to_markdown(results, scorecard=scorecard, settings=settings))
     (args.out / "rejudged_from.txt").write_text(f"{args.source}\njudge: {spec['provider']}/{spec['model']}\n")
     print(f"Re-judged report written to {args.out / 'report.md'}", file=sys.stderr)
     rates = {n: s["judge_failure_rate"] for n, s in summarize(results, scorecard)["candidates"].items()}

@@ -29,19 +29,12 @@ sys.path.insert(0, str(ROOT))
 
 from eval_agents.config import load_config  # noqa: E402
 from eval_agents.report import to_json, to_markdown, to_summary_json  # noqa: E402
-from eval_agents.results_io import load_results  # noqa: E402
+from eval_agents.results_io import load_results, load_settings  # noqa: E402
 from eval_agents.runner import TaskResult  # noqa: E402
 
 
 class MergeError(RuntimeError):
     pass
-
-
-def load_settings(run_dir: pathlib.Path) -> dict | None:
-    try:
-        return json.loads((run_dir / "summary.json").read_text()).get("run_settings")
-    except (OSError, json.JSONDecodeError):
-        return None
 
 
 def merge_results(runs: list[list[TaskResult]], names: list[str]) -> list[TaskResult]:

@@ -12,6 +12,14 @@ from .judge import Verdict
 from .runner import CandidateResult, Task, TaskResult
 
 
+def load_settings(run_dir: pathlib.Path) -> dict | None:
+    """The run settings recorded in `<run_dir>/summary.json`, if the run has them."""
+    try:
+        return json.loads((pathlib.Path(run_dir) / "summary.json").read_text()).get("run_settings")
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 def load_results(path: pathlib.Path, with_verdicts: bool = False) -> list[TaskResult]:
     """Rebuild TaskResult objects from `<path>/results.json`.
 

@@ -28,4 +28,10 @@ def test_rejudge_keeps_answers_and_recomputes_verdicts(tmp_path):
     verdicts = lambda d: [r["verdict"]["overall"] for tr in d for r in tr["results"]]
     assert verdicts(before) == verdicts(after)
     assert (out / "summary.json").is_file() and (out / "report.md").is_file()
+    # candidate settings carry over from the source run; the judge is the re-judging one
+    src_settings = json.loads((src / "summary.json").read_text())["run_settings"]
+    new_settings = json.loads((out / "summary.json").read_text())["run_settings"]
+    assert new_settings["candidates"] == src_settings["candidates"]
+    assert new_settings["judge"]["model"] == "mock-judge" and new_settings["rejudged_from"] == str(src)
+    assert "Reasoning effort" in (out / "report.md").read_text()
     assert "judge: mock/mock-judge" in (out / "rejudged_from.txt").read_text()
