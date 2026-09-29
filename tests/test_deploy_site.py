@@ -157,3 +157,24 @@ def test_missing_credentials_point_to_bootstrap(monkeypatch):
     for name, *_ in ds.SECRETS:
         monkeypatch.delenv(name, raising=False)
     assert ds.main(["deploy", "--dry-run"]) == 1
+
+
+# ---------------------------------------------------------------- IndexNow
+
+
+def test_indexnow_key_is_deterministic_and_file_is_self_healing(tmp_path):
+    key = ds.indexnow_key("eval.aveto.com")
+    assert key == ds.indexnow_key("eval.aveto.com") and len(key) == 32 and key != ds.indexnow_key("other.example.com")
+    path = ds.ensure_indexnow_key_file(tmp_path, "eval.aveto.com")
+    assert path.name == f"{key}.txt" and path.read_text().strip() == key
+    path.write_text("tampered")
+    assert ds.ensure_indexnow_key_file(tmp_path, "eval.aveto.com").read_text().strip() == key
+
+
+def test_indexnow_ping_sends_host_key_and_location():
+    http = FakeHTTP({("POST", "/indexnow"): (200, "")})
+    assert ds.ping_indexnow(["https://eval.aveto.com/"], "eval.aveto.com", request=http) is True
+    body = json.loads(http.calls[0][2])
+    assert body["host"] == "eval.aveto.com" and body["urlList"] == ["https://eval.aveto.com/"]
+    assert body["keyLocation"] == f"https://eval.aveto.com/{ds.indexnow_key('eval.aveto.com')}.txt"
+    assert ds.ping_indexnow(["u"], "eval.aveto.com", request=FakeHTTP({("POST", "/indexnow"): (403, "")})) is False

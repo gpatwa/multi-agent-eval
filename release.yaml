@@ -17,3 +17,10 @@ suites:
 env_unset: [ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL]
 
 commit_trailer: "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+
+# Public repo metadata (GitHub search and Explore index the description and topics). scripts/sync_repo.py applies it
+# idempotently; the homepage is only set once the site is actually live, so it never links a dead URL.
+repo:
+  description: "Self-hosted LLM evaluation harness: compare Claude, GPT and Gemini on your own support tickets and policy, with an LLM judge, guardrail checks and a cost/latency scorecard."
+  homepage: https://eval.aveto.com
+  topics: [llm-evaluation, llm-as-judge, ai-evals, model-comparison, prompt-injection, guardrails, customer-support, benchmarking, python]

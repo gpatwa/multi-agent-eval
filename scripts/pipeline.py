@@ -25,6 +25,16 @@ sys.path.insert(0, str(ROOT))
 from eval_agents.pipeline import EXIT_OK, EXIT_WAITING, Pipeline, Release  # noqa: E402
 
 
+def sync_repo_metadata() -> None:
+    """Best effort: keep the repo's description/topics/homepage in step with release.yaml. It needs the
+    machine's `gh` login (admin), so it can't run in CI; a failure here never fails a release."""
+    import subprocess
+
+    done = subprocess.run([sys.executable, str(ROOT / "scripts" / "sync_repo.py")], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    print(f"[pipeline] {(done.stdout or done.stderr).strip().splitlines()[-1] if (done.stdout or done.stderr).strip() else 'repo sync: no output'}",
+          file=sys.stderr, flush=True)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--release", default=str(ROOT / "release.yaml"))
@@ -76,6 +86,8 @@ def main(argv=None) -> int:
         print(f"[pipeline] {result.state}" + (f" — waiting on: {'; '.join(result.waiting_on)}" if result.waiting_on else "")
               + (f" — problems: {'; '.join(result.problems)}" if result.problems else ""), file=sys.stderr, flush=True)
         if not args.loop or result.exit_code != EXIT_WAITING:
+            if result.state in ("published", "current"):
+                sync_repo_metadata()
             return result.exit_code
         if time.time() + args.interval > deadline:
             print(f"[pipeline] still waiting after {args.max_hours}h; giving up (run tick again to continue)", file=sys.stderr)

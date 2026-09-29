@@ -37,7 +37,9 @@ jobs:
              && [ -n "$NICRU_PASSWORD" ] && [ -n "$NICRU_CLIENT_ID" ] && [ -n "$NICRU_CLIENT_SECRET" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::Deploy credentials not set — skipping. Run: python scripts/deploy_site.py bootstrap"
+            echo "::warning title=Site NOT deployed::Deploy credentials are not set, so this run published nothing (a green check here does not mean the site is live). Run: python scripts/deploy_site.py doctor"
+            echo "### Site NOT deployed" >> "$GITHUB_STEP_SUMMARY"
+            echo "Deploy credentials are not set, so nothing was published. \`python scripts/deploy_site.py doctor\` lists exactly what is missing." >> "$GITHUB_STEP_SUMMARY"
             echo "ready=false" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4

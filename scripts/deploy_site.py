@@ -14,6 +14,7 @@ Idempotent; safe to run on every push (CI does: .github/workflows/deploy-site.ym
 Usage:
   python scripts/deploy_site.py deploy [--dry-run] [--no-verify]
   python scripts/deploy_site.py status
+  python scripts/deploy_site.py doctor      # what's ready, what's missing, and exactly what to do
   python scripts/deploy_site.py bootstrap   # one-time: store credentials as GitHub secrets
 
 Credentials (environment variables; CI reads them from GitHub secrets):
@@ -30,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import hashlib
 import json
 import os
 import pathlib
@@ -294,11 +296,40 @@ def verify(cf: Cloudflare, timeout_s: int = 900) -> bool:
     return False
 
 
+# ---------------------------------------------------------------- search engines
+
+INDEXNOW = "https://api.indexnow.org/indexnow"
+
+
+def indexnow_key(domain: str = DOMAIN) -> str:
+    """IndexNow's ownership key is public by design (it is served from the site itself), so a
+    deterministic one derived from the domain needs no secret storage."""
+    return hashlib.sha256(f"indexnow:{domain}".encode()).hexdigest()[:32]
+
+
+def ensure_indexnow_key_file(site_dir: pathlib.Path = SITE_DIR, domain: str = DOMAIN) -> pathlib.Path:
+    path = site_dir / f"{indexnow_key(domain)}.txt"
+    if not path.exists() or path.read_text().strip() != indexnow_key(domain):
+        path.write_text(indexnow_key(domain) + "\n")
+    return path
+
+
+def ping_indexnow(urls: list[str], domain: str = DOMAIN, request=http) -> bool:
+    """Tell IndexNow-participating engines (Bing, Yandex, Seznam, Naver...) the URLs changed. Google
+    doesn't participate; it finds the site through the sitemap and links to it."""
+    body = json.dumps({"host": domain, "key": indexnow_key(domain), "keyLocation": f"https://{domain}/{indexnow_key(domain)}.txt",
+                       "urlList": urls}).encode()
+    status, _ = request("POST", INDEXNOW, headers={"Content-Type": "application/json; charset=utf-8"}, data=body)
+    log(f"IndexNow ping -> HTTP {status}")
+    return status in (200, 202)
+
+
 # ---------------------------------------------------------------- commands
 
 
 def cmd_deploy(args) -> int:
     cf = Cloudflare(_env("CLOUDFLARE_API_TOKEN"), _env("CLOUDFLARE_ACCOUNT_ID"))
+    ensure_indexnow_key_file()  # must exist before the upload so the engines can fetch it
     pages_host = cf.ensure_project(dry_run=args.dry_run)
     upload_site(dry_run=args.dry_run)
     cf.ensure_domain(dry_run=args.dry_run)  # before DNS, or Cloudflare 522s the hostname
@@ -306,8 +337,46 @@ def cmd_deploy(args) -> int:
     nic.ensure_cname(ZONE, cname_label(DOMAIN, ZONE), pages_host, dry_run=args.dry_run)
     if args.dry_run or args.no_verify:
         return 0
-    verify(cf)
+    if verify(cf):
+        ping_indexnow([f"https://{DOMAIN}/"])
     return 0
+
+
+def cmd_doctor(_args) -> int:
+    """Read-only readiness report. Exit 0 only when the whole path can run unattended."""
+    import socket
+
+    rows, ok = [], True
+
+    def row(label, good, detail):
+        nonlocal ok
+        ok &= bool(good)
+        rows.append(f"  {'ok     ' if good else 'MISSING'}  {label:34s} {detail}")
+
+    have_env = {name: bool(os.environ.get(name)) for name, *_ in SECRETS}
+    try:
+        listed = subprocess.run(["gh", "secret", "list"], capture_output=True, text=True, cwd=ROOT)
+        in_gh = {line.split()[0] for line in listed.stdout.splitlines() if line.strip()} if listed.returncode == 0 else set()
+    except OSError:
+        in_gh = set()
+    for name, _, help_text in SECRETS:
+        row(f"credential {name}", have_env[name] or name in in_gh,
+            "GitHub secret set" if name in in_gh else "in this environment" if have_env[name] else help_text)
+    if have_env["CLOUDFLARE_API_TOKEN"]:
+        status, _ = http("GET", f"{CF_API}/user/tokens/verify", headers={"Authorization": f"Bearer {os.environ['CLOUDFLARE_API_TOKEN']}"})
+        row("Cloudflare token is valid", status == 200, f"HTTP {status}")
+    try:
+        dns_ok = bool(socket.getaddrinfo(DOMAIN, 443))
+    except OSError:
+        dns_ok = False
+    row(f"DNS for {DOMAIN}", dns_ok, "resolves" if dns_ok else "no record yet (created by `deploy` once credentials exist)")
+    status, body = http("GET", f"https://{DOMAIN}/", timeout=10) if dns_ok else (0, "")
+    row(f"https://{DOMAIN}/ serves the page", status == 200 and VERIFY_MARKER in body, f"HTTP {status}" if status else "not reachable")
+    print("\n".join(rows))
+    print("\nReady: every step runs unattended." if ok else
+          "\nNot ready. The only steps that cannot be automated are creating credentials (nobody else can issue them for you);\n"
+          "`python scripts/deploy_site.py bootstrap` stores them once. Everything after that is automatic.")
+    return 0 if ok else 1
 
 
 def cmd_status(_args) -> int:
@@ -344,10 +413,11 @@ def main(argv=None) -> int:
     d.add_argument("--dry-run", action="store_true", help="read-only: report what would change")
     d.add_argument("--no-verify", action="store_true", help="skip waiting for the live URL")
     sub.add_parser("status")
+    sub.add_parser("doctor")
     sub.add_parser("bootstrap")
     args = parser.parse_args(argv)
     try:
-        return {"deploy": cmd_deploy, "status": cmd_status, "bootstrap": cmd_bootstrap}[args.command](args)
+        return {"deploy": cmd_deploy, "status": cmd_status, "bootstrap": cmd_bootstrap, "doctor": cmd_doctor}[args.command](args)
     except DeployError as exc:
         log(f"ERROR: {exc}")
         return 1
