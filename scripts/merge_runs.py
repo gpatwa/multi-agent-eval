@@ -62,8 +62,14 @@ def merge_settings(all_settings: list[dict | None], names: list[str], allow_judg
     if missing:
         raise MergeError(f"no run_settings in {', '.join(missing)} (produced before settings were recorded); "
                          "can't verify how those candidates were run")
-    judges = [json.dumps(s["judge"], sort_keys=True) for s in all_settings]
+    # The judge's identity is provider + model + effort. A CLI patch release between
+    # runs (cli_version) doesn't change which model judged, so it's noted, not refused.
+    identity = lambda j: (j["provider"], j["model"], j["effort"])  # noqa: E731
+    judges = [identity(s["judge"]) for s in all_settings]
     notes = []
+    versions = {s["judge"].get("cli_version") for s in all_settings} - {None}
+    if len(versions) > 1:
+        notes.append(f"judge CLI version differs across merged runs ({', '.join(sorted(versions))})")
     if len(set(judges)) > 1:
         detail = "; ".join(f"{n}: {s['judge']['model']} effort {s['judge']['effort']}" for n, s in zip(names, all_settings))
         if not allow_judge_mismatch:

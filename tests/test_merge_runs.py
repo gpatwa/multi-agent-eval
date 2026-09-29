@@ -73,6 +73,13 @@ def test_refuses_different_judges_unless_overridden(tmp_path):
     assert "judges differ" in merged["notes"][0]
 
 
+def test_judge_cli_version_difference_is_noted_not_refused(tmp_path):
+    v1, v2 = {**JUDGE, "cli_version": "2.1.263"}, {**JUDGE, "cli_version": "2.1.270"}
+    sa, sb = mr.load_settings(_run(tmp_path, "a", "x", 1.0, judge=v1)), mr.load_settings(_run(tmp_path, "b", "y", 1.0, judge=v2))
+    merged = mr.merge_settings([sa, sb], ["a", "b"], allow_judge_mismatch=False)
+    assert "CLI version differs" in merged["notes"][0]
+
+
 def test_unmatched_effort_across_runs_is_reported(tmp_path):
     sa, sb = mr.load_settings(_run(tmp_path, "a", "x", 1.0, effort="low")), mr.load_settings(_run(tmp_path, "b", "y", 1.0, effort="high"))
     merged = mr.merge_settings([sa, sb], ["a", "b"], False)

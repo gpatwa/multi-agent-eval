@@ -62,12 +62,24 @@ def main() -> None:
         "--trials", type=int, default=None,
         help="repeat each task N times to measure variance (default: the config's `trials:`, else 1)",
     )
+    parser.add_argument(
+        "--only", default=None, metavar="NAMES",
+        help="comma-separated candidate names to run (others in the config are skipped); lets a candidate "
+             "that hit a usage limit be run alone and merged later with scripts/merge_runs.py",
+    )
     parser.add_argument("--baseline", default=None, help="previous --out dir; exit 1 if quality regresses vs it")
     parser.add_argument("--regression-threshold", type=float, default=0.3,
                         help="max allowed quality-mean drop vs baseline (default 0.3)")
     args = parser.parse_args()
 
     config = load_config(args.config)
+    if args.only:
+        wanted = [n.strip() for n in args.only.split(",") if n.strip()]
+        known = [c["name"] for c in config["candidates"]]
+        unknown = [n for n in wanted if n not in known]
+        if unknown:
+            sys.exit(f"--only: unknown candidate(s) {unknown}; the config has {known}")
+        config["candidates"] = [c for c in config["candidates"] if c["name"] in wanted]
     try:
         candidates, judge = load_agents(config)
         _, scorer = select_use_case(config)

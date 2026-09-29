@@ -93,3 +93,17 @@ def test_config_trials_used_and_cli_flag_overrides(tmp_path):
     proc = _run_cli("--config", str(cfg), "--tasks", str(tasks), "--out", str(out), "--trials", "1", cwd=ROOT)
     assert proc.returncode == 0, proc.stderr
     assert _trial_counts(out) == {1}
+
+
+def test_only_flag_runs_just_the_named_candidates(tmp_path):
+    out = tmp_path / "only"
+    proc = _run_cli("--config", "config.demo.yaml", "--out", str(out), "--only", "mock-beta", cwd=ROOT)
+    assert proc.returncode == 0, proc.stderr
+    summary = json.loads((out / "summary.json").read_text())
+    assert set(summary["candidates"]) == {"mock-beta"}
+    assert set(summary["run_settings"]["candidates"]) == {"mock-beta"}
+
+
+def test_only_flag_rejects_unknown_names(tmp_path):
+    proc = _run_cli("--config", "config.demo.yaml", "--out", str(tmp_path / "x"), "--only", "nope", cwd=ROOT)
+    assert proc.returncode != 0 and "unknown candidate" in proc.stderr

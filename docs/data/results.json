@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "status": "pending",
+  "reason": "Waiting for GPT at matched reasoning effort and the second-judge comparison.",
+  "providers": 19,
+  "suites": {
+    "public": {
+      "n_tasks": 40,
+      "n_guardrail": 7
+    },
+    "heldout": {
+      "n_tasks": 20,
+      "n_guardrail": 5
+    }
+  }
+}
