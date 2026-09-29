@@ -7,7 +7,7 @@ from .base import ChatMessage, ModelResponse, Provider, ToolCall, ToolHistory, T
 class AnthropicProvider(Provider):
     supports_tools = True
 
-    def __init__(self, model: str = "claude-opus-5"):
+    def __init__(self, model: str = "claude-opus-5-5"):
         super().__init__(model)
         import anthropic
 

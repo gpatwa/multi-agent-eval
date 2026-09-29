@@ -19,7 +19,7 @@ tasks: tasks.triage.yaml
 candidates:
   - name: claude
     provider: claude-code
-    model: opus
+    model: claude-opus-5
   - name: gpt
     provider: codex-cli
     model: default

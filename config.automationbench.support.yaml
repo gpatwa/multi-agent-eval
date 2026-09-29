@@ -28,7 +28,7 @@ trials: 3
 candidates:
   - name: claude
     provider: anthropic
-    model: claude-opus-5
+    model: claude-opus-5-5
   - name: gpt
     provider: openai
     model: gpt-6-astra
@@ -42,7 +42,7 @@ candidates:
 # CLI keeps it flat-rate. Tasks with no external-facing message never call it.
 judge:
   provider: claude-code
-  model: opus
+  model: claude-opus-5
 
 scorecard:
   monthly_volume: 5000
@@ -52,7 +52,7 @@ scorecard:
     cost: 0.15
   # USD per 1M tokens [input, output] — same verified rates as config.triage.yaml.
   pricing:
-    claude: [5.00, 25.00]    # claude-opus-5
+    claude: [4.00, 20.00]    # claude-opus-5-5
     gpt: [10.00, 50.00]       # gpt-6-astra
     gemini: [2.00, 12.00]    # gemini-3.1-pro-preview (<=200k prompts)
   # Caveat: history grows every turn, and long tasks can push single requests past

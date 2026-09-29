@@ -424,11 +424,11 @@ change is needed to adopt a new release. Candidate defaults as of
 
 | Provider | Model ID | $/MTok in | $/MTok out |
 |---|---|---|---|
-| Anthropic | `claude-opus-5` | 5.00 | 25.00 |
+| Anthropic | `claude-opus-5-5` | 4.00 | 20.00 |
 | OpenAI | `gpt-6-astra` | 10.00 | 50.00 |
 | Google | `gemini-3.1-pro-preview` | 2.00 | 12.00 |
 | Z.ai | `glm-5.3` | 1.40 | 4.40 |
-| xAI | `grok-4.6` | 2.00 | 6.00 |
+| xAI | `grok-4.7` | 2.00 | 6.00 |
 | Meta | `muse-spark-1.3` | 1.25 | 4.25 |
 
 Meta's own model is **Muse Spark**, not Llama — Meta wound down the
@@ -451,12 +451,15 @@ since these sit well below flagship pricing:
 |---|---|---|---|---|
 | `moonshot` | `kimi-k3` | 3.00 | 15.00 | `MOONSHOT_API_KEY` |
 | `qwen` | `qwen3.8-max-0902` | 2.00 | 6.00 | `DASHSCOPE_API_KEY` |
-| `deepseek` | `deepseek-v4-pro` | 0.435 | 0.87 | `DEEPSEEK_API_KEY` |
+| `deepseek` | `deepseek-v4-pro` | 1.32 | 3.96 | `DEEPSEEK_API_KEY` |
+
+DeepSeek bills peak and off-peak rates (`deepseek-v4-pro`: $1.32/$3.96 peak, $0.66/$1.98
+off-peak); the table and configs use the peak rate so cost comparisons are conservative.
 | `zai` | `glm-5.3` | 1.40 | 4.40 | `ZAI_API_KEY` |
 | `nvidia` | `nvidia/nemotron-3-ultra-550b-a55b` | 0.50 | 2.20 | `NVIDIA_API_KEY` |
 
-Value tiers go lower still: `kimi-k2.6` ($0.95/$4.00), `deepseek-v4-flash`
-($0.14/$0.28), `qwen3.8-flash` ($0.16/$0.47), `glm-5`, and NVIDIA's own
+Value tiers go lower still: `kimi-k2.6` ($0.95/$4.00), `deepseek-flash`
+($0.30/$1.20 peak), `qwen3.8-flash` ($0.16/$0.47), `glm-5`, and NVIDIA's own
 smaller Nemotron tiers
 (`nemotron-3-super-120b-a12b` $0.09/$0.40, `nemotron-3.5-lightning`
 $0.08/$0.20). NVIDIA is a genuine first-party host here, not an

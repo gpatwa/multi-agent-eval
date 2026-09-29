@@ -18,7 +18,7 @@ tasks: tasks.triage.yaml
 candidates:
   - name: claude
     provider: claude-code
-    model: opus            # alias: opus | sonnet | haiku, or a full model ID
+    model: claude-opus-5            # pinned full ID: the `opus` alias moves when the CLI updates
   - name: gpt
     provider: codex-cli
     model: default         # "default" = whatever your Codex plan serves
@@ -28,7 +28,7 @@ candidates:
 
 judge:
   provider: claude-code
-  model: opus
+  model: claude-opus-5
 
 scorecard:
   weights:

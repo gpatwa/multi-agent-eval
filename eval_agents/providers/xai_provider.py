@@ -16,5 +16,5 @@ class XAIProvider(OpenAIProvider):
     base_url = "https://api.x.ai/v1"
     token_param = "max_tokens"
 
-    def __init__(self, model: str = "grok-4.6"):
+    def __init__(self, model: str = "grok-4.7"):
         super().__init__(model)

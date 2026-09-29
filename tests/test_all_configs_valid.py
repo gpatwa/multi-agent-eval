@@ -60,3 +60,20 @@ def test_judge_pricing_shape(path):
         pytest.skip("no judge_pricing")
     assert isinstance(jp, list) and len(jp) == 2, f"{path.name}: judge_pricing must be [in, out]"
     assert all(isinstance(x, (int, float)) and x >= 0 for x in jp), f"{path.name}: bad judge_pricing {jp}"
+
+
+MOVING_CLI_ALIASES = {"opus", "sonnet", "haiku"}
+
+
+@pytest.mark.parametrize("path", CONFIG_FILES, ids=lambda p: p.name)
+def test_claude_code_models_are_pinned(path):
+    """The Claude Code CLI's family aliases (opus/sonnet/haiku) re-point when the
+    CLI updates, which can change the model mid-benchmark. Configs pin a full
+    model ID (`default` means "whatever the account serves" and is allowed)."""
+    config = yaml.safe_load(path.read_text())
+    specs = list(config.get("candidates", [])) + [config["judge"]]
+    for spec in specs:
+        if spec.get("provider") == "claude-code":
+            assert spec["model"] not in MOVING_CLI_ALIASES, (
+                f"{path.name}: claude-code model {spec['model']!r} is a moving alias; pin a full ID"
+            )

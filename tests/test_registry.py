@@ -17,11 +17,11 @@ from eval_agents.registry import _PROVIDERS, create_provider
 _SKIP_CONSTRUCT = {"claude-code", "codex-cli", "gemini-cli", "local", "mock"}
 
 _SAMPLE_MODEL = {
-    "anthropic": "claude-opus-5",
+    "anthropic": "claude-opus-5-5",
     "openai": "gpt-6-astra",
     "gemini": "gemini-3.1-pro-preview",
     "zai": "glm-5.3",
-    "xai": "grok-4.6",
+    "xai": "grok-4.7",
     "meta": "muse-spark-1.3",
     "nvidia": "nvidia/nemotron-3-ultra-550b-a55b",
     "openrouter": "meta-llama/llama-4-maverick",

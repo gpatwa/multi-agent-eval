@@ -10,7 +10,7 @@ use_case: support_triage
 candidates:
   - name: claude
     provider: anthropic
-    model: claude-opus-5
+    model: claude-opus-5-5
   - name: gpt
     provider: openai
     model: gpt-6-astra
@@ -22,14 +22,14 @@ candidates:
     model: glm-5.3
   - name: grok
     provider: xai
-    model: grok-4.6
+    model: grok-4.7
   - name: meta
     provider: meta
     model: muse-spark-1.3
 
 judge:
   provider: anthropic
-  model: claude-opus-5
+  model: claude-opus-5-5
 
 # Balanced scorecard: composite = weighted blend of quality, latency, cost
 # (each normalized 0-1; latency and cost inverted so lower is better).
@@ -44,14 +44,14 @@ scorecard:
   # USD per 1M tokens [input, output] — keep in sync with vendor pricing
   # pages. Candidates without an entry are treated as flat-rate (cost 0).
   pricing:
-    claude: [5.00, 25.00]    # claude-opus-5
+    claude: [4.00, 20.00]    # claude-opus-5-5
     gpt: [10.00, 50.00]       # gpt-6-astra
     gemini: [2.00, 12.00]    # gemini-3.1-pro-preview (<=200k prompts)
     glm: [1.40, 4.40]        # glm-5.3
-    grok: [2.00, 6.00]       # grok-4.6 (<200k context)
+    grok: [2.00, 6.00]       # grok-4.7 (<200k context)
     meta: [1.25, 4.25]      # muse-spark-1.3
   # Judge spend (evaluation overhead, reported separately; never in the composite).
-  judge_pricing: [5.00, 25.00]   # claude-opus-5
+  judge_pricing: [4.00, 20.00]   # claude-opus-5-5
 
 # Task suite that goes with this config (used when --tasks/UI value is not overridden)
 tasks: tasks.triage.yaml
