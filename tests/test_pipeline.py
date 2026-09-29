@@ -102,7 +102,10 @@ def world(tmp_path):
     root = tmp_path / "repo"
     (root / "docs" / "data").mkdir(parents=True)
     shutil.copy(REPO / "docs" / "index.html", root / "docs" / "index.html")
-    shutil.copy(REPO / "docs" / "data" / "results.json", root / "docs" / "data" / "results.json")
+    # start from a pending stub, never the repo's live data (which becomes "published")
+    (root / "docs" / "data" / "results.json").write_text(json.dumps({
+        "schema": 1, "status": "pending", "reason": "test", "providers": 19, "site_url": "https://eval.aveto.dev",
+        "suites": {"public": {"n_tasks": 40, "n_guardrail": 7}, "heldout": {"n_tasks": 20, "n_guardrail": 5}}}))
     shutil.copy(REPO / "README.md", root / "README.md")
     for cfg in ("config.triage.mixed.yaml", "config.triage.mixed.codex-judge.yaml"):
         shutil.copy(REPO / cfg, root / cfg)
