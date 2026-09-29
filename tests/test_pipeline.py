@@ -212,6 +212,19 @@ def test_gate_refuses_a_second_judge_from_the_same_vendor(world):
     assert world.git.commits() == []
 
 
+def test_publish_records_history_once_per_distinct_result(world):
+    fake = FakeExec()
+    p = world.pipeline(fake)
+    world.seed_valid(p)
+    assert p.tick(publish=True).state == "published"
+    path = world.root / "docs" / "data" / "history.json"
+    first = json.loads(path.read_text())
+    assert len(first["entries"]) == 1 and first["entries"][0]["changes"] == []
+    assert "first published run" in (world.root / "docs" / "index.html").read_text()
+    assert world.pipeline(fake).tick(publish=True).state == "current"
+    assert json.loads(path.read_text()) == first  # unchanged results add no row
+
+
 def test_republishing_unchanged_results_makes_no_commit(world):
     fake = FakeExec()
     p = world.pipeline(fake)

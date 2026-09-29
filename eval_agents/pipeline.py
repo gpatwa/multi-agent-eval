@@ -37,6 +37,7 @@ from datetime import datetime, timezone
 import yaml
 
 from .config import load_config, load_tasks
+from .history import append as append_history, dump as dump_history, load as load_history, regressions
 from .publish import build_release, check_gates, leak_probes
 from .results_io import load_results, load_settings
 from .site import generated_files
@@ -322,7 +323,10 @@ class Pipeline:
         data_path = docs / "data" / "results.json"
         strip = lambda d: {k: v for k, v in d.items() if k != "generated"}  # noqa: E731
         prior = json.loads(data_path.read_text()) if data_path.exists() else {}
-        generated = generated_files(self.root, data)  # page, README, sitemap.xml, robots.txt
+        history_path = docs / "data" / "history.json"
+        history, entry = append_history(load_history(history_path), data)
+        generated = generated_files(self.root, data, history=history)  # page, README, sitemap.xml, robots.txt
+        generated.append((history_path, dump_history(history)))
         stale_text = any(not p.exists() or p.read_text() != t for p, t in generated)
         changed = strip(prior) != strip(data) or stale_text or any(not p.exists() or p.read_text() != t for p, t in artifacts.items())
         if not changed:
@@ -333,7 +337,9 @@ class Pipeline:
         for p, text in [*artifacts.items(), *generated]:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(text)
-        self.result.actions.append("published data + page + README + sitemap")
+        self.result.actions.append("published data + history + page + README + sitemap")
+        for c in regressions(entry["changes"] if entry else []):
+            self.result.actions.append(f"regression vs previous published run: {c['suite']}/{c['candidate']} {c['kind']}")
         self.result.state = "published"
         if do_commit:
             self.commit(["docs", "README.md"], f"Publish {self.r.name} results (validated, effort-matched)")

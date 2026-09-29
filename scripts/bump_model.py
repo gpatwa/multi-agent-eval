@@ -123,6 +123,8 @@ def main() -> int:
             print(f"  - {p}", file=sys.stderr)
         return 1
     print(f"\nVerified: every config*.yaml parses, every provider module imports cleanly.")
+    print("Promotion check: run `python scripts/pipeline.py tick --publish`. It re-runs the changed candidate, gates the run, "
+          "and records any quality drop or new guardrail flag against the last published run in docs/data/history.json.")
     return 0
 
 

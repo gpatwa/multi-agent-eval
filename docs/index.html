@@ -181,6 +181,10 @@
   .topic-table th:first-child, .topic-table td:first-child{text-align:left;}
   .topic-table tbody th{font-weight:500; text-transform:capitalize;}
   .topic-table td.best{color:var(--brass-strong); font-weight:600;}
+  .history-table td.mod{color:var(--slate); text-align:left; white-space:nowrap;}
+  .history-table td, .history-table th{text-align:left; vertical-align:top;}
+  .chg{display:inline-block; margin:0 6px 4px 0; padding:1px 8px; border-radius:99px; background:var(--brass-tint); color:var(--brass-strong); font-size:12px;}
+  .chg.bad{background:color-mix(in srgb,var(--critical) 18%,transparent); color:var(--critical);}
   .prow .fl{color:var(--critical); font-size:11px; margin-left:4px; white-space:nowrap;}
   .prow .nm{overflow:visible; white-space:normal;}
   .pill{display:inline-block; padding:2px 9px; border-radius:99px; font-family:"Geist Mono",monospace; font-size:12px; font-weight:500; background:var(--brass-tint); color:var(--brass-strong);}
@@ -455,6 +459,7 @@
       <a href="#problem">Problem</a>
       <a href="#usecases">Use cases</a>
       <a href="#proof">Proof</a>
+      <a href="#history">History</a>
       <a href="#method">Method</a>
       <a href="#coverage">Coverage</a>
     </nav>
@@ -706,6 +711,14 @@
       </div>
     </div>
   <!-- /AUTO:proof -->  </section>
+
+  <section id="history" class="wrap-wide"><!-- AUTO:history -->
+    <div class="sec-head reveal">
+      <p class="eyebrow">Published history</p>
+      <h2>Every published run stays on the record</h2>
+    </div>
+    <p class="proof-note">The first row appears here when a run is published.</p>
+  <!-- /AUTO:history -->  </section>
 
   <section id="method" class="wrap">
     <div class="sec-head reveal">

@@ -79,6 +79,50 @@ def stats(data: dict) -> str:
         f'<div class="label">{esc(label)}</div></div>' for num, label, cls in tiles) + "\n      "
 
 
+# ---------------------------------------------------------------- history
+
+HISTORY_URL = "https://github.com/gpatwa/multi-agent-eval/blob/main/docs/data/history.json"
+CHANGE_TEXT = {
+    "added": "added", "removed": "removed", "judge_changed": "judge changed",
+    "model_changed": lambda c: f"model {c['from']} → {c['to']}",
+    "quality_up": lambda c: f"quality +{c['delta']:.2f}", "quality_down": lambda c: f"quality {c['delta']:.2f}",
+    "flags_up": lambda c: f"flags {c['from']} → {c['to']}", "flags_down": lambda c: f"flags {c['from']} → {c['to']}",
+}
+
+
+def _change(c: dict) -> str:
+    text = CHANGE_TEXT[c["kind"]]
+    text = text(c) if callable(text) else text
+    who = "" if c["candidate"] == "*" else f"{c['candidate']}: "
+    bad = c["kind"] in ("quality_down", "flags_up")
+    return f'<span class="chg{" bad" if bad else ""}">{esc(who + text)}</span>'
+
+
+def history(data: dict) -> str:
+    entries = (data.get("history") or {}).get("entries") or []
+    head = ('\n    <div class="sec-head reveal">\n      <p class="eyebrow">Published history</p>\n'
+            '      <h2>Every published run stays on the record</h2>\n    </div>\n')
+    if not entries:
+        return head + '    <p class="proof-note">The first row appears here when a run is published.</p>\n  '
+    rows = []
+    for e in reversed(entries):
+        pub = e["suites"][next(iter(e["suites"]))]
+        lead = pub["ranking"][0]
+        cands = pub["candidates"]
+        quality = " · ".join(f"{esc(n)} {cands[n]['quality_mean']:.2f}" for n in pub["ranking"])
+        flags = sum(v["critical_violations"] for s in e["suites"].values() for v in s["candidates"].values())
+        models = " · ".join(esc(cands[n]["model"]) for n in pub["ranking"])
+        changes = " ".join(_change(c) for c in e["changes"]) or ('<span class="chg">first published run</span>'
+                                                                    if e is entries[0] else '<span class="chg">no change</span>')
+        rows.append(f'<tr><th scope="row">{esc(e["published"][:10])}</th><td>{esc(lead)}</td><td>{quality}</td>'
+                    f'<td>{flags}</td><td class="mod">{models}</td><td>{changes}</td></tr>')
+    return (head + '    <div class="chart-card reveal">\n      <div class="topic-table"><table class="history-table">\n        <thead><tr>'
+            '<th>Published</th><th>Leader</th><th>Quality</th><th>Flags</th><th>Models</th><th>Changes</th></tr></thead>\n        <tbody>\n          '
+            + "\n          ".join(rows) + '\n        </tbody>\n      </table></div>\n'
+            f'      <p class="quality-note">A row is added only when a model, score, judge or flag count changes. '
+            f'<a href="{HISTORY_URL}">Raw history</a>.</p>\n    </div>\n  ')
+
+
 # ---------------------------------------------------------------- hero panels
 
 
@@ -448,7 +492,7 @@ def robots(data: dict) -> str:
     return "User-agent: *\nAllow: /\n" + (f"\nSitemap: {base}/sitemap.xml\n" if base else "")
 
 
-RENDERERS = {"head": head, "stats": stats, "panels": panels, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
+RENDERERS = {"head": head, "stats": stats, "panels": panels, "history": history, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
 README_RENDERERS = {"readme_results": readme_results}
 
 
@@ -474,14 +518,17 @@ def render_readme(text: str, data: dict) -> str:
     return render(text, data, README_RENDERERS)
 
 
-def generated_files(root, data: dict) -> list[tuple]:
+def generated_files(root, data: dict, history: dict | None = None) -> list[tuple]:
     """Every generated file under `root` and the text it should contain: AUTO regions spliced into the
     hand-written page and README, plus the wholly generated sitemap.xml and robots.txt. The single list
     shared by scripts/build_site.py (and CI's freshness check) and the release pipeline."""
     import pathlib
 
+    from .history import load as load_history
+
     root = pathlib.Path(root)
     docs, page, readme = root / "docs", root / "docs" / "index.html", root / "README.md"
+    data = {**data, "history": history if history is not None else load_history(docs / "data" / "history.json")}
     files = [(page, render(page.read_text(), data))]
     if readme.exists():
         files.append((readme, render_readme(readme.read_text(), data)))
