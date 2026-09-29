@@ -79,6 +79,41 @@ def stats(data: dict) -> str:
         f'<div class="label">{esc(label)}</div></div>' for num, label, cls in tiles) + "\n      "
 
 
+# ---------------------------------------------------------------- hero panels
+
+
+def panels(data: dict) -> str:
+    """Three instrument panels under the hero. Pending runs show empty tracks and no figures."""
+
+    def panel(title: str, body: str) -> str:
+        return f'\n      <div class="panel"><h3>{esc(title)}</h3>{body}</div>'
+
+    if data["status"] != "published":
+        rows = "".join('<div class="prow wait"><span class="nm">awaiting run</span><div class="tr"><i></i></div><span>&nbsp;</span></div>'
+                       for _ in range(3))
+        return (panel("Scoreboard", rows + '<p class="sub">Figures appear when a run passes validation.</p>')
+                + panel("Judge agreement", '<div class="big">&mdash;</div><div><span class="pill">pending</span></div>')
+                + panel("Guardrail flags", '<div class="big">&mdash;</div><div><span class="pill">pending</span></div>') + "\n    ")
+    first, _ = _suites(data)
+    public = data["suites"][first]
+    rows = "".join(
+        f'<div class="prow"><span class="nm">{esc(n)}</span><div class="tr"><i style="--w:{public["candidates"][n]["composite"] * 100:.0f}%"></i></div>'
+        f'<span>{public["candidates"][n]["composite"]:.2f}</span></div>' for n in public["ranking"])
+    ag = (data.get("agreement") or {}).get(first)
+    if ag and ag["rank_rho"] is not None:
+        agree = (f'<div class="big">&rho; {ag["rank_rho"]:.2f}</div><div><span class="pill ok">two vendors</span></div>'
+                 f'<p class="sub">Two different-vendor judges, {ag["n_answers"]} answers.</p>')
+    else:
+        agree = '<div class="big">&mdash;</div><div><span class="pill">one judge</span></div>'
+    all_c = [c for s in data["suites"].values() for c in s["candidates"].values()]
+    flags = sum(c["critical_violations"] for c in all_c)
+    answers = sum(c["n_samples"] for c in all_c)
+    flag = (f'<div class="big">{flags}</div><div><span class="pill {"ok" if flags == 0 else "bad"}">'
+            f'{"none raised" if flags == 0 else "review"}</span></div><p class="sub">Across {answers} graded answers.</p>')
+    return (panel("Composite score", rows + f'<p class="sub">{esc(_judge_name(public["judge"]))} judging.</p>')
+            + panel("Judge agreement", agree) + panel("Guardrail flags", flag) + "\n    ")
+
+
 # ---------------------------------------------------------------- walkthrough
 
 
@@ -380,7 +415,7 @@ def robots(data: dict) -> str:
     return "User-agent: *\nAllow: /\n" + (f"\nSitemap: {base}/sitemap.xml\n" if base else "")
 
 
-RENDERERS = {"head": head, "stats": stats, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
+RENDERERS = {"head": head, "stats": stats, "panels": panels, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
 README_RENDERERS = {"readme_results": readme_results}
 
 
