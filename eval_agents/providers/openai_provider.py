@@ -17,6 +17,14 @@ class OpenAIProvider(Provider):
     # this; an endpoint that doesn't implement `tools` fails that candidate's
     # run with the endpoint's error rather than silently answering in text.
     supports_tools = True
+
+    @property
+    def supported_efforts(self):
+        # `reasoning_effort` is an OpenAI parameter; compatible endpoints (GLM, Grok,
+        # local servers, aggregators) may reject or ignore it, so they can't promise
+        # a matched effort.
+        return ("low", "medium", "high", "xhigh", "max") if type(self) is OpenAIProvider else None
+
     api_key_env = "OPENAI_API_KEY"
     base_url: str | None = None
     # gpt-5-family models reject `max_tokens`; compatible endpoints (GLM)
@@ -43,10 +51,12 @@ class OpenAIProvider(Provider):
             msgs.append({"role": "system", "content": system})
         msgs.extend({"role": m.role, "content": m.content} for m in messages)
 
+        extra = {"reasoning_effort": self.effort} if self.effort else {}
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=msgs,
             **{self.token_param: max_tokens},
+            **extra,
         )
         usage = resp.usage
         return ModelResponse(
@@ -75,9 +85,11 @@ class OpenAIProvider(Provider):
                     {"role": "tool", "tool_call_id": r.call_id, "content": r.content} for r in item
                 )
 
+        extra = {"reasoning_effort": self.effort} if self.effort else {}
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=msgs,
+            **extra,
             tools=[
                 {"type": "function", "function": {"name": t.name, "description": t.description, "parameters": t.parameters}}
                 for t in tools

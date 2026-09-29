@@ -199,7 +199,7 @@ class NoToolsProvider(Provider):
 def test_tool_use_case_skips_providers_without_tool_support(monkeypatch):
     import eval_agents.config as cfg
 
-    def fake_create(provider, model):
+    def fake_create(provider, model, effort=None):
         return NoToolsProvider(model) if provider == "notools" else ScriptedToolProvider([])
 
     monkeypatch.setattr(cfg, "create_provider", fake_create)

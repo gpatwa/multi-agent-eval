@@ -44,7 +44,7 @@ _PROVIDERS: dict[str, tuple[str, str, str | None]] = {
 }
 
 
-def create_provider(provider: str, model: str) -> Provider:
+def create_provider(provider: str, model: str, effort: str | None = None) -> Provider:
     try:
         module_path, class_name, env_var = _PROVIDERS[provider]
     except KeyError:
@@ -60,4 +60,6 @@ def create_provider(provider: str, model: str) -> Provider:
     import importlib
 
     cls = getattr(importlib.import_module(module_path), class_name)
-    return cls(model=model)
+    instance = cls(model=model)
+    instance.set_effort(effort)  # raises ValueError if this adapter can't apply it
+    return instance

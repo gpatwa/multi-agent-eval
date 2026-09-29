@@ -347,6 +347,39 @@ REST API (usable without the frontend):
 | `GET` | `/api/runs` | run summaries with progress |
 | `GET` | `/api/runs/{id}` | full results (partial while running) |
 
+## Matched reasoning effort
+
+Comparing models at different reasoning effort compares settings, not models: a
+model at `low` looks faster and cheaper than one at its default `high`. Set one
+level for every candidate:
+
+```yaml
+effort: low          # low | medium | high | xhigh | max, for every candidate
+candidates:
+  - {name: claude, provider: claude-code, model: claude-opus-5}
+  - {name: gpt,    provider: codex-cli,   model: gpt-6-astra}
+  - {name: gemini, provider: gemini,      model: gemini-3.1-pro-preview, effort: low}  # per-candidate override
+```
+
+- `low` is the one level Claude, GPT and Gemini all offer (Gemini 3.1 Pro only has
+  `low` and `high`), so it's the default in the mixed, tools and AutomationBench configs.
+- It maps to each vendor's own control: Claude API `output_config.effort`, Claude
+  Code `--effort`, OpenAI `reasoning_effort`, Codex `model_reasoning_effort`, Gemini
+  `thinking_level` (which replaces our old thinking-budget cap).
+- **No silent fallback.** An adapter that can't apply the requested effort (the
+  OpenAI-compatible vendors like GLM, Grok, Kimi, DeepSeek; `gemini-cli`) makes the
+  config fail to load, and a config test enforces it.
+- Judges don't inherit the top-level value, because a judge's effort changes every
+  verdict. A judge names its own `effort:` if it should be pinned.
+- Every run records what actually ran (model IDs, effort, CLI versions) in
+  `summary.json` and at the top of `report.md`, with a warning if effort isn't
+  matched. For the Codex CLI it also records personal `~/.codex/config.toml`
+  settings that still apply, notably `service_tier` (`priority` is the faster,
+  separately metered tier), so latency comparisons can be audited.
+- Pin `model:` to a full ID. The Claude Code CLI's `opus` alias and Codex's
+  `default` follow CLI updates and personal config, which can change the model
+  mid-benchmark.
+
 ## Landing page: eval.aveto.com
 
 `docs/` is the landing page. It deploys itself on every push to `main` that

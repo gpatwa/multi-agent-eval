@@ -208,8 +208,35 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
     }
 
 
-def to_summary_json(results: list[TaskResult], scorecard: dict | None = None) -> str:
-    return json.dumps(summarize(results, scorecard), indent=2)
+def to_summary_json(results: list[TaskResult], scorecard: dict | None = None, settings: dict | None = None) -> str:
+    summary = summarize(results, scorecard)
+    if settings:
+        summary["run_settings"] = settings
+    return json.dumps(summary, indent=2)
+
+
+def _settings_lines(settings: dict) -> list[str]:
+    """Report header: exactly what ran, and whether effort was matched."""
+    efforts = settings["effort_by_candidate"]
+    if settings["effort_matched"]:
+        head = f"**Reasoning effort: matched — `{next(iter(efforts.values()))}` for every candidate.**"
+    else:
+        listed = ", ".join(f"{n}: {e}" for n, e in efforts.items())
+        head = (f"**⚠ Reasoning effort NOT matched** ({listed}). Latency and quality differences may "
+                "reflect effort settings, not the models.")
+    lines = [head, "", "| Candidate | Model | Effort | Notes |", "|---|---|---|---|"]
+    for name, info in settings["candidates"].items():
+        notes = []
+        if info.get("cli_version"):
+            notes.append(info["cli_version"])
+        tier = (info.get("user_config") or {}).get("service_tier")
+        if tier:
+            notes.append(f"personal Codex config: service_tier={tier}")
+        lines.append(f"| {name} | `{info['model']}` | {info['effort']} | {'; '.join(notes) or '—'} |")
+    j = settings["judge"]
+    lines += ["", f"Judge: `{j['model']}` ({j['provider']}), effort {j['effort']}"
+              + (f", {j['cli_version']}" if j.get("cli_version") else ""), ""]
+    return lines
 
 
 def _quality_cell(s: dict) -> str:
@@ -219,7 +246,7 @@ def _quality_cell(s: dict) -> str:
     return q
 
 
-def to_markdown(results: list[TaskResult], scorecard: dict | None = None) -> str:
+def to_markdown(results: list[TaskResult], scorecard: dict | None = None, settings: dict | None = None) -> str:
     scorecard = scorecard or {}
     summary = summarize(results, scorecard)
     stats = summary["candidates"]
@@ -234,6 +261,8 @@ def to_markdown(results: list[TaskResult], scorecard: dict | None = None) -> str
         f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
         "",
     ]
+    if settings:
+        lines += _settings_lines(settings)
 
     # ---- judge coverage warning ----------------------------------------
     failed = {n: s for n, s in stats.items() if s["judge_failures"]}

@@ -6,6 +6,7 @@ from .base import ChatMessage, ModelResponse, Provider, ToolCall, ToolHistory, T
 
 class AnthropicProvider(Provider):
     supports_tools = True
+    supported_efforts = ("low", "medium", "high", "xhigh", "max")  # Haiku 4.5 doesn't take effort
 
     def __init__(self, model: str = "claude-opus-5-5"):
         super().__init__(model)
@@ -23,6 +24,8 @@ class AnthropicProvider(Provider):
         kwargs: dict = {}
         if system:
             kwargs["system"] = system
+        if self.effort:
+            kwargs["output_config"] = {"effort": self.effort}
 
         resp = self.client.messages.create(
             model=self.model,
@@ -68,6 +71,8 @@ class AnthropicProvider(Provider):
                 })
 
         kwargs: dict = {"system": system} if system else {}
+        if self.effort:
+            kwargs["output_config"] = {"effort": self.effort}
         resp = self.client.messages.create(
             model=self.model,
             max_tokens=max_tokens,

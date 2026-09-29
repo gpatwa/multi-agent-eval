@@ -58,6 +58,38 @@ def select_trials(config: dict, override: int | None = None) -> int:
     return trials
 
 
+EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
+
+
+def select_effort(config: dict, spec: dict, inherit: bool = True) -> str | None:
+    """Reasoning effort for one candidate/judge spec: its own `effort:`, else (for
+    candidates) the config's top-level `effort:`, else None (vendor default).
+
+    Judges don't inherit the top-level value: it exists so *candidates* are compared
+    at matched effort, and changing a judge's effort changes every verdict."""
+    value = spec.get("effort", config.get("effort") if inherit else None)
+    if value is None:
+        return None
+    if value not in EFFORT_LEVELS:
+        raise RuntimeError(f"`effort` must be one of {list(EFFORT_LEVELS)}, got {value!r}")
+    return value
+
+
+def describe_run(config: dict, candidates: list[Agent], judge: Agent) -> dict:
+    """What each candidate and the judge actually ran with — stored next to results
+    so a comparison can be audited (model IDs, effort, CLI versions, personal CLI
+    settings) instead of trusted."""
+    candidate_info = {a.name: a.provider.describe() for a in candidates}
+    efforts = {name: info["effort"] for name, info in candidate_info.items()}
+    matched = len(set(efforts.values())) == 1 and next(iter(efforts.values())) != "default"
+    return {
+        "effort_matched": matched,
+        "effort_by_candidate": efforts,
+        "candidates": candidate_info,
+        "judge": judge.provider.describe(),
+    }
+
+
 def load_agents(config: dict) -> tuple[list[Agent], Agent]:
     """Build candidate and judge agents from a parsed config dict.
 
@@ -70,10 +102,12 @@ def load_agents(config: dict) -> tuple[list[Agent], Agent]:
     candidates: list[Agent] = []
     for spec in config["candidates"]:
         try:
-            provider = create_provider(spec["provider"], spec["model"])
+            provider = create_provider(spec["provider"], spec["model"], effort=select_effort(config, spec))
         except MissingCredentials as exc:
             print(f"skipping candidate {spec['name']!r}: {exc}", file=sys.stderr)
             continue
+        except ValueError as exc:  # e.g. this adapter can't apply the requested effort
+            raise RuntimeError(f"candidate {spec['name']!r}: {exc}") from None
         if needs_tools and not provider.supports_tools:
             print(
                 f"skipping candidate {spec['name']!r}: provider {spec['provider']!r} has no tool-use "
@@ -92,7 +126,11 @@ def load_agents(config: dict) -> tuple[list[Agent], Agent]:
 
     judge_spec = config["judge"]
     try:
-        judge_provider = create_provider(judge_spec["provider"], judge_spec["model"])
+        judge_provider = create_provider(
+            judge_spec["provider"], judge_spec["model"], effort=select_effort(config, judge_spec, inherit=False)
+        )
+    except ValueError as exc:
+        raise RuntimeError(f"judge: {exc}") from None
     except MissingCredentials as exc:
         raise RuntimeError(
             f"Judge unavailable ({exc}) — the judge is required; set its key or "

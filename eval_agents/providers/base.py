@@ -86,8 +86,32 @@ class Provider(ABC):
     # which run their own agent loop and can't call our sandbox tools).
     supports_tools: bool = False
 
+    # Reasoning-effort levels this adapter can apply, or None if it can't set
+    # effort at all. Comparing models at different effort compares settings, not
+    # models, so a config that asks for an effort an adapter can't apply is an
+    # error — never silently ignored.
+    supported_efforts: tuple[str, ...] | None = None
+    effort: str | None = None  # None = the vendor's own default
+
     def __init__(self, model: str):
         self.model = model
+
+    def set_effort(self, effort: str | None) -> None:
+        if effort is None:
+            return
+        allowed = self.supported_efforts
+        if allowed is None:
+            raise ValueError(
+                f"{type(self).__name__} can't set reasoning effort (asked for {effort!r}); "
+                "remove `effort:` for this candidate or use a provider that supports it"
+            )
+        if effort not in allowed:
+            raise ValueError(f"{type(self).__name__} supports effort {list(allowed)}, not {effort!r}")
+        self.effort = effort
+
+    def describe(self) -> dict:
+        """What this provider will actually run with, recorded alongside results."""
+        return {"provider": type(self).__name__, "model": self.model, "effort": self.effort or "default"}
 
     def complete_with_tools(
         self,

@@ -28,6 +28,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from eval_agents.config import (
+    describe_run,
     load_agents,
     load_config,
     load_tasks,
@@ -173,8 +174,9 @@ def _execute(run: Run) -> None:
         out = run.dir
         out.mkdir(parents=True, exist_ok=True)
         (out / "results.json").write_text(to_json(results))
-        (out / "summary.json").write_text(to_summary_json(results, scorecard=config.get("scorecard")))
-        (out / "report.md").write_text(to_markdown(results, scorecard=config.get("scorecard")))
+        settings = describe_run(config, candidates, judge)
+        (out / "summary.json").write_text(to_summary_json(results, scorecard=config.get("scorecard"), settings=settings))
+        (out / "report.md").write_text(to_markdown(results, scorecard=config.get("scorecard"), settings=settings))
         run.status = "completed"
     except Exception as exc:
         run.status = "failed"
@@ -189,8 +191,9 @@ def _execute(run: Run) -> None:
             out.mkdir(parents=True, exist_ok=True)
             scorecard = config.get("scorecard")
             (out / "results.json").write_text(to_json(partial))
-            (out / "summary.json").write_text(to_summary_json(partial, scorecard=scorecard))
-            (out / "report.md").write_text(to_markdown(partial, scorecard=scorecard))
+            settings = describe_run(config, candidates, judge) if "candidates" in locals() else None
+            (out / "summary.json").write_text(to_summary_json(partial, scorecard=scorecard, settings=settings))
+            (out / "report.md").write_text(to_markdown(partial, scorecard=scorecard, settings=settings))
     finally:
         run.finished_at = time.time()
         run.save_meta()

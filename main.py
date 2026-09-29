@@ -17,6 +17,7 @@ import sys
 import json
 
 from eval_agents.config import (
+    describe_run,
     load_agents,
     load_config,
     load_tasks,
@@ -99,9 +100,10 @@ def main() -> None:
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(to_json(results))
-    (out / "summary.json").write_text(to_summary_json(results, scorecard))
+    settings = describe_run(config, candidates, judge)
+    (out / "summary.json").write_text(to_summary_json(results, scorecard, settings=settings))
     report_path = out / "report.md"
-    report_path.write_text(to_markdown(results, scorecard=scorecard))
+    report_path.write_text(to_markdown(results, scorecard=scorecard, settings=settings))
     print(f"\nReport written to {report_path}", file=sys.stderr)
 
     if args.baseline:

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import os
+import pathlib
 import shutil
 import subprocess
 import tempfile
@@ -51,6 +52,21 @@ class CliProvider(Provider):
                 f"(see eval_agents/providers/cli_providers.py docstring), or set "
                 f"{_BINARY_ENV.get(self.binary, 'the binary path env var')}"
             )
+
+    def describe(self) -> dict:
+        info = super().describe()
+        info["cli_version"] = self._cli_version()
+        return info
+
+    def _cli_version(self) -> str:
+        if not hasattr(self, "_version_cache"):
+            try:
+                out = subprocess.run([self.binary_path, "--version"], capture_output=True, text=True,
+                                     timeout=20, stdin=subprocess.DEVNULL).stdout.strip()
+                self._version_cache = out.splitlines()[0] if out else "unknown"
+            except Exception:
+                self._version_cache = "unknown"
+        return self._version_cache
 
     def _run(self, args: list[str], stdin: str | None = None) -> subprocess.CompletedProcess:
         # subprocess.run's `input` and `stdin` kwargs are mutually exclusive.
@@ -105,11 +121,14 @@ class ClaudeCodeProvider(CliProvider):
     """
 
     binary = "claude"
+    supported_efforts = ("low", "medium", "high", "xhigh", "max")
 
     def complete(self, messages, system=None, max_tokens=4096) -> ModelResponse:
         args = ["-p", "--output-format", "json"]
         if self.model != DEFAULT:
             args += ["--model", self.model]
+        if self.effort:
+            args += ["--effort", self.effort]
         prompt = self._flatten(messages, None)
         if system:
             args += ["--append-system-prompt", system]
@@ -136,7 +155,14 @@ class ClaudeCodeProvider(CliProvider):
 
 
 class CodexProvider(CliProvider):
-    """`codex exec` — uses a ChatGPT Plus/Pro subscription login."""
+    """`codex exec` — uses a ChatGPT Plus/Pro subscription login.
+
+    With model="default" and no effort, the CLI runs on whatever is in the user's
+    ~/.codex/config.toml (model, reasoning effort, service tier ...), which makes a
+    benchmark depend on a personal file. Pin `model:` in the config and set
+    `effort:`; describe() records the remaining personal settings that still apply
+    (notably `service_tier`, e.g. "priority" = the faster, separately-metered tier).
+    """
 
     binary = "codex"
 
@@ -148,6 +174,8 @@ class CodexProvider(CliProvider):
             args = ["exec", "--skip-git-repo-check", "--output-last-message", out_path]
             if self.model != DEFAULT:
                 args += ["--model", self.model]
+            if self.effort:
+                args += ["-c", f'model_reasoning_effort="{self.effort}"']
             args.append(prompt)
             self._run(args)
             with open(out_path) as f:
@@ -155,6 +183,30 @@ class CodexProvider(CliProvider):
         finally:
             os.unlink(out_path)
         return ModelResponse(text=text, model=self.model)
+
+    supported_efforts = ("low", "medium", "high", "xhigh")
+
+    def describe(self) -> dict:
+        info = super().describe()
+        info["user_config"] = self._user_config()
+        return info
+
+    @staticmethod
+    def _user_config() -> dict:
+        """Personal ~/.codex/config.toml values that shape a run and that we don't override."""
+        path = pathlib.Path(os.environ.get("CODEX_HOME", "~/.codex")).expanduser() / "config.toml"
+        keys = {"model", "model_reasoning_effort", "service_tier"}
+        found = {}
+        try:
+            for line in path.read_text().splitlines():
+                if line.startswith("["):
+                    break  # top-level keys only
+                key, _, value = line.partition("=")
+                if key.strip() in keys:
+                    found[key.strip()] = value.strip().strip('"')
+        except OSError:
+            pass
+        return found
 
 
 class GeminiCliProvider(CliProvider):

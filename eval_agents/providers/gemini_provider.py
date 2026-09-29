@@ -9,6 +9,17 @@ _SYNTH_ID = "local:"  # prefix for call ids we invent when Gemini omits one
 
 class GeminiProvider(Provider):
     supports_tools = True
+    # Gemini 3.x controls thinking with `thinking_level`. Gemini 3.1 Pro documents
+    # only low/high, so medium may be rejected by that model (the API error is
+    # surfaced on the call); xhigh/max don't exist here.
+    supported_efforts = ("low", "medium", "high")
+
+    def _thinking_config(self, types, max_tokens: int):
+        if self.effort:
+            return types.ThinkingConfig(thinking_level=getattr(types.ThinkingLevel, self.effort.upper()))
+        # Unset effort keeps the historical behaviour: bound thinking to at most
+        # half the output budget (min 128, the smallest budget 2.5-pro accepts).
+        return types.ThinkingConfig(thinking_budget=min(1024, max(128, max_tokens // 2)))
 
     def __init__(self, model: str = "gemini-3.1-pro-preview"):
         super().__init__(model)
@@ -36,14 +47,13 @@ class GeminiProvider(Provider):
         # against max_output_tokens — with small budgets the visible text can
         # come back empty. Bound thinking to at most half the budget
         # (min 128, the smallest budget 2.5-pro accepts).
-        thinking_budget = min(1024, max(128, max_tokens // 2))
         resp = self.client.models.generate_content(
             model=self.model,
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system,
                 max_output_tokens=max_tokens,
-                thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget),
+                thinking_config=self._thinking_config(types, max_tokens),
             ),
         )
         usage = resp.usage_metadata
@@ -86,14 +96,13 @@ class GeminiProvider(Provider):
                     for r in item
                 ]))
 
-        thinking_budget = min(1024, max(128, max_tokens // 2))
         resp = self.client.models.generate_content(
             model=self.model,
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=system,
                 max_output_tokens=max_tokens,
-                thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget),
+                thinking_config=self._thinking_config(types, max_tokens),
                 tools=[types.Tool(function_declarations=[
                     types.FunctionDeclaration(name=t.name, description=t.description, parameters_json_schema=t.parameters)
                     for t in tools

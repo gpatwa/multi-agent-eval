@@ -13,6 +13,12 @@
 use_case: support_triage_tools
 tasks: tasks.triage.tools.yaml
 
+# Matched reasoning effort for every candidate: `low` is the one level Claude, GPT and
+# Gemini all offer, so latency and quality compare the models, not their settings.
+# Judges don't inherit it (a judge's effort changes every verdict); a judge that
+# should be pinned names its own `effort:`. Results record what actually ran.
+effort: low
+
 candidates:
   - name: claude
     provider: anthropic

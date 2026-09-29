@@ -16,6 +16,7 @@ from .base import ChatMessage, ModelResponse, Provider, ToolCall, ToolTurn
 
 class MockProvider(Provider):
     supports_tools = True
+    supported_efforts = ("low", "medium", "high", "xhigh", "max")  # accepted and recorded, no effect
 
     def complete(
         self,

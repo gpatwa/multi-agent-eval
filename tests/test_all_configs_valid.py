@@ -77,3 +77,38 @@ def test_claude_code_models_are_pinned(path):
             assert spec["model"] not in MOVING_CLI_ALIASES, (
                 f"{path.name}: claude-code model {spec['model']!r} is a moving alias; pin a full ID"
             )
+
+
+@pytest.mark.parametrize("path", CONFIG_FILES, ids=lambda p: p.name)
+def test_configured_effort_is_applicable_to_every_adapter(path):
+    """An `effort:` in a config must be one every affected adapter can apply, so
+    a matched-effort config can never load with a candidate silently at its default."""
+    import importlib
+
+    from eval_agents.config import EFFORT_LEVELS
+    from eval_agents.providers.openai_provider import OpenAIProvider
+    from eval_agents.registry import _PROVIDERS
+
+    config = yaml.safe_load(path.read_text())
+
+    def adapter_levels(key):
+        module, cls, _ = _PROVIDERS[key]
+        c = getattr(importlib.import_module(module), cls)
+        if issubclass(c, OpenAIProvider):  # only first-party OpenAI takes reasoning_effort
+            return ("low", "medium", "high", "xhigh", "max") if c is OpenAIProvider else None
+        return c.supported_efforts
+
+    default = config.get("effort")
+    if default is not None:
+        assert default in EFFORT_LEVELS, f"{path.name}: unknown effort {default!r}"
+    for spec in config.get("candidates", []):
+        effort = spec.get("effort", default)
+        if effort is not None:
+            levels = adapter_levels(spec["provider"])
+            assert levels and effort in levels, (
+                f"{path.name}: candidate {spec['name']!r} ({spec['provider']}) can't apply effort {effort!r}"
+            )
+    judge_effort = config["judge"].get("effort")
+    if judge_effort is not None:
+        levels = adapter_levels(config["judge"]["provider"])
+        assert levels and judge_effort in levels, f"{path.name}: judge can't apply effort {judge_effort!r}"

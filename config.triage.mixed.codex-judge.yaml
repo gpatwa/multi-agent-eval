@@ -9,20 +9,27 @@
 use_case: support_triage
 tasks: tasks.triage.yaml
 
+# Matched reasoning effort for every candidate: `low` is the one level Claude, GPT and
+# Gemini all offer, so latency and quality compare the models, not their settings.
+# Judges don't inherit it (a judge's effort changes every verdict); a judge that
+# should be pinned names its own `effort:`. Results record what actually ran.
+effort: low
+
 candidates:
   - name: claude
     provider: claude-code
     model: claude-opus-5            # skipped automatically if the CLI isn't logged in
   - name: gpt
     provider: codex-cli
-    model: default
+    model: gpt-6-astra
   - name: gemini
     provider: gemini
     model: gemini-3.1-pro-preview
 
 judge:
   provider: codex-cli
-  model: default
+  model: gpt-6-astra
+  effort: low  # the Codex CLI already ran judges at low via a personal config; now explicit
 
 scorecard:
   weights:
