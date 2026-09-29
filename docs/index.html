@@ -377,6 +377,26 @@
   footer .fine + .fine{margin-top:8px;}
   footer a{text-decoration:underline; text-decoration-color:var(--line);}
 
+
+  /* ---------- tightened lower sections ---------- */
+  section{padding:48px 0;}
+  .sec-head{margin-bottom:24px;}
+  .problem-card{padding:20px 22px;}
+  .problem-card q{font-size:17px; margin-bottom:6px;}
+  .problem-card p{font-size:14px;}
+  .usecase-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:680px){ .usecase-grid{grid-template-columns:1fr;} }
+  .usecase-grid .usecase{display:grid; grid-template-columns:1fr; gap:8px; align-content:start; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--surface-raised);}
+  .usecase-grid .usecase p{font-size:14px; color:var(--slate);}
+  .usecase-grid .usecase .flag{width:fit-content; font-family:"Geist Mono",monospace; font-size:11.5px; color:var(--brass-strong); background:var(--brass-tint); padding:2px 8px; border-radius:4px;}
+  .method-list{grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:680px){ .method-list{grid-template-columns:1fr;} }
+  .method-item, .method-item:first-child{border:1px solid var(--line); border-radius:10px; background:var(--surface-raised); padding:18px 20px; grid-template-columns:28px 1fr; gap:12px;}
+  .method-item p{font-size:14px;}
+  .roster-row{padding:10px 0;}
+  .fact{margin-top:16px;}
+  .cta-band .wrap{padding-block:40px;}
+
   /* ---------- scroll-triggered reveal ---------- */
   /* Default: fully visible. .reveal-init (hiding state) and .is-visible (the
      reveal itself) are only ever added by JS, and only after confirming
@@ -473,60 +493,52 @@
   <section id="problem" class="wrap">
     <div class="sec-head reveal">
       <p class="eyebrow">The gap in procurement today</p>
-      <h2>What your vendor's benchmark can't tell you</h2>
-      <p class="dek">Four questions that come up before every model contract gets signed — and that a vendor-supplied leaderboard was never built to answer.</p>
+      <h2>What a vendor benchmark can't tell you</h2>
     </div>
     <div class="problem-grid">
       <div class="problem-card reveal">
-        <q>“Vendor benchmarks are marketing.”</q>
-        <p>None of them are scored against your policy, your tickets, or your definition of a good answer.</p>
+        <q>Benchmarks are marketing.</q>
+        <p>None are scored against your policy, your tickets or your definition of a good answer.</p>
       </div>
       <div class="problem-card reveal">
-        <q>“A model swap can silently break production.”</q>
-        <p>Quality drops. Nobody notices until a customer complains — there was no gate that would have caught it first.</p>
+        <q>A model swap can break production.</q>
+        <p>Quality drops and nobody notices until a customer complains. No gate caught it first.</p>
       </div>
       <div class="problem-card reveal">
-        <q>“Nobody's testing for the failure that matters.”</q>
-        <p>A model that's cheaper but leaks its system prompt isn't a saving — it's a liability with a lower price tag.</p>
+        <q>The failure that matters goes untested.</q>
+        <p>A cheaper model that leaks its system prompt is a liability with a lower price.</p>
       </div>
       <div class="problem-card reveal">
-        <q>“$/1M tokens isn't a budget line.”</q>
-        <p>Nobody's translated the rate card into $/month at your actual volume before the contract is signed.</p>
+        <q>$/1M tokens is not a budget line.</q>
+        <p>Nobody turns the rate card into $/month at your volume before signing.</p>
       </div>
     </div>
   </section>
 
   <section id="usecases" class="wrap">
     <div class="sec-head reveal">
-      <p class="eyebrow">What it's actually for</p>
-      <h2>Built around four decisions, not one demo</h2>
+      <p class="eyebrow">What it's for</p>
+      <h2>Four decisions, not one demo</h2>
     </div>
-
-    <div class="usecase reveal">
-      <h3>Vendor selection &amp; procurement</h3>
-      <div class="mech">
-        <p>The model you're being pitched, against every other vendor's flagship, on the same tickets — ranked by quality, latency, and cost weighted to your workload.</p>
+    <div class="usecase-grid">
+      <div class="usecase reveal">
+        <h3>Vendor selection</h3>
+        <p>Your shortlist against every other flagship on the same tickets, ranked by quality, latency and cost weighted to your workload.</p>
         <span class="flag">scorecard.weights: quality / latency / cost</span>
       </div>
-    </div>
-    <div class="usecase reveal">
-      <h3>Safety &amp; compliance red-teaming</h3>
-      <div class="mech">
-        <p>A prompt-injection, a system-prompt leak attempt, and an over-refusal trap ride along in every run. A violation is a hard gate, never averaged into the score.</p>
-        <span class="flag">critical_violation → hard gate, not a discount</span>
+      <div class="usecase reveal">
+        <h3>Safety red-teaming</h3>
+        <p>Injection, prompt-leak and over-refusal traps ride along in every run. A violation is a hard gate, never averaged in.</p>
+        <span class="flag">critical_violation → hard gate</span>
       </div>
-    </div>
-    <div class="usecase reveal">
-      <h3>Cost governance at scale</h3>
-      <div class="mech">
-        <p>Set your monthly ticket volume once; every candidate's rate card becomes a $/month figure finance can actually act on.</p>
-        <span class="flag">scorecard.monthly_volume → $/month projection</span>
+      <div class="usecase reveal">
+        <h3>Cost governance</h3>
+        <p>Set monthly ticket volume once. Every rate card becomes a $/month figure finance can act on.</p>
+        <span class="flag">scorecard.monthly_volume → $/month</span>
       </div>
-    </div>
-    <div class="usecase reveal">
-      <h3>Regression protection on model swaps</h3>
-      <div class="mech">
-        <p>Run the new model version against the same tasks and a saved baseline; the gate fails the deploy if quality drops or violations rise — enforceable in CI.</p>
+      <div class="usecase reveal">
+        <h3>Regression protection</h3>
+        <p>Run a new model version against a saved baseline. The gate fails the deploy if quality drops or violations rise.</p>
         <span class="flag">--baseline / --regression-threshold → exit 1</span>
       </div>
     </div>
@@ -549,12 +561,12 @@
       <div class="method-item reveal">
         <span class="mk">i.</span>
         <div><h3>Graded exactly, where exactness is possible</h3>
-        <p>Routing, priority, and the refund, escalation, and retention actions the agent declares are checked against gold labels — no judge opinion where there's a right answer.</p></div>
+        <p>Routing, priority and declared actions are checked against gold labels. No judge opinion where there is a right answer.</p></div>
       </div>
       <div class="method-item reveal">
         <span class="mk">ii.</span>
         <div><h3>Judged only where judgment is required</h3>
-        <p>Policy adherence, resolution, and tone are scored by an LLM judge against the exact policy the candidate saw.</p></div>
+        <p>Policy adherence, resolution and tone are scored by an LLM judge against the exact policy the candidate saw.</p></div>
       </div>
 <!-- AUTO:method_judges -->
       <div class="method-item reveal">
@@ -566,7 +578,7 @@
       <div class="method-item reveal">
         <span class="mk">iv.</span>
         <div><h3>A violation is pass/fail, never a discount</h3>
-        <p><code class="mono">critical_violation</code> is a hard gate — a forbidden refund promise or a leaked prompt fails outright, never smoothed into an average.</p></div>
+        <p><code class="mono">critical_violation</code> is a hard gate. A forbidden refund promise or a leaked prompt fails outright.</p></div>
       </div>
     </div>
   </section>
@@ -574,7 +586,7 @@
   <section id="coverage" class="wrap">
     <div class="sec-head reveal">
       <p class="eyebrow">Provider coverage</p>
-      <h2>No lock-in built into the tool that measures lock-in</h2>
+      <h2>No lock-in in the tool that measures lock-in</h2>
     </div>
     <div class="roster">
       <div class="roster-row reveal">
@@ -598,14 +610,14 @@
         <span class="vendors">Ollama (self-hosted)<span class="sep">·</span>Nous Research Hermes (no stake in the outcome, used as judge)</span>
       </div>
     </div>
-    <p class="fact">Most of these speak the same OpenAI-compatible wire protocol underneath — a new adapter is typically about eight lines of code, so coverage grows without a rewrite each time a vendor ships something new.</p>
+    <p class="fact">Most speak the same OpenAI-compatible protocol, so a new adapter is about eight lines.</p>
   </section>
 
   <section class="cta-band">
     <div class="wrap">
       <div class="cta-band-inner reveal">
         <h2>Run it against your own policy.</h2>
-        <p style="color:var(--surface); opacity:0.75; font-size:14.5px;">Clone it, point it at your own tickets and your own rulebook, or start from the Northwind Cloud reference workload above.</p>
+        <p style="color:var(--slate); font-size:14.5px;">Point it at your own tickets and rulebook, or start from the Northwind Cloud reference workload.</p>
         <a class="btn btn-primary" href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">View on GitHub →</a>
       </div>
       <div class="cmd">git clone https://github.com/gpatwa/multi-agent-eval
