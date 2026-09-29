@@ -47,8 +47,10 @@ from xml.etree import ElementTree
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SITE_DIR = ROOT / "docs"
 
-DOMAIN = os.environ.get("SITE_DOMAIN", "eval.aveto.com")
-ZONE = os.environ.get("SITE_ZONE", "aveto.com")
+# The custom domain is optional and comes from the SITE_DOMAIN repo variable / environment. Empty means
+# "publish at the <project>.pages.dev address only", so the site can go live before a domain is settled.
+DOMAIN = os.environ.get("SITE_DOMAIN", "")
+ZONE = os.environ.get("SITE_ZONE", ".".join(DOMAIN.split(".")[-2:]) if DOMAIN else "")
 PROJECT = os.environ.get("CF_PAGES_PROJECT", "model-ledger")
 BRANCH = "main"
 VERIFY_MARKER = "The Model Ledger"  # text the live page must contain
@@ -341,17 +343,24 @@ def ping_indexnow(urls: list[str], domain: str = DOMAIN, request=http) -> bool:
 
 def cmd_deploy(args) -> int:
     cf = Cloudflare(_env("CLOUDFLARE_API_TOKEN"), _env("CLOUDFLARE_ACCOUNT_ID"))
-    ensure_indexnow_key_file()  # must exist before the upload so the engines can fetch it
+    if DOMAIN:
+        ensure_indexnow_key_file()  # must exist before the upload so the engines can fetch it
     pages_host = cf.ensure_project(dry_run=args.dry_run)
     upload_site(dry_run=args.dry_run)
+    if not DOMAIN:
+        log(f"no SITE_DOMAIN set: published at https://{pages_host}/ only")
+        if args.dry_run or args.no_verify:
+            return 0
+        verify(cf, url=f"https://{pages_host}/", check_domain=False)
+        return 0
     cf.ensure_domain(dry_run=args.dry_run)  # before DNS, or Cloudflare 522s the hostname
     creds = nic_credentials()
     if creds:
         NicRu(*creds).ensure_cname(ZONE, cname_label(DOMAIN, ZONE), pages_host, dry_run=args.dry_run)
     else:
         # Publishing needs only Cloudflare. Without DNS access the site is still live at its pages.dev address,
-        # and the custom domain (already attached above) activates as soon as NIC.RU credentials exist.
-        log(f"NIC.RU credentials not set: published at https://{pages_host}/ ; {DOMAIN} activates once DNS can be set")
+        # and the custom domain (already attached above) activates as soon as its DNS points at Pages.
+        log(f"no DNS credentials: published at https://{pages_host}/ ; {DOMAIN} activates once its DNS points at Pages")
     if args.dry_run or args.no_verify:
         return 0
     if verify(cf, url=f"https://{DOMAIN}/" if creds else f"https://{pages_host}/", check_domain=bool(creds)) and creds:
@@ -398,9 +407,14 @@ def cmd_doctor(_args) -> int:
 
 def cmd_status(_args) -> int:
     cf = Cloudflare(_env("CLOUDFLARE_API_TOKEN"), _env("CLOUDFLARE_ACCOUNT_ID"))
-    log(f"domain {DOMAIN}: {cf.domain_status() or 'not attached'}")
-    status, body = http("GET", f"https://{DOMAIN}/", timeout=15)
-    log(f"https://{DOMAIN}/ -> {status}{' (landing page)' if VERIFY_MARKER in body else ''}")
+    host = cf.ensure_project(dry_run=True)
+    url = f"https://{host}/"
+    status, body = http("GET", url, timeout=15)
+    log(f"{url} -> {status}{' (landing page)' if VERIFY_MARKER in body else ''}")
+    if DOMAIN:
+        log(f"domain {DOMAIN}: {cf.domain_status() or 'not attached'}")
+        status, body = http("GET", f"https://{DOMAIN}/", timeout=15)
+        log(f"https://{DOMAIN}/ -> {status}{' (landing page)' if VERIFY_MARKER in body else ''}")
     return 0
 
 

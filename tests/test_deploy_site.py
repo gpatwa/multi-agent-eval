@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import pathlib
 
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+os.environ.setdefault("SITE_DOMAIN", "eval.aveto.com")  # the module reads its domain at import
 spec = importlib.util.spec_from_file_location("deploy_site", ROOT / "scripts" / "deploy_site.py")
 ds = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ds)
@@ -215,3 +217,16 @@ def test_deploy_without_dns_credentials_still_publishes_and_never_touches_dns(mo
     monkeypatch.setattr(ds, "verify", lambda cf, url=None, check_domain=True, **k: calls.append(("verify", url, check_domain)) or True)
     assert ds.main(["deploy"]) == 0
     assert calls == ["upload", ("verify", "https://model-ledger.pages.dev/", False)]
+
+
+def test_deploy_without_a_configured_domain_touches_no_domain_or_dns(monkeypatch):
+    monkeypatch.setattr(ds, "DOMAIN", "")
+    monkeypatch.setenv("CLOUDFLARE_API_TOKEN", "t")
+    monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "a")
+    seen = []
+    monkeypatch.setattr(ds, "http", FakeHTTP({("GET", f"/projects/{ds.PROJECT}"): cf_json({"subdomain": "model-ledger.pages.dev"})}))
+    monkeypatch.setattr(ds, "upload_site", lambda dry_run=False: seen.append("upload"))
+    monkeypatch.setattr(ds, "verify", lambda cf, url=None, check_domain=True, **k: seen.append((url, check_domain)) or True)
+    monkeypatch.setattr(ds, "ensure_indexnow_key_file", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no domain, no IndexNow")))
+    assert ds.main(["deploy"]) == 0
+    assert seen == ["upload", ("https://model-ledger.pages.dev/", False)]  # the domain route isn't even faked: it must not be called

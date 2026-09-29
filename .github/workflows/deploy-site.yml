@@ -25,6 +25,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}   # optional repo variable; empty = pages.dev only
       NICRU_USERNAME: ${{ secrets.NICRU_USERNAME }}
       NICRU_PASSWORD: ${{ secrets.NICRU_PASSWORD }}
       NICRU_CLIENT_ID: ${{ secrets.NICRU_CLIENT_ID }}
