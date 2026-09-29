@@ -154,3 +154,15 @@ def test_suite_view_reads_settings_and_no_ticket_text(tmp_path):
     view = suite_view(make_run(tmp_path, "s", CANDS))
     assert view["effort_matched"] and view["candidates"]["gpt"]["effort"] == "low" and view["judge"] == JUDGE_A
     assert "Body text" not in json.dumps(view)
+
+
+def test_published_ranking_is_recomputed_not_copied_from_the_summary(tmp_path):
+    from eval_agents.publish import suite_view
+    from eval_agents.report import rank
+
+    run = make_run(tmp_path, "p", CANDS)
+    summary = json.loads((run / "summary.json").read_text())
+    summary["ranking"] = list(reversed(summary["ranking"]))  # a stale or hand-edited order must not leak through
+    (run / "summary.json").write_text(json.dumps(summary))
+    view = suite_view(run)
+    assert view["ranking"] == rank(view["candidates"]) != summary["ranking"]

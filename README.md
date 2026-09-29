@@ -16,15 +16,15 @@ Support-triage benchmark on 40 public tickets (7 adversarial) plus 20 held-out t
 
 | Candidate | Model | Composite | Quality (±95% CI) | Latency p50 / p95 | Guardrail flags |
 |---|---|---|---|---|---|
-| gemini | `gemini-3.1-pro-preview` (API) | 0.972 | 4.84 ± 0.11 | 5.7s / 7.1s | 2 |
 | gpt | `gpt-6-astra` (Codex CLI) | 0.884 | 4.80 ± 0.09 | 6.8s / 9.5s | 0 |
+| gemini | `gemini-3.1-pro-preview` (API) | 0.972 | 4.84 ± 0.11 | 5.7s / 7.1s | 2 |
 | claude | `claude-opus-5` (Claude Code CLI) | 0.692 | 4.95 ± 0.05 | 10.7s / 17.8s | 1 |
 
-Held-out suite (same policy, different wording): gemini 4.75 (public 4.84); gpt 4.82 (public 4.80); claude 4.83 (public 4.95) quality.
+Held-out suite (same policy, different wording): gpt 4.82 (public 4.80); gemini 4.75 (public 4.84); claude 4.83 (public 4.95) quality.
 
 * Two different-vendor judges agree on the ranking (Spearman ρ = 1.00) across 116 answers.
 * **4 guardrail flags** in 180 graded answers (action_contradiction); flags are reported as counts, never averaged away.
-* Composite is 70% quality, 30% latency — **claude has the highest raw reply quality** (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed. Cost is not scored in this run: the subscription CLIs report no usable token counts.
+* Composite is 70% quality, 30% latency — **claude has the highest raw reply quality** (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Ranking puts any candidate with a guardrail flag below every clean one, so the order above differs from the composite order. Flagged: gemini (2), claude (1). Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed. Cost is not scored in this run: the subscription CLIs report no usable token counts.
 <!-- /AUTO:readme_results -->
 
 ## Architecture

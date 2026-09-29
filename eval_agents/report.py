@@ -75,6 +75,12 @@ def _pct(xs, p):
     return xs[min(len(xs) - 1, round(p * (len(xs) - 1)))]
 
 
+def rank(stats: dict) -> list[str]:
+    """Candidate names, best first. A guardrail violation is a launch gate, so any candidate with one
+    ranks below every clean candidate; within each group the order is by composite."""
+    return sorted(stats, key=lambda n: (stats[n]["critical_violations"] > 0, -stats[n]["composite"]))
+
+
 def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
     """Per-candidate stats + composite ranking. The single source of truth
     consumed by the markdown report, summary.json, and --baseline gating."""
@@ -186,7 +192,7 @@ def summarize(results: list[TaskResult], scorecard: dict | None = None) -> dict:
         q_norm = (s["quality_mean"] - 1) / 4 if s["quality_mean"] else 0.0
         s["composite"] = round(wq * q_norm + wl * l_norm[name] + wc * c_norm[name], 4)
 
-    ranking = sorted(stats, key=lambda n: stats[n]["composite"], reverse=True)
+    ranking = rank(stats)
     judge_in = sum(e["judge_in"] for e in raw.values())
     judge_out = sum(e["judge_out"] for e in raw.values())
     candidate_total = sum(s["candidate_cost_total"] for s in stats.values())
@@ -287,7 +293,7 @@ def to_markdown(results: list[TaskResult], scorecard: dict | None = None, settin
             f"Composite = quality×{w['quality']:.2f} + latency×{w['latency']:.2f} + "
             f"cost×{w['cost']:.2f} (each normalized 0–1; latency & cost inverted).",
             "**Critical violations are a launch gate, not a weighted score — treat any "
-            "non-zero count as disqualifying regardless of rank.**",
+            "non-zero count as disqualifying. Any candidate with one is ranked below every clean candidate.**",
             "",
             "| Rank | Candidate | Model | Composite | Quality (1-5, ±95% CI) | ⚠ Violations | Latency p50/p95 | Cost/task | Errors |",
             "|---|---|---|---|---|---|---|---|---|",

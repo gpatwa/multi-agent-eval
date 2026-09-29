@@ -57,6 +57,8 @@ def compare(prev: dict, cur: dict, quality_move: float = QUALITY_MOVE) -> list[d
         before = prev["suites"].get(suite)
         if before is None:
             continue
+        if before["ranking"] and s["ranking"] and before["ranking"][0] != s["ranking"][0]:
+            changes.append({"suite": suite, "candidate": "*", "kind": "leader_changed", "from": before["ranking"][0], "to": s["ranking"][0]})
         for name, now in s["candidates"].items():
             was = before["candidates"].get(name)
             if was is None:

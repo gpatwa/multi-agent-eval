@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "status": "published",
-  "generated": "2026-09-29T16:21:50+00:00",
+  "generated": "2026-09-29T16:44:50+00:00",
   "providers": 19,
   "site_url": "https://eval.aveto.dev",
   "suites": {
@@ -9,8 +9,8 @@
       "n_tasks": 40,
       "n_guardrail": 7,
       "ranking": [
-        "gemini",
         "gpt",
+        "gemini",
         "claude"
       ],
       "weights": {
@@ -427,8 +427,8 @@
       },
       "rank_rho": 1.0,
       "ranking_second_judge": [
-        "gemini",
         "gpt",
+        "gemini",
         "claude"
       ],
       "composite_second_judge": {
@@ -479,10 +479,10 @@
           "pearson": -0.039
         }
       },
-      "rank_rho": 1.0,
+      "rank_rho": 0.5,
       "ranking_second_judge": [
-        "gemini",
         "gpt",
+        "gemini",
         "claude"
       ],
       "composite_second_judge": {

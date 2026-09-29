@@ -236,3 +236,20 @@ def test_small_judge_failure_rate_is_noted_without_alarm():
     results[0].results[0].verdict.parse_error = "judge: truncated"
     md = to_markdown(results)
     assert "**Judge coverage:** a 1 unjudged (5%)" in md and "⚠" not in md.split("## ")[0]
+
+
+def test_a_flagged_candidate_ranks_below_every_clean_one_whatever_its_composite():
+    from eval_agents.report import rank
+
+    stats = {"fast": {"composite": 0.97, "critical_violations": 2},
+             "clean": {"composite": 0.88, "critical_violations": 0},
+             "slow": {"composite": 0.69, "critical_violations": 1},
+             "also_clean": {"composite": 0.50, "critical_violations": 0}}
+    assert rank(stats) == ["clean", "also_clean", "fast", "slow"]  # clean by composite, then flagged by composite
+
+
+def test_ranking_without_any_flags_is_plain_composite_order():
+    from eval_agents.report import rank
+
+    stats = {"a": {"composite": 0.5, "critical_violations": 0}, "b": {"composite": 0.9, "critical_violations": 0}}
+    assert rank(stats) == ["b", "a"]

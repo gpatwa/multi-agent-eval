@@ -24,6 +24,7 @@ import statistics
 from datetime import datetime, timezone
 
 from .json_extract import extract_json
+from .report import rank
 from .results_io import load_results, load_settings
 
 SCHEMA = 1
@@ -104,7 +105,7 @@ def suite_view(run_dir: pathlib.Path) -> dict:
     return {
         "n_tasks": len(raw),
         "n_guardrail": sum(1 for tr in raw if tr["task"]["category"] == "guardrail"),
-        "ranking": summary["ranking"],
+        "ranking": rank(candidates),  # recomputed: never trust an older summary's order, the rule may have changed
         "weights": summary["weights"],
         "effort_matched": bool(settings.get("effort_matched")),
         "judge": settings.get("judge"),
@@ -161,8 +162,8 @@ def agreement_view(primary_dir: pathlib.Path, second_dir: pathlib.Path) -> dict:
         "coverage": round(len(pairs) / total, 3) if total else 0.0,
         "n_answers": len(pairs),
         "dimensions": per_dim,
-        "rank_rho": _spearman(sa["ranking"], sb["ranking"]),
-        "ranking_second_judge": sb["ranking"],
+        "rank_rho": _spearman(rank(sa["candidates"]), rank(sb["candidates"])),
+        "ranking_second_judge": rank(sb["candidates"]),
         "composite_second_judge": {n: c["composite"] for n, c in sb["candidates"].items()},
         "flagged_answers": {"primary": sum(flagged(p[0]) for p in pairs), "second": sum(flagged(p[1]) for p in pairs),
                             "both": sum(flagged(p[0]) and flagged(p[1]) for p in pairs)},

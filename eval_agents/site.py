@@ -84,6 +84,7 @@ def stats(data: dict) -> str:
 HISTORY_URL = "https://github.com/gpatwa/multi-agent-eval/blob/main/docs/data/history.json"
 CHANGE_TEXT = {
     "added": "added", "removed": "removed", "judge_changed": "judge changed",
+    "leader_changed": lambda c: f"leader {c['from']} → {c['to']}",
     "model_changed": lambda c: f"model {c['from']} → {c['to']}",
     "quality_up": lambda c: f"quality +{c['delta']:.2f}", "quality_down": lambda c: f"quality {c['delta']:.2f}",
     "flags_up": lambda c: f"flags {c['from']} → {c['to']}", "flags_down": lambda c: f"flags {c['from']} → {c['to']}",
@@ -165,7 +166,7 @@ def panels(data: dict) -> str:
     answers = sum(c["n_samples"] for c in all_c)
     flag = (f'<div class="big">{flags}</div><div><span class="pill {"ok" if flags == 0 else "bad"}">'
             f'{"none raised" if flags == 0 else "review"}</span></div><p class="sub">Across {answers} graded answers.</p>')
-    return (panel("Composite score", rows + f'<p class="sub">{esc(score_basis(public).capitalize())}. Guardrail flags are a separate gate, not part of this score. '
+    return (panel("Composite score", rows + f'<p class="sub">{esc(score_basis(public).capitalize())}. Any guardrail flag ranks a model below every clean one. '
                                           f'{esc(_judge_name(public["judge"]))} judging.</p>')
             + panel("Judge agreement", agree) + panel("Guardrail flags", flag) + "\n    ")
 
@@ -279,22 +280,27 @@ def _aria(rows: list[dict], two_judges: bool) -> str:
 def _quality_note(public: dict) -> str:
     cands, ranking = public["candidates"], public["ranking"]
     best = max(cands, key=lambda n: cands[n]["quality_mean"])
+    by_composite = sorted(cands, key=lambda n: -cands[n]["composite"])
     cli = any("CLI" in _label(c["provider"]) for c in cands.values())
     tail = " Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed." if cli else ""
-    basis = f"Composite is {score_basis(public)}"
     if not (public.get("weights") or {}).get("cost"):
         tail += (" Cost is not scored in this run: the subscription CLIs report no usable token counts."
                  if cli else " Cost is not scored in this run.")
-    if best == ranking[0]:
-        b = cands[best]
-        return (f"{basis} — <b>{esc(best)} leads on both</b> raw reply quality "
-                f"({b['quality_mean']:.2f}/5) and the composite.{tail}")
-    others = [c["latency_p95"] for n, c in cands.items() if n != best]
     b = cands[best]
-    return (f"{basis} — <b>{esc(best)} has the highest raw reply quality</b> "
-            f"({b['quality_mean']:.2f}/5 vs {', '.join(f'{esc(n)}’s {c['quality_mean']:.2f}' for n, c in cands.items() if n != best)}) "
-            f"but ranks {ordinal(ranking.index(best) + 1)} on the composite: its p95 latency is {b['latency_p95']:.1f}s vs "
-            f"{min(others):.1f}–{max(others):.1f}s for the others.{tail}")
+    out = f"Composite is {score_basis(public)}"
+    if best == by_composite[0]:
+        out += f" — <b>{esc(best)} leads on both</b> raw reply quality ({b['quality_mean']:.2f}/5) and the composite."
+    else:
+        others = [c["latency_p95"] for n, c in cands.items() if n != best]
+        out += (f" — <b>{esc(best)} has the highest raw reply quality</b> "
+                f"({b['quality_mean']:.2f}/5 vs {', '.join(f'{esc(n)}’s {c['quality_mean']:.2f}' for n, c in cands.items() if n != best)}) "
+                f"but ranks {ordinal(by_composite.index(best) + 1)} on the composite: its p95 latency is {b['latency_p95']:.1f}s vs "
+                f"{min(others):.1f}–{max(others):.1f}s for the others.")
+    if ranking != by_composite:
+        flagged = [f"{esc(n)} ({cands[n]['critical_violations']})" for n in by_composite if cands[n]["critical_violations"]]
+        out += (f" Ranking puts any candidate with a guardrail flag below every clean one, so the order above differs from the "
+                f"composite order. Flagged: {', '.join(flagged)}.")
+    return out + tail
 
 
 def _topics(public: dict) -> str:

@@ -491,7 +491,7 @@
       <!-- /AUTO:stats -->    </div>
 
     <div class="panels fade-up"><!-- AUTO:panels -->
-      <div class="panel"><h3>Composite score</h3><div class="prow"><span class="nm">gemini <span class="fl">2 flags</span></span><div class="tr"><i style="--w:97%"></i></div><span>0.97</span></div><div class="prow"><span class="nm">gpt</span><div class="tr"><i style="--w:88%"></i></div><span>0.88</span></div><div class="prow"><span class="nm">claude <span class="fl">1 flag</span></span><div class="tr"><i style="--w:69%"></i></div><span>0.69</span></div><p class="sub">70% quality, 30% latency. Guardrail flags are a separate gate, not part of this score. Claude Code CLI (claude-opus-5) judging.</p></div>
+      <div class="panel"><h3>Composite score</h3><div class="prow"><span class="nm">gpt</span><div class="tr"><i style="--w:88%"></i></div><span>0.88</span></div><div class="prow"><span class="nm">gemini <span class="fl">2 flags</span></span><div class="tr"><i style="--w:97%"></i></div><span>0.97</span></div><div class="prow"><span class="nm">claude <span class="fl">1 flag</span></span><div class="tr"><i style="--w:69%"></i></div><span>0.69</span></div><p class="sub">70% quality, 30% latency. Any guardrail flag ranks a model below every clean one. Claude Code CLI (claude-opus-5) judging.</p></div>
       <div class="panel"><h3>Judge agreement</h3><div class="big">&rho; 1.00</div><div><span class="pill ok">two vendors</span></div><p class="sub">Two different-vendor judges, 116 answers.</p></div>
       <div class="panel"><h3>Guardrail flags</h3><div class="big">4</div><div><span class="pill bad">review</span></div><p class="sub">Across 180 graded answers.</p></div>
     <!-- /AUTO:panels --></div>
@@ -629,7 +629,7 @@
       </div>
       <div class="bar-chart">
         <svg class="bc-anim-target" data-reveal-class="bc-anim" viewBox="0 0 880 245" role="img"
-             aria-label="Composite score by candidate, scored by two judges. gemini scores 0.972 and 0.972, gpt scores 0.884 and 0.902, claude scores 0.692 and 0.685.">
+             aria-label="Composite score by candidate, scored by two judges. gpt scores 0.884 and 0.902, gemini scores 0.972 and 0.972, claude scores 0.692 and 0.685.">
           <line class="bc-grid" x1="190" y1="40" x2="190" y2="238"/>
           <line class="bc-grid" x1="525" y1="40" x2="525" y2="238"/>
           <line class="bc-grid" x1="860" y1="40" x2="860" y2="238"/>
@@ -638,21 +638,21 @@
           <text class="bc-tick" x="860" y="30" text-anchor="end">1.0</text>
 
           <g class="bc-g1">
-            <text class="bc-name" x="182" y="66" text-anchor="end">gemini</text>
-            <text class="bc-model" x="182" y="86" text-anchor="end">gemini-3.1-pro-preview · API</text>
-            <rect class="bc-bar-a" x="190" y="54" width="651" height="16" rx="3"/>
-            <rect class="bc-bar-b" x="190" y="74" width="651" height="16" rx="3"/>
-            <text class="bc-value bc-value-a bc-value-in" x="833" y="66" text-anchor="end">0.972</text>
-            <text class="bc-value bc-value-b bc-value-in" x="833" y="86" text-anchor="end">0.972</text>
+            <text class="bc-name" x="182" y="66" text-anchor="end">gpt</text>
+            <text class="bc-model" x="182" y="86" text-anchor="end">gpt-6-astra · Codex CLI</text>
+            <rect class="bc-bar-a" x="190" y="54" width="592" height="16" rx="3"/>
+            <rect class="bc-bar-b" x="190" y="74" width="604" height="16" rx="3"/>
+            <text class="bc-value bc-value-a" x="788" y="66">0.884</text>
+            <text class="bc-value bc-value-b" x="800" y="86">0.902</text>
           </g>
 
           <g class="bc-g2">
-            <text class="bc-name" x="182" y="136" text-anchor="end">gpt</text>
-            <text class="bc-model" x="182" y="156" text-anchor="end">gpt-6-astra · Codex CLI</text>
-            <rect class="bc-bar-a" x="190" y="124" width="592" height="16" rx="3"/>
-            <rect class="bc-bar-b" x="190" y="144" width="604" height="16" rx="3"/>
-            <text class="bc-value bc-value-a" x="788" y="136">0.884</text>
-            <text class="bc-value bc-value-b" x="800" y="156">0.902</text>
+            <text class="bc-name" x="182" y="136" text-anchor="end">gemini</text>
+            <text class="bc-model" x="182" y="156" text-anchor="end">gemini-3.1-pro-preview · API</text>
+            <rect class="bc-bar-a" x="190" y="124" width="651" height="16" rx="3"/>
+            <rect class="bc-bar-b" x="190" y="144" width="651" height="16" rx="3"/>
+            <text class="bc-value bc-value-a bc-value-in" x="833" y="136" text-anchor="end">0.972</text>
+            <text class="bc-value bc-value-b bc-value-in" x="833" y="156" text-anchor="end">0.972</text>
           </g>
 
           <g class="bc-g3">
@@ -665,21 +665,21 @@
           </g>
         </svg>
       </div>
-      <p class="quality-note">Composite is 70% quality, 30% latency — <b>claude has the highest raw reply quality</b> (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed. Cost is not scored in this run: the subscription CLIs report no usable token counts.</p>
+      <p class="quality-note">Composite is 70% quality, 30% latency — <b>claude has the highest raw reply quality</b> (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Ranking puts any candidate with a guardrail flag below every clean one, so the order above differs from the composite order. Flagged: gemini (2), claude (1). Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed. Cost is not scored in this run: the subscription CLIs report no usable token counts.</p>
       <p class="quality-note">Check the numbers: <a href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results/public/report.md">full per-ticket report and run settings</a> · <a href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results/heldout/summary.json">heldout suite aggregates</a>.</p>
     </div>
 
     <div class="chart-card reveal">
       <p class="quality-note"><b>Quality by topic</b> (1 to 5, judge score). The composite averages these; a leader can still be the weakest on one topic. Scored on 70% quality, 30% latency.</p>
       <div class="topic-table"><table>
-        <thead><tr><th>Topic</th><th>Tasks</th><th>gemini</th><th>gpt</th><th>claude</th></tr></thead>
+        <thead><tr><th>Topic</th><th>Tasks</th><th>gpt</th><th>gemini</th><th>claude</th></tr></thead>
         <tbody>
-          <tr><th scope="row">account access</th><td>7</td><td class="">4.73</td><td class="">4.74</td><td class="best">4.95</td></tr>
-          <tr><th scope="row">billing</th><td>11</td><td class="">4.84</td><td class="">4.87</td><td class="best">4.98</td></tr>
-          <tr><th scope="row">cancellation</th><td>5</td><td class="">4.94</td><td class="best">5.00</td><td class="">4.98</td></tr>
-          <tr><th scope="row">feature request</th><td>3</td><td class="best">5.00</td><td class="">4.90</td><td class="best">5.00</td></tr>
-          <tr><th scope="row">guardrail</th><td>7</td><td class="">4.77</td><td class="">4.66</td><td class="best">4.84</td></tr>
-          <tr><th scope="row">technical</th><td>7</td><td class="">4.90</td><td class="">4.74</td><td class="best">4.99</td></tr>
+          <tr><th scope="row">account access</th><td>7</td><td class="">4.74</td><td class="">4.73</td><td class="best">4.95</td></tr>
+          <tr><th scope="row">billing</th><td>11</td><td class="">4.87</td><td class="">4.84</td><td class="best">4.98</td></tr>
+          <tr><th scope="row">cancellation</th><td>5</td><td class="best">5.00</td><td class="">4.94</td><td class="">4.98</td></tr>
+          <tr><th scope="row">feature request</th><td>3</td><td class="">4.90</td><td class="best">5.00</td><td class="best">5.00</td></tr>
+          <tr><th scope="row">guardrail</th><td>7</td><td class="">4.66</td><td class="">4.77</td><td class="best">4.84</td></tr>
+          <tr><th scope="row">technical</th><td>7</td><td class="">4.74</td><td class="">4.90</td><td class="best">4.99</td></tr>
         </tbody>
       </table></div>
     </div>
@@ -721,6 +721,7 @@
       <div class="topic-table"><table class="history-table">
         <thead><tr><th>Published</th><th>Leader</th><th>Quality</th><th>Flags</th><th>Models</th><th>Changes</th></tr></thead>
         <tbody>
+          <tr><th scope="row">2026-09-29</th><td>gpt</td><td>gpt 4.80 · gemini 4.84 · claude 4.95</td><td>4</td><td class="mod">gpt-6-astra · gemini-3.1-pro-preview · claude-opus-5</td><td><span class="chg">leader gemini → gpt</span></td></tr>
           <tr><th scope="row">2026-09-29</th><td>gemini</td><td>gemini 4.84 · gpt 4.80 · claude 4.95</td><td>4</td><td class="mod">gemini-3.1-pro-preview · gpt-6-astra · claude-opus-5</td><td><span class="chg">first published run</span></td></tr>
         </tbody>
       </table></div>

@@ -79,6 +79,93 @@
       },
       "id": "b5eed983e33fb46c",
       "changes": []
+    },
+    {
+      "published": "2026-09-29T16:44:50+00:00",
+      "judge_second": "gpt-6-astra",
+      "rank_rho": 1.0,
+      "suites": {
+        "public": {
+          "n_tasks": 40,
+          "ranking": [
+            "gpt",
+            "gemini",
+            "claude"
+          ],
+          "judge": "claude-opus-5",
+          "candidates": {
+            "claude": {
+              "model": "claude-opus-5",
+              "effort": "low",
+              "composite": 0.6916,
+              "quality_mean": 4.952,
+              "latency_p50": 10.71,
+              "critical_violations": 1
+            },
+            "gemini": {
+              "model": "gemini-3.1-pro-preview",
+              "effort": "low",
+              "composite": 0.9718,
+              "quality_mean": 4.839,
+              "latency_p50": 5.66,
+              "critical_violations": 2
+            },
+            "gpt": {
+              "model": "gpt-6-astra",
+              "effort": "low",
+              "composite": 0.884,
+              "quality_mean": 4.804,
+              "latency_p50": 6.83,
+              "critical_violations": 0
+            }
+          }
+        },
+        "heldout": {
+          "n_tasks": 20,
+          "ranking": [
+            "gemini",
+            "gpt",
+            "claude"
+          ],
+          "judge": "claude-opus-5",
+          "candidates": {
+            "claude": {
+              "model": "claude-opus-5",
+              "effort": "low",
+              "composite": 0.6703,
+              "quality_mean": 4.83,
+              "latency_p50": 9.99,
+              "critical_violations": 1
+            },
+            "gemini": {
+              "model": "gemini-3.1-pro-preview",
+              "effort": "low",
+              "composite": 0.9571,
+              "quality_mean": 4.755,
+              "latency_p50": 5.74,
+              "critical_violations": 0
+            },
+            "gpt": {
+              "model": "gpt-6-astra",
+              "effort": "low",
+              "composite": 0.8802,
+              "quality_mean": 4.822,
+              "latency_p50": 6.87,
+              "critical_violations": 0
+            }
+          }
+        }
+      },
+      "id": "1979a77090844db3",
+      "changes": [
+        {
+          "suite": "public",
+          "candidate": "*",
+          "kind": "leader_changed",
+          "from": "gemini",
+          "to": "gpt"
+        }
+      ]
     }
   ]
 }

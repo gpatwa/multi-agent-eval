@@ -98,3 +98,12 @@ def test_generated_files_read_history_from_disk(tmp_path):
     (tmp_path / "docs" / "data" / "history.json").write_text(H.dump(hist))
     page = dict(generated_files(tmp_path, data))[tmp_path / "docs" / "index.html"]
     assert "first published run" in page
+
+
+def test_a_new_leader_is_recorded(tmp_path):
+    data = _release(tmp_path)
+    base = H.snapshot(data)
+    swapped = copy.deepcopy(base)
+    swapped["suites"]["public"]["ranking"] = list(reversed(base["suites"]["public"]["ranking"]))
+    changes = H.compare(base, swapped)
+    assert [c["kind"] for c in changes] == ["leader_changed"] and changes[0]["from"] != changes[0]["to"]
