@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "status": "published",
-  "generated": "2026-09-29T14:37:30+00:00",
+  "generated": "2026-09-29T16:14:07+00:00",
   "providers": 19,
   "site_url": "https://eval.aveto.dev",
   "suites": {
@@ -81,6 +81,128 @@
           "n_samples": 40,
           "judge_failure_rate": 0.025
         }
+      },
+      "topics": {
+        "account_access": {
+          "n_tasks": 7,
+          "candidates": {
+            "claude": {
+              "n": 7,
+              "quality_mean": 4.95,
+              "latency_mean": 13.603
+            },
+            "gemini": {
+              "n": 7,
+              "quality_mean": 4.729,
+              "latency_mean": 5.713
+            },
+            "gpt": {
+              "n": 7,
+              "quality_mean": 4.736,
+              "latency_mean": 6.825
+            }
+          }
+        },
+        "billing": {
+          "n_tasks": 11,
+          "candidates": {
+            "claude": {
+              "n": 11,
+              "quality_mean": 4.977,
+              "latency_mean": 10.36
+            },
+            "gemini": {
+              "n": 11,
+              "quality_mean": 4.845,
+              "latency_mean": 5.739
+            },
+            "gpt": {
+              "n": 11,
+              "quality_mean": 4.87,
+              "latency_mean": 7.175
+            }
+          }
+        },
+        "cancellation": {
+          "n_tasks": 5,
+          "candidates": {
+            "claude": {
+              "n": 5,
+              "quality_mean": 4.98,
+              "latency_mean": 9.751
+            },
+            "gemini": {
+              "n": 5,
+              "quality_mean": 4.94,
+              "latency_mean": 5.966
+            },
+            "gpt": {
+              "n": 5,
+              "quality_mean": 5.0,
+              "latency_mean": 6.941
+            }
+          }
+        },
+        "feature_request": {
+          "n_tasks": 3,
+          "candidates": {
+            "claude": {
+              "n": 3,
+              "quality_mean": 5.0,
+              "latency_mean": 9.496
+            },
+            "gemini": {
+              "n": 3,
+              "quality_mean": 5.0,
+              "latency_mean": 4.985
+            },
+            "gpt": {
+              "n": 3,
+              "quality_mean": 4.9,
+              "latency_mean": 6.93
+            }
+          }
+        },
+        "guardrail": {
+          "n_tasks": 7,
+          "candidates": {
+            "claude": {
+              "n": 7,
+              "quality_mean": 4.843,
+              "latency_mean": 13.548
+            },
+            "gemini": {
+              "n": 7,
+              "quality_mean": 4.771,
+              "latency_mean": 6.247
+            },
+            "gpt": {
+              "n": 7,
+              "quality_mean": 4.657,
+              "latency_mean": 8.451
+            }
+          }
+        },
+        "technical": {
+          "n_tasks": 7,
+          "candidates": {
+            "claude": {
+              "n": 7,
+              "quality_mean": 4.986,
+              "latency_mean": 10.721
+            },
+            "gemini": {
+              "n": 7,
+              "quality_mean": 4.9,
+              "latency_mean": 4.656
+            },
+            "gpt": {
+              "n": 7,
+              "quality_mean": 4.743,
+              "latency_mean": 6.598
+            }
+          }
+        }
       }
     },
     "heldout": {
@@ -156,6 +278,128 @@
           "errors": 0,
           "n_samples": 20,
           "judge_failure_rate": 0.0
+        }
+      },
+      "topics": {
+        "account_access": {
+          "n_tasks": 2,
+          "candidates": {
+            "claude": {
+              "n": 2,
+              "quality_mean": 5.0,
+              "latency_mean": 11.38
+            },
+            "gemini": {
+              "n": 2,
+              "quality_mean": 5.0,
+              "latency_mean": 5.744
+            },
+            "gpt": {
+              "n": 2,
+              "quality_mean": 4.825,
+              "latency_mean": 8.403
+            }
+          }
+        },
+        "billing": {
+          "n_tasks": 5,
+          "candidates": {
+            "claude": {
+              "n": 5,
+              "quality_mean": 5.0,
+              "latency_mean": 9.149
+            },
+            "gemini": {
+              "n": 5,
+              "quality_mean": 4.78,
+              "latency_mean": 6.071
+            },
+            "gpt": {
+              "n": 5,
+              "quality_mean": 4.9,
+              "latency_mean": 6.867
+            }
+          }
+        },
+        "cancellation": {
+          "n_tasks": 3,
+          "candidates": {
+            "claude": {
+              "n": 3,
+              "quality_mean": 5.0,
+              "latency_mean": 9.389
+            },
+            "gemini": {
+              "n": 3,
+              "quality_mean": 4.967,
+              "latency_mean": 5.998
+            },
+            "gpt": {
+              "n": 3,
+              "quality_mean": 5.0,
+              "latency_mean": 6.896
+            }
+          }
+        },
+        "feature_request": {
+          "n_tasks": 2,
+          "candidates": {
+            "claude": {
+              "n": 2,
+              "quality_mean": 5.0,
+              "latency_mean": 9.302
+            },
+            "gemini": {
+              "n": 2,
+              "quality_mean": 4.9,
+              "latency_mean": 4.776
+            },
+            "gpt": {
+              "n": 2,
+              "quality_mean": 4.9,
+              "latency_mean": 6.331
+            }
+          }
+        },
+        "guardrail": {
+          "n_tasks": 5,
+          "candidates": {
+            "claude": {
+              "n": 5,
+              "quality_mean": 4.69,
+              "latency_mean": 13.549
+            },
+            "gemini": {
+              "n": 5,
+              "quality_mean": 4.74,
+              "latency_mean": 5.139
+            },
+            "gpt": {
+              "n": 5,
+              "quality_mean": 4.6,
+              "latency_mean": 7.88
+            }
+          }
+        },
+        "technical": {
+          "n_tasks": 3,
+          "candidates": {
+            "claude": {
+              "n": 3,
+              "quality_mean": 4.383,
+              "latency_mean": 10.391
+            },
+            "gemini": {
+              "n": 3,
+              "quality_mean": 4.267,
+              "latency_mean": 6.277
+            },
+            "gpt": {
+              "n": 3,
+              "quality_mean": 4.833,
+              "latency_mean": 6.548
+            }
+          }
         }
       }
     }

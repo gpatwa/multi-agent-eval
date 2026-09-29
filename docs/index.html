@@ -664,6 +664,21 @@
       <p class="quality-note">Check the numbers: <a href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results/public/report.md">full per-ticket report and run settings</a> · <a href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results/heldout/summary.json">heldout suite aggregates</a>.</p>
     </div>
 
+    <div class="chart-card reveal">
+      <p class="quality-note"><b>Quality by topic</b> (1 to 5, judge score). The composite averages these; a leader can still be the weakest on one topic. Scored on 70% quality, 30% latency; cost is not part of it unless listed.</p>
+      <div class="topic-table"><table>
+        <thead><tr><th>Topic</th><th>Tasks</th><th>gemini</th><th>gpt</th><th>claude</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">account access</th><td>7</td><td class="">4.73</td><td class="">4.74</td><td class="best">4.95</td></tr>
+          <tr><th scope="row">billing</th><td>11</td><td class="">4.84</td><td class="">4.87</td><td class="best">4.98</td></tr>
+          <tr><th scope="row">cancellation</th><td>5</td><td class="">4.94</td><td class="best">5.00</td><td class="">4.98</td></tr>
+          <tr><th scope="row">feature request</th><td>3</td><td class="best">5.00</td><td class="">4.90</td><td class="best">5.00</td></tr>
+          <tr><th scope="row">guardrail</th><td>7</td><td class="">4.77</td><td class="">4.66</td><td class="best">4.84</td></tr>
+          <tr><th scope="row">technical</th><td>7</td><td class="">4.90</td><td class="">4.74</td><td class="best">4.99</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
     <div class="verdict-row reveal">
       <div class="stamp">
         <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
