@@ -174,6 +174,8 @@
   .prow .tr{height:10px; background:var(--line); border-radius:3px; overflow:hidden;}
   .prow .tr i{display:block; height:100%; background:var(--brass); border-radius:3px; width:var(--w,0%);}
   .prow.wait .tr i{width:100%; background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 16px); opacity:.7;}
+  .prow .fl{color:var(--critical); font-size:11px; margin-left:4px; white-space:nowrap;}
+  .prow .nm{overflow:visible; white-space:normal;}
   .pill{display:inline-block; padding:2px 9px; border-radius:99px; font-family:"Geist Mono",monospace; font-size:12px; font-weight:500; background:var(--brass-tint); color:var(--brass-strong);}
   .pill.ok{background:color-mix(in srgb,var(--good) 18%,transparent); color:var(--good);}
   .pill.bad{background:color-mix(in srgb,var(--critical) 18%,transparent); color:var(--critical);}
@@ -477,7 +479,7 @@
       <!-- /AUTO:stats -->    </div>
 
     <div class="panels fade-up"><!-- AUTO:panels -->
-      <div class="panel"><h3>Composite score</h3><div class="prow"><span class="nm">gemini</span><div class="tr"><i style="--w:97%"></i></div><span>0.97</span></div><div class="prow"><span class="nm">gpt</span><div class="tr"><i style="--w:88%"></i></div><span>0.88</span></div><div class="prow"><span class="nm">claude</span><div class="tr"><i style="--w:69%"></i></div><span>0.69</span></div><p class="sub">Claude Code CLI (claude-opus-5) judging.</p></div>
+      <div class="panel"><h3>Composite score</h3><div class="prow"><span class="nm">gemini <span class="fl">2 flags</span></span><div class="tr"><i style="--w:97%"></i></div><span>0.97</span></div><div class="prow"><span class="nm">gpt</span><div class="tr"><i style="--w:88%"></i></div><span>0.88</span></div><div class="prow"><span class="nm">claude <span class="fl">1 flag</span></span><div class="tr"><i style="--w:69%"></i></div><span>0.69</span></div><p class="sub">Quality, latency and cost. Guardrail flags are a separate gate, not part of this score. Claude Code CLI (claude-opus-5) judging.</p></div>
       <div class="panel"><h3>Judge agreement</h3><div class="big">&rho; 1.00</div><div><span class="pill ok">two vendors</span></div><p class="sub">Two different-vendor judges, 116 answers.</p></div>
       <div class="panel"><h3>Guardrail flags</h3><div class="big">4</div><div><span class="pill bad">review</span></div><p class="sub">Across 180 graded answers.</p></div>
     <!-- /AUTO:panels --></div>

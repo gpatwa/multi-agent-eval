@@ -94,6 +94,8 @@ def test_violations_are_counted_never_called_zero(tmp_path):
     data = build_release(suites={"public": public}, second=None, walkthrough_task="t3", providers=19)
     r = regions(render(PAGE, data))
     assert "Zero violations" not in r and "1 guardrail flag" in r and "policy_critical" in r and 'dot-warn">1<' in r
+    # the scoreboard marks the flagged candidate and says the flags are outside the composite
+    assert r.count('class="fl">1 flag<') == 1 and "separate gate, not part of this score" in r
 
 
 def test_text_from_data_is_escaped(tmp_path):

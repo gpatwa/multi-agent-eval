@@ -96,8 +96,12 @@ def panels(data: dict) -> str:
                 + panel("Guardrail flags", '<div class="big">&mdash;</div><div><span class="pill">pending</span></div>') + "\n    ")
     first, _ = _suites(data)
     public = data["suites"][first]
+    def flag_mark(n: str) -> str:
+        k = public["candidates"][n]["critical_violations"]
+        return f' <span class="fl">{k} flag{"s" if k != 1 else ""}</span>' if k else ""
+
     rows = "".join(
-        f'<div class="prow"><span class="nm">{esc(n)}</span><div class="tr"><i style="--w:{public["candidates"][n]["composite"] * 100:.0f}%"></i></div>'
+        f'<div class="prow"><span class="nm">{esc(n)}{flag_mark(n)}</span><div class="tr"><i style="--w:{public["candidates"][n]["composite"] * 100:.0f}%"></i></div>'
         f'<span>{public["candidates"][n]["composite"]:.2f}</span></div>' for n in public["ranking"])
     ag = (data.get("agreement") or {}).get(first)
     if ag and ag["rank_rho"] is not None:
@@ -110,7 +114,8 @@ def panels(data: dict) -> str:
     answers = sum(c["n_samples"] for c in all_c)
     flag = (f'<div class="big">{flags}</div><div><span class="pill {"ok" if flags == 0 else "bad"}">'
             f'{"none raised" if flags == 0 else "review"}</span></div><p class="sub">Across {answers} graded answers.</p>')
-    return (panel("Composite score", rows + f'<p class="sub">{esc(_judge_name(public["judge"]))} judging.</p>')
+    return (panel("Composite score", rows + f'<p class="sub">Quality, latency and cost. Guardrail flags are a separate gate, not part of this score. '
+                                          f'{esc(_judge_name(public["judge"]))} judging.</p>')
             + panel("Judge agreement", agree) + panel("Guardrail flags", flag) + "\n    ")
 
 
