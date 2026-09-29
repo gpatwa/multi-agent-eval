@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 runs/
 results*/
+!docs/results/
+!docs/results/**
 .env
 tasks.triage.private.yaml
 .abvenv/

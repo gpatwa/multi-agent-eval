@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import pathlib
 import shutil
+import subprocess
 import sys
 
 import pytest
@@ -270,3 +271,13 @@ def test_health_distinguishes_quota_from_unjudged_from_healthy(world, tmp_path):
     assert p.health(str(make_run(tmp_path, "u", ["gpt"], tasks=PUBLIC_TASKS, verdicts=bad)), "gpt")["why"] == "unjudged"
     ok = str(make_run(tmp_path, "ok", ["gpt"], tasks=PUBLIC_TASKS))
     assert p.health(ok, "gpt")["ok"] is True and p.health(ok, "missing") is None
+
+
+def test_published_result_files_are_not_gitignored():
+    """`results*/` in .gitignore once swallowed docs/results/, so published reports were never committed or deployed."""
+    for rel in ("docs/results/public/summary.json", "docs/results/public/report.md", "docs/results/heldout/summary.json",
+                "docs/data/results.json", "docs/data/history.json"):
+        done = subprocess.run(["git", "check-ignore", "-q", rel], cwd=REPO)
+        assert done.returncode == 1, f"{rel} is gitignored, so the pipeline can never publish it"
+    # ...while local run directories stay ignored
+    assert subprocess.run(["git", "check-ignore", "-q", "results-triage-run9/summary.json"], cwd=REPO).returncode == 0
