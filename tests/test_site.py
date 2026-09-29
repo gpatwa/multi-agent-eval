@@ -13,7 +13,8 @@ from tests.test_publish import CANDS, JUDGE_B, _release, make_run
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PAGE = (ROOT / "docs" / "index.html").read_text()
-DATA = json.loads((ROOT / "docs" / "data" / "results.json").read_text())
+DATA = {**json.loads((ROOT / "docs" / "data" / "results.json").read_text()),
+        "history": json.loads((ROOT / "docs" / "data" / "history.json").read_text())}  # the page renders both files
 
 
 def regions(html: str) -> str:
@@ -209,4 +210,4 @@ def test_topics_are_labels_only_and_the_table_names_its_own_basis(tmp_path):
 
 
 def test_pending_page_has_no_topic_table():
-    assert "topic-table" not in regions(render(PAGE, {**DATA, "status": "pending"}))
+    assert "Quality by topic" not in regions(render(PAGE, {**DATA, "status": "pending"}))
