@@ -53,7 +53,8 @@ def test_load_agents_applies_top_level_effort_to_candidates_not_judge():
     assert load_agents(config)[1].provider.effort == "high"
 
 
-def test_effort_the_adapter_cannot_apply_is_an_error_not_silently_ignored():
+def test_effort_the_adapter_cannot_apply_is_an_error_not_silently_ignored(monkeypatch):
+    monkeypatch.setenv("GEMINI_CLI_PATH", __file__)  # any existing file: CI has no gemini binary
     config = _config(effort="low")
     config["candidates"][1] = {"name": "b", "provider": "gemini-cli", "model": "default"}
     with pytest.raises(RuntimeError, match="candidate 'b'.*can't set reasoning effort"):
