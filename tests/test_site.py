@@ -195,3 +195,18 @@ def test_no_stale_domain_is_left_anywhere_outside_the_tests():
         if p.is_file() and p.suffix in {".html", ".xml", ".txt", ".md", ".yaml", ".yml", ".py", ".json"} and stale in p.read_text():
             offenders.append(str(p.relative_to(ROOT)))
     assert not offenders, f"still mentions {stale}: {offenders}"
+
+
+def test_topics_are_labels_only_and_the_table_names_its_own_basis(tmp_path):
+    data = _release(tmp_path)
+    topics = data["suites"]["public"]["topics"]
+    assert topics and all(set(t) == {"n_tasks", "candidates"} for t in topics.values())
+    r = regions(render(PAGE, data))
+    assert "Quality by topic" in r and 'class="topic-table"' in r
+    assert "70% quality, 30% latency" in r and "Quality, latency and cost." not in r  # names only what was weighted
+    assert "Body text for" not in json.dumps(topics) and "t1" not in json.dumps(topics)  # labels and numbers only
+    assert_well_formed(r)
+
+
+def test_pending_page_has_no_topic_table():
+    assert "topic-table" not in regions(render(PAGE, {**DATA, "status": "pending"}))

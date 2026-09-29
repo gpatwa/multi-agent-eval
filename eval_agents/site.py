@@ -82,6 +82,13 @@ def stats(data: dict) -> str:
 # ---------------------------------------------------------------- hero panels
 
 
+def score_basis(suite: dict) -> str:
+    """What the composite is made of, from the run's own weights (zero-weight parts are not named)."""
+    w = {k: v for k, v in (suite.get("weights") or {}).items() if v}
+    total = sum(w.values()) or 1
+    return ", ".join(f"{v / total:.0%} {k}" for k, v in sorted(w.items(), key=lambda kv: -kv[1]))
+
+
 def panels(data: dict) -> str:
     """Three instrument panels under the hero. Pending runs show empty tracks and no figures."""
 
@@ -114,7 +121,7 @@ def panels(data: dict) -> str:
     answers = sum(c["n_samples"] for c in all_c)
     flag = (f'<div class="big">{flags}</div><div><span class="pill {"ok" if flags == 0 else "bad"}">'
             f'{"none raised" if flags == 0 else "review"}</span></div><p class="sub">Across {answers} graded answers.</p>')
-    return (panel("Composite score", rows + f'<p class="sub">Quality, latency and cost. Guardrail flags are a separate gate, not part of this score. '
+    return (panel("Composite score", rows + f'<p class="sub">{esc(score_basis(public).capitalize())}. Guardrail flags are a separate gate, not part of this score. '
                                           f'{esc(_judge_name(public["judge"]))} judging.</p>')
             + panel("Judge agreement", agree) + panel("Guardrail flags", flag) + "\n    ")
 
@@ -242,6 +249,26 @@ def _quality_note(public: dict) -> str:
             f"{min(others):.1f}–{max(others):.1f}s for the others.{tail}")
 
 
+def _topics(public: dict) -> str:
+    """Quality per topic per candidate: the composite's average can hide a topic where the leader is weak."""
+    topics = public.get("topics") or {}
+    names = [n for n in public["ranking"]]
+    if len(topics) < 2:
+        return ""
+    head = "".join(f"<th>{esc(n)}</th>" for n in names)
+    rows = []
+    for topic, t in topics.items():
+        cells = {n: t["candidates"].get(n, {}).get("quality_mean") for n in names}
+        best = max((v for v in cells.values() if v is not None), default=None)
+        tds = "".join(f'<td class="{"best" if v is not None and v == best else ""}">{"" if v is None else f"{v:.2f}"}</td>'
+                      for v in cells.values())
+        rows.append(f'<tr><th scope="row">{esc(topic.replace("_", " "))}</th><td>{t["n_tasks"]}</td>{tds}</tr>')
+    return ('\n    <div class="chart-card reveal">\n      <p class="quality-note"><b>Quality by topic</b> (1 to 5, judge score). '
+            f'The composite averages these; a leader can still be the weakest on one topic. Scored on {esc(score_basis(public))}; '
+            'cost is not part of it unless listed.</p>\n      <div class="topic-table"><table>\n        <thead><tr><th>Topic</th><th>Tasks</th>'
+            f'{head}</tr></thead>\n        <tbody>\n          ' + "\n          ".join(rows) + '\n        </tbody>\n      </table></div>\n    </div>\n')
+
+
 def proof(data: dict) -> str:
     head = '\n    <div class="sec-head reveal">\n      <p class="eyebrow">Case study</p>\n      <h2>The reference workload: support-ticket triage</h2>\n    </div>\n'
     if data["status"] != "published":
@@ -270,6 +297,7 @@ def proof(data: dict) -> str:
              f'      <p class="quality-note">Check the numbers: <a href="{RESULTS_URL}/{first}/report.md">full per-ticket report and run settings</a>'
              + "".join(f' · <a href="{RESULTS_URL}/{n}/summary.json">{esc(n)} suite aggregates</a>' for n in rest)
              + '.</p>\n    </div>\n')
+    chart += _topics(public)
     stamps = []
     if ag and ag["rank_rho"] is not None:
         same = ag["rank_rho"] == 1.0

@@ -47,6 +47,32 @@ def _summary(run_dir: pathlib.Path) -> dict:
     return json.loads((pathlib.Path(run_dir) / "summary.json").read_text())
 
 
+def topic_view(raw: list[dict]) -> dict:
+    """Quality and latency per topic per candidate. A topic is the ticket's gold
+    routing label, or "guardrail" for the adversarial tasks: labels only, never
+    ticket text, so it is as safe to publish for a held-out suite as the totals."""
+    cells: dict[str, dict[str, dict]] = {}
+    for tr in raw:
+        task = tr["task"]
+        topic = "guardrail" if task["category"] == "guardrail" else str((task.get("gold") or {}).get("category") or task["category"])
+        for r in tr["results"]:
+            if r.get("error"):
+                continue
+            cell = cells.setdefault(topic, {}).setdefault(r["candidate"], {"n": 0, "quality": [], "latency": []})
+            cell["n"] += 1
+            cell["latency"].append(r["latency_s"])
+            v = r.get("verdict")
+            if v and not v.get("parse_error"):
+                cell["quality"].append(v["overall"])
+    mean = lambda xs: round(sum(xs) / len(xs), 3) if xs else None
+    return {t: {"n_tasks": len({tr["task"]["id"] for tr in raw if (
+                    "guardrail" if tr["task"]["category"] == "guardrail"
+                    else str((tr["task"].get("gold") or {}).get("category") or tr["task"]["category"])) == t}),
+                "candidates": {c: {"n": v["n"], "quality_mean": mean(v["quality"]), "latency_mean": mean(v["latency"])}
+                               for c, v in sorted(by.items())}}
+            for t, by in sorted(cells.items())}
+
+
 def suite_view(run_dir: pathlib.Path) -> dict:
     """Aggregates for one suite. Reads task *categories* only, never ticket text,
     so it is safe for a held-out suite."""
@@ -83,6 +109,7 @@ def suite_view(run_dir: pathlib.Path) -> dict:
         "effort_matched": bool(settings.get("effort_matched")),
         "judge": settings.get("judge"),
         "candidates": candidates,
+        "topics": topic_view(raw),
     }
 
 
