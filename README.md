@@ -357,28 +357,36 @@ candidates:
   `default` follow CLI updates and personal config, which can change the model
   mid-benchmark.
 
-## Landing page: eval.aveto.com
+## Landing page
 
-`docs/` is the landing page. It deploys itself on every push to `main` that
-touches it ([deploy-site.yml](.github/workflows/deploy-site.yml) runs
+`docs/` is the landing page, served at the `site.url` in [release.yaml](release.yaml)
+(currently `https://eval.aveto.dev`). That one line is the single source for the
+domain: the page's canonical URL and social tags, `sitemap.xml`, `robots.txt`, the
+Cloudflare Pages custom domain and its DNS record, IndexNow, and the repo's
+homepage link all derive from it, so moving the site is a one-line change.
+
+It deploys itself on every push to `main` that touches `docs/` or `release.yaml`
+([deploy-site.yml](.github/workflows/deploy-site.yml) runs
 [scripts/deploy_site.py](scripts/deploy_site.py)). Each run is idempotent:
 
 1. ensure the Cloudflare Pages project exists;
 2. upload `docs/`;
-3. attach `eval.aveto.com`;
-4. make sure the `eval` CNAME at NIC.RU (aveto.com's DNS host) points at
-   Pages, replacing a stale record and committing the zone;
-5. wait until the live URL serves the page.
+3. attach the custom domain to the project;
+4. set the domain's DNS record (a proxied CNAME to the Pages address) in its
+   Cloudflare zone. It never overwrites a record that isn't a Pages CNAME;
+5. wait until the live URL serves the page, then ping IndexNow (Bing, Yandex).
 
-It needs credentials, stored once as GitHub secrets. They're prompted for
-with hidden input and never written to disk:
+The whole credential surface is two GitHub secrets, `CLOUDFLARE_API_TOKEN`
+(Account › Cloudflare Pages › Edit; Zone › DNS › Edit; Zone › Zone › Read) and
+`CLOUDFLARE_ACCOUNT_ID`, and the domain's zone must be on that account. Creating
+a token can't be automated, so `python scripts/deploy_site.py bootstrap` stores
+one with hidden prompts. `doctor` is a read-only report of what's ready or
+missing, `deploy --dry-run` a read-only plan, and `status` checks the live site.
+Until credentials exist the workflow says so loudly and publishes nothing.
 
-```bash
-python scripts/deploy_site.py bootstrap
-```
-
-Until those exist, the workflow skips with a notice instead of failing. Use
-`deploy --dry-run` for a read-only plan, and `status` to check the live site.
+Everything on the page that states a result, a count or a URL is generated (see
+`AUTO` regions in `docs/index.html`, `python scripts/build_site.py`); CI fails if
+a generated file differs from the data it's rendered from.
 
 ## Quick start
 

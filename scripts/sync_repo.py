@@ -89,7 +89,10 @@ def main(argv=None) -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--release", default=str(ROOT / "release.yaml"))
     args = ap.parse_args(argv)
-    desired = (yaml.safe_load(pathlib.Path(args.release).read_text()) or {}).get("repo") or {}
+    release = yaml.safe_load(pathlib.Path(args.release).read_text()) or {}
+    desired = {**(release.get("repo") or {})}
+    if (release.get("site") or {}).get("url") and "homepage" not in desired:
+        desired["homepage"] = release["site"]["url"]  # the site URL is the repo's homepage; one source
     changes = sync(desired, dry_run=args.dry_run)
     verb = "would change" if args.dry_run else "changed"
     print(f"repo metadata: {verb} {', '.join(changes)}" if changes else "repo metadata: already in sync")

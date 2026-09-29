@@ -112,7 +112,8 @@ def world(tmp_path):
     release = Release(name="test", config="config.triage.mixed.yaml", second_judge_config="config.triage.mixed.codex-judge.yaml",
                       require_second_judge=True, walkthrough_task="t3", min_judge_coverage=0.9,
                       suites={"public": {"tasks": "tasks.triage.yaml"}, "heldout": {"tasks": "tasks.triage.private.yaml", "private": True}},
-                      candidates=CANDS, env_unset=["ANTHROPIC_AUTH_TOKEN"], commit_trailer="Co-Authored-By: Test <t@example.com>")
+                      candidates=CANDS, env_unset=["ANTHROPIC_AUTH_TOKEN"], commit_trailer="Co-Authored-By: Test <t@example.com>",
+                      site_url="https://eval.aveto.dev")
 
     class W:
         pass
@@ -149,10 +150,20 @@ def test_runs_only_the_missing_candidate_then_publishes_everything(world):
     assert "being refreshed" not in page and "Spearman" in page
     assert "Spearman ρ" in (world.root / "README.md").read_text() and "being refreshed" not in (world.root / "README.md").read_text()
     assert ["add", "docs", "README.md"] in world.git.calls
+    # every URL the page names comes from release.yaml's site.url, written by the same publish
+    assert "<loc>https://eval.aveto.dev/</loc>" in (world.root / "docs" / "sitemap.xml").read_text()
+    assert "Sitemap: https://eval.aveto.dev/sitemap.xml" in (world.root / "docs" / "robots.txt").read_text()
+    assert '<link rel="canonical" href="https://eval.aveto.dev/">' in page
+    assert json.loads((world.root / "docs" / "data" / "results.json").read_text())["site_url"] == "https://eval.aveto.dev"
     published_text = "".join(f.read_text() for f in (world.root / "docs").rglob("*") if f.is_file())
     assert "Body text for heldout-ticket-1" not in published_text and "heldout-ticket-1" not in published_text
     assert len(world.git.commits()) == 1 and "Co-Authored-By: Test" in world.git.commits()[0][-1]
     assert ["push", "-q", "origin", "HEAD:main"] in world.git.calls
+
+
+def test_the_real_release_yaml_names_the_site():
+    release = Release.load(REPO / "release.yaml")
+    assert release.site_url == "https://eval.aveto.dev"
 
 
 def test_quota_stop_sets_a_cooldown_returns_quickly_and_retries_later(world):

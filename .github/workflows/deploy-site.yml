@@ -1,15 +1,16 @@
 name: Deploy site
 
-# Publishes docs/ to https://eval.aveto.com via Cloudflare Pages, and keeps the
-# eval.aveto.com CNAME at NIC.RU pointed at it. Fully idempotent — see
-# scripts/deploy_site.py. Credentials are GitHub secrets, stored once with
-# `python scripts/deploy_site.py bootstrap`; until they exist this job skips.
+# Publishes docs/ to Cloudflare Pages at the site URL in release.yaml, attaches the custom domain, sets its DNS record
+# in the domain's Cloudflare zone, verifies the live URL, and pings IndexNow. Fully idempotent — see scripts/deploy_site.py.
+# The only credentials are two GitHub secrets (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID); until they exist this job
+# says so loudly instead of looking green.
 
 on:
   push:
     branches: [main]
     paths:
       - "docs/**"
+      - "release.yaml"
       - "scripts/deploy_site.py"
       - ".github/workflows/deploy-site.yml"
   workflow_dispatch:
@@ -25,16 +26,10 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}   # optional repo variable; empty = pages.dev only
-      NICRU_USERNAME: ${{ secrets.NICRU_USERNAME }}
-      NICRU_PASSWORD: ${{ secrets.NICRU_PASSWORD }}
-      NICRU_CLIENT_ID: ${{ secrets.NICRU_CLIENT_ID }}
-      NICRU_CLIENT_SECRET: ${{ secrets.NICRU_CLIENT_SECRET }}
     steps:
       - name: Check credentials
         id: creds
         run: |
-          # Cloudflare's pair is enough to publish (at the pages.dev address); the NIC.RU four add the custom domain.
           if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
@@ -53,6 +48,9 @@ jobs:
         if: steps.creds.outputs.ready == 'true'
         with:
           node-version: "22"
+      - name: Install dependencies
+        if: steps.creds.outputs.ready == 'true'
+        run: pip install pyyaml
       - name: Deploy and verify
         if: steps.creds.outputs.ready == 'true'
         run: python scripts/deploy_site.py deploy

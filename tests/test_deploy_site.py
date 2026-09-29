@@ -1,5 +1,5 @@
-"""scripts/deploy_site.py: idempotent Cloudflare Pages + NIC.RU DNS logic,
-exercised against a fake HTTP layer (no network, no credentials)."""
+"""scripts/deploy_site.py: idempotent Cloudflare Pages + Cloudflare DNS logic, exercised against a fake HTTP
+layer (no network, no credentials)."""
 from __future__ import annotations
 
 import importlib.util
@@ -10,10 +10,31 @@ import pathlib
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-os.environ.setdefault("SITE_DOMAIN", "eval.aveto.com")  # the module reads its domain at import
-spec = importlib.util.spec_from_file_location("deploy_site", ROOT / "scripts" / "deploy_site.py")
-ds = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(ds)
+DOMAIN = "eval.aveto.dev"
+
+
+def load_module(domain: str | None = DOMAIN):
+    """A fresh copy of the script; it reads its domain and project at import (env, else release.yaml)."""
+    saved = {k: os.environ.get(k) for k in ("SITE_DOMAIN", "CF_PAGES_PROJECT")}
+    try:
+        os.environ.pop("CF_PAGES_PROJECT", None)
+        if domain is None:
+            os.environ.pop("SITE_DOMAIN", None)
+        else:
+            os.environ["SITE_DOMAIN"] = domain
+        spec = importlib.util.spec_from_file_location("deploy_site", ROOT / "scripts" / "deploy_site.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+ds = load_module()
 
 
 @pytest.fixture(autouse=True)
@@ -38,20 +59,43 @@ class FakeHTTP:
                 return resp(data) if callable(resp) else resp
         raise AssertionError(f"unexpected {method} {url}")
 
+    def writes(self):
+        return [c for c in self.calls if c[0] in ("POST", "PATCH", "PUT", "DELETE")]
+
 
 def cf_json(result, status=200):
     return status, json.dumps({"success": status < 300, "result": result})
 
 
-# ---------------------------------------------------------------- Cloudflare
+ZONES = cf_json([{"id": "z-dev", "name": "aveto.dev"}, {"id": "z-k", "name": "kavachiq.com"}, {"id": "z-sub", "name": "eval.aveto.dev"}])
+ZONE_LIST = "/zones?per_page=50"
+RECORDS = "/zones/z-sub/dns_records?name=eval.aveto.dev"  # the longest matching zone wins
+TARGET = "model-ledger.pages.dev"
+
+
+def dns_routes(existing, extra=None):
+    return {("GET", ZONE_LIST): ZONES, ("GET", RECORDS): cf_json(existing), **(extra or {})}
+
+
+def rec(type_, content, proxied=True, id_="r1", name=DOMAIN):
+    return {"id": id_, "type": type_, "name": name, "content": content, "proxied": proxied}
+
+
+# ---------------------------------------------------------------- Cloudflare Pages
+
+
+def test_configuration_comes_from_release_yaml_unless_overridden():
+    fresh = load_module(domain=None)
+    assert fresh.DOMAIN == "eval.aveto.dev" and fresh.PROJECT == "model-ledger"  # release.yaml `site:`
+    assert load_module("eval.example.org").DOMAIN == "eval.example.org"
 
 
 def test_project_created_only_when_missing():
     http = FakeHTTP({
         ("GET", f"/projects/{ds.PROJECT}"): (404, json.dumps({"success": False})),
-        ("POST", "/pages/projects"): cf_json({"subdomain": "model-ledger.pages.dev"}),
+        ("POST", "/pages/projects"): cf_json({"subdomain": TARGET}),
     })
-    assert ds.Cloudflare("t", "acct", request=http).ensure_project() == "model-ledger.pages.dev"
+    assert ds.Cloudflare("t", "acct", request=http).ensure_project() == TARGET
     assert [c[0] for c in http.calls] == ["GET", "POST"]
     assert json.loads(http.calls[1][2]) == {"name": ds.PROJECT, "production_branch": "main"}
 
@@ -61,16 +105,16 @@ def test_project_created_only_when_missing():
 
 
 def test_domain_attached_only_when_missing_and_dry_run_is_read_only():
-    http = FakeHTTP({("GET", f"/domains/{ds.DOMAIN}"): (404, "{}")})
+    http = FakeHTTP({("GET", f"/domains/{DOMAIN}"): (404, "{}")})
     ds.Cloudflare("t", "acct", request=http).ensure_domain(dry_run=True)
     assert [c[0] for c in http.calls] == ["GET"]
 
     http = FakeHTTP({
-        ("GET", f"/domains/{ds.DOMAIN}"): (404, "{}"),
-        ("POST", "/domains"): cf_json({"name": ds.DOMAIN, "status": "initializing"}),
+        ("GET", f"/domains/{DOMAIN}"): (404, "{}"),
+        ("POST", "/domains"): cf_json({"name": DOMAIN, "status": "initializing"}),
     })
     ds.Cloudflare("t", "acct", request=http).ensure_domain()
-    assert json.loads(http.calls[1][2]) == {"name": ds.DOMAIN}
+    assert json.loads(http.calls[1][2]) == {"name": DOMAIN}
 
 
 def test_cloudflare_errors_are_reported_not_swallowed():
@@ -79,92 +123,135 @@ def test_cloudflare_errors_are_reported_not_swallowed():
         ds.Cloudflare("t", "acct", request=http).ensure_project()
 
 
-# ---------------------------------------------------------------- NIC.RU DNS
+# ---------------------------------------------------------------- Cloudflare DNS
 
 
-def test_cname_label():
-    assert ds.cname_label("eval.aveto.com", "aveto.com") == "eval"
-    assert ds.cname_label("a.b.aveto.com", "aveto.com") == "a.b"
-    with pytest.raises(ds.DeployError):
-        ds.cname_label("aveto.com", "aveto.com")
-    with pytest.raises(ds.DeployError):
-        ds.cname_label("eval.other.com", "aveto.com")
-
-
-def test_cname_xml_uses_fqdn_target_and_roundtrips():
-    xml = ds.cname_xml("eval", "model-ledger.pages.dev")
-    assert "<name>model-ledger.pages.dev.</name>" in xml  # trailing dot: not relative to the zone
-    records = ds.parse_records(xml.replace("<rr>", '<rr id="7">'))
-    assert records == [{"id": "7", "name": "eval", "type": "CNAME", "target": "model-ledger.pages.dev"}]
-
-
-RECORDS = """<?xml version="1.0" encoding="UTF-8" ?><response><status>success</status><data>
-<zone admin="1/NIC-D" id="1" name="aveto.com" service="SVC">
-<rr id="10"><name>@</name><type>A</type><a>192.0.2.1</a></rr>
-{extra}
-</zone></data></response>"""
-
-
-@pytest.mark.parametrize("extra,expected", [
-    ("", {"keep": False, "delete": [], "add": True}),
-    ('<rr id="11"><name>eval</name><type>CNAME</type><cname><name>model-ledger.pages.dev.</name></cname></rr>',
-     {"keep": True, "delete": [], "add": False}),
-    ('<rr id="12"><name>eval</name><type>CNAME</type><cname><name>old.example.net.</name></cname></rr>',
-     {"keep": False, "delete": ["12"], "add": True}),
-    ('<rr id="13"><name>eval</name><type>A</type><a>192.0.2.9</a></rr>',
-     {"keep": False, "delete": ["13"], "add": True}),
+@pytest.mark.parametrize("records,expected", [
+    ([], "create"),
+    ([rec("CNAME", TARGET)], "keep"),
+    ([rec("CNAME", TARGET + ".")], "keep"),                       # trailing dot is the same name
+    ([rec("CNAME", TARGET, proxied=False)], "update"),            # right target, not proxied: ours, fix it
+    ([rec("CNAME", "old-project.pages.dev")], "update"),          # a previous Pages target: ours
+    ([rec("CNAME", "somewhere.example.net")], "conflict"),        # someone else's record
+    ([rec("A", "192.0.2.1")], "conflict"),
+    ([rec("TXT", "v=spf1 -all")], "conflict"),
+    ([rec("CNAME", TARGET), rec("TXT", "x", id_="r2")], "conflict"),
+    ([rec("A", "192.0.2.1", name="other.aveto.dev")], "create"),  # a different name doesn't matter
 ])
-def test_plan_dns(extra, expected):
-    records = ds.parse_records(RECORDS.format(extra=extra))
-    assert ds.plan_dns(records, "eval", "model-ledger.pages.dev") == expected
+def test_plan_dns_only_ever_changes_a_pages_cname(records, expected):
+    assert ds.plan_dns(records, DOMAIN, TARGET)[0] == expected
 
 
-SERVICES = '<response><status>success</status><data><service name="SVC" /></data></response>'
-ZONES = '<response><status>success</status><data><zone name="aveto.com" service="SVC" /></data></response>'
+def test_zone_is_found_by_longest_suffix_and_only_in_this_account():
+    dns = ds.CloudflareDNS("t", request=FakeHTTP({("GET", ZONE_LIST): ZONES}))
+    assert dns.find_zone("eval.aveto.dev")["id"] == "z-sub"
+    assert dns.find_zone("docs.aveto.dev")["id"] == "z-dev"
+    assert dns.find_zone("aveto.dev")["id"] == "z-dev"
+    assert dns.find_zone("aveto.com") is None and dns.find_zone("notaveto.dev") is None  # suffix must be a label boundary
+    with pytest.raises(ds.DeployError, match="list zones failed"):
+        ds.CloudflareDNS("t", request=FakeHTTP({("GET", ZONE_LIST): (403, "{}")})).find_zone(DOMAIN)
 
 
-def _nic(records_extra):
-    http = FakeHTTP({
-        ("POST", "/oauth/token"): (200, json.dumps({"access_token": "tok"})),
-        ("GET", "/dns-master/services"): (200, SERVICES),
-        ("GET", "/services/SVC/zones"): (200, ZONES),
-        ("GET", "/zones/aveto.com/records"): (200, RECORDS.format(extra=records_extra)),
-        ("DELETE", "/records/12"): (200, "<response><status>success</status></response>"),
-        ("PUT", "/zones/aveto.com/records"): (200, "<response><status>success</status></response>"),
-        ("POST", "/zones/aveto.com/commit"): (200, "<response><status>success</status></response>"),
+def test_cname_created_proxied_when_missing():
+    http = FakeHTTP(dns_routes([], {("POST", "/zones/z-sub/dns_records"): cf_json({"id": "new"})}))
+    assert ds.CloudflareDNS("t", request=http).ensure_cname(DOMAIN, TARGET) == "create"
+    (method, _, body), = http.writes()
+    body = json.loads(body)
+    assert method == "POST" and body["type"] == "CNAME" and body["name"] == DOMAIN and body["content"] == TARGET
+    assert body["proxied"] is True and "scripts/deploy_site.py" in body["comment"]
+
+
+def test_cname_updated_in_place_when_it_points_at_an_old_pages_target():
+    http = FakeHTTP(dns_routes([rec("CNAME", "old-project.pages.dev", id_="r9")],
+                               {("PATCH", "/zones/z-sub/dns_records/r9"): cf_json({"id": "r9"})}))
+    assert ds.CloudflareDNS("t", request=http).ensure_cname(DOMAIN, TARGET) == "update"
+    assert [c[0] for c in http.writes()] == ["PATCH"]
+
+
+def test_correct_record_makes_no_write_and_dry_run_never_writes():
+    http = FakeHTTP(dns_routes([rec("CNAME", TARGET)]))
+    assert ds.CloudflareDNS("t", request=http).ensure_cname(DOMAIN, TARGET) == "keep" and not http.writes()
+    http = FakeHTTP(dns_routes([]))
+    assert ds.CloudflareDNS("t", request=http).ensure_cname(DOMAIN, TARGET, dry_run=True) == "create" and not http.writes()
+
+
+def test_someone_elses_record_is_never_overwritten():
+    http = FakeHTTP(dns_routes([rec("A", "192.0.2.1")]))
+    with pytest.raises(ds.DeployError, match="already has a A record.*refusing to overwrite"):
+        ds.CloudflareDNS("t", request=http).ensure_cname(DOMAIN, TARGET)
+    assert not http.writes()
+
+
+def test_domain_outside_the_account_is_reported_not_guessed():
+    http = FakeHTTP({("GET", ZONE_LIST): cf_json([{"id": "z-k", "name": "kavachiq.com"}])})
+    assert ds.CloudflareDNS("t", request=http).ensure_cname(DOMAIN, TARGET) == "no-zone" and not http.writes()
+
+
+def test_missing_dns_permission_says_which_permission_to_add():
+    with pytest.raises(ds.DeployError, match="Zone > DNS > Edit"):
+        ds.CloudflareDNS("t", request=FakeHTTP(dns_routes([], {("POST", "/zones/z-sub/dns_records"): (403, "{}")}))).ensure_cname(DOMAIN, TARGET)
+    with pytest.raises(ds.DeployError, match="Zone > DNS > Edit"):
+        ds.CloudflareDNS("t", request=FakeHTTP({("GET", ZONE_LIST): ZONES, ("GET", RECORDS): (403, "{}")})).ensure_cname(DOMAIN, TARGET)
+
+
+# ---------------------------------------------------------------- deploy flow
+
+
+def _deploy_env(monkeypatch, routes, *, domain=DOMAIN):
+    monkeypatch.setattr(ds, "DOMAIN", domain)
+    monkeypatch.setenv("CLOUDFLARE_API_TOKEN", "t")
+    monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "a")
+    http = FakeHTTP(routes)
+    monkeypatch.setattr(ds, "http", http)
+    seen = []
+    monkeypatch.setattr(ds, "upload_site", lambda dry_run=False: seen.append("upload"))
+    monkeypatch.setattr(ds, "ensure_indexnow_key_file", lambda *a, **k: seen.append("key-file"))
+    monkeypatch.setattr(ds, "verify", lambda cf, url=None, check_domain=True, **k: seen.append(("verify", url, check_domain)) or True)
+    monkeypatch.setattr(ds, "ping_indexnow", lambda urls, *a, **k: seen.append(("ping", urls)))
+    return http, seen
+
+
+def test_full_deploy_attaches_the_domain_before_its_dns_and_notifies_search_engines(monkeypatch):
+    http, seen = _deploy_env(monkeypatch, {
+        ("GET", f"/projects/{ds.PROJECT}"): cf_json({"subdomain": TARGET}),
+        ("GET", f"/domains/{DOMAIN}"): (404, "{}"),
+        ("POST", "/domains"): cf_json({"name": DOMAIN, "status": "initializing"}),
+        ("GET", ZONE_LIST): ZONES, ("GET", RECORDS): cf_json([]),
+        ("POST", "/zones/z-sub/dns_records"): cf_json({"id": "new"}),
     })
-    return ds.NicRu("u", "p", "cid", "sec", request=http), http
+    assert ds.main(["deploy"]) == 0
+    assert seen == ["key-file", "upload", ("verify", f"https://{DOMAIN}/", True), ("ping", [f"https://{DOMAIN}/"])]
+    order = [(m, u.rsplit("/", 1)[-1].split("?")[0]) for m, u, _ in http.calls]
+    assert order.index(("POST", "domains")) < order.index(("POST", "dns_records"))  # domain first, or Cloudflare 522s the hostname
 
 
-def test_nic_replaces_stale_cname_then_commits():
-    nic, http = _nic('<rr id="12"><name>eval</name><type>CNAME</type><cname><name>old.example.net.</name></cname></rr>')
-    nic.ensure_cname("aveto.com", "eval", "model-ledger.pages.dev")
-    methods = [(c[0], c[1].rsplit("/", 1)[-1]) for c in http.calls[4:]]
-    assert methods == [("DELETE", "12"), ("PUT", "records"), ("POST", "commit")]
-    token_body = http.calls[0][2].decode()
-    assert "grant_type=password" in token_body and "scope=.%2B%3A%2Fdns-master%2F.%2B" in token_body
+def test_domain_outside_the_account_still_publishes_at_pages_dev(monkeypatch):
+    http, seen = _deploy_env(monkeypatch, {
+        ("GET", f"/projects/{ds.PROJECT}"): cf_json({"subdomain": TARGET}),
+        ("GET", f"/domains/{DOMAIN}"): cf_json({"name": DOMAIN, "status": "pending"}),
+        ("GET", ZONE_LIST): cf_json([{"id": "z-k", "name": "kavachiq.com"}]),
+    })
+    assert ds.main(["deploy"]) == 0
+    assert seen == ["key-file", "upload", ("verify", f"https://{TARGET}/", False)]  # no ping: the domain isn't live
 
 
-def test_nic_is_a_no_op_when_record_is_correct():
-    nic, http = _nic('<rr id="11"><name>eval</name><type>CNAME</type><cname><name>model-ledger.pages.dev.</name></cname></rr>')
-    nic.ensure_cname("aveto.com", "eval", "model-ledger.pages.dev")
-    assert not any(c[0] in ("PUT", "DELETE") or c[1].endswith("commit") for c in http.calls)
+def test_deploy_without_a_configured_domain_touches_no_domain_or_dns(monkeypatch):
+    http, seen = _deploy_env(monkeypatch, {("GET", f"/projects/{ds.PROJECT}"): cf_json({"subdomain": TARGET})}, domain="")
+    assert ds.main(["deploy"]) == 0
+    assert seen == ["upload", ("verify", f"https://{TARGET}/", False)]  # no key file, no domain, no DNS, no IndexNow
 
 
-def test_nic_dry_run_changes_nothing():
-    nic, http = _nic("")
-    nic.ensure_cname("aveto.com", "eval", "model-ledger.pages.dev", dry_run=True)
-    assert not any(c[0] in ("PUT", "DELETE") or c[1].endswith("commit") for c in http.calls)
+def test_dns_conflict_fails_the_deploy_visibly(monkeypatch):
+    _deploy_env(monkeypatch, {
+        ("GET", f"/projects/{ds.PROJECT}"): cf_json({"subdomain": TARGET}),
+        ("GET", f"/domains/{DOMAIN}"): cf_json({"name": DOMAIN, "status": "pending"}),
+        ("GET", ZONE_LIST): ZONES, ("GET", RECORDS): cf_json([rec("A", "192.0.2.1")]),
+    })
+    assert ds.main(["deploy"]) == 1
 
 
-def test_nic_bad_credentials_fail_clearly():
-    http = FakeHTTP({("POST", "/oauth/token"): (401, '{"error": "invalid_grant"}')})
-    with pytest.raises(ds.DeployError, match="NIC.RU OAuth failed"):
-        ds.NicRu("u", "bad", "cid", "sec", request=http)
-
-
-def test_missing_credentials_point_to_bootstrap(monkeypatch):
-    for name, *_ in ds.SECRETS:
+def test_missing_credentials_point_to_doctor(monkeypatch):
+    for name in ("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"):
         monkeypatch.delenv(name, raising=False)
     assert ds.main(["deploy", "--dry-run"]) == 1
 
@@ -172,64 +259,29 @@ def test_missing_credentials_point_to_bootstrap(monkeypatch):
 # ---------------------------------------------------------------- IndexNow
 
 
-def test_indexnow_key_is_deterministic_and_file_is_self_healing(tmp_path):
-    key = ds.indexnow_key("eval.aveto.com")
-    assert key == ds.indexnow_key("eval.aveto.com") and len(key) == 32 and key != ds.indexnow_key("other.example.com")
-    path = ds.ensure_indexnow_key_file(tmp_path, "eval.aveto.com")
+def test_indexnow_key_is_deterministic_per_domain_and_stale_key_files_are_removed(tmp_path):
+    key = ds.indexnow_key("eval.aveto.dev")
+    assert key == ds.indexnow_key("eval.aveto.dev") and len(key) == 32 and key != ds.indexnow_key("eval.aveto.com")
+    old = tmp_path / f"{ds.indexnow_key('eval.aveto.com')}.txt"
+    old.write_text("old domain's key")
+    (tmp_path / "index.html").write_text("keep me")
+    path = ds.ensure_indexnow_key_file(tmp_path, "eval.aveto.dev")
     assert path.name == f"{key}.txt" and path.read_text().strip() == key
+    assert not old.exists() and (tmp_path / "index.html").exists()  # only key files are cleaned up
     path.write_text("tampered")
-    assert ds.ensure_indexnow_key_file(tmp_path, "eval.aveto.com").read_text().strip() == key
+    assert ds.ensure_indexnow_key_file(tmp_path, "eval.aveto.dev").read_text().strip() == key
 
 
 def test_indexnow_ping_sends_host_key_and_location():
     http = FakeHTTP({("POST", "/indexnow"): (200, "")})
-    assert ds.ping_indexnow(["https://eval.aveto.com/"], "eval.aveto.com", request=http) is True
+    assert ds.ping_indexnow([f"https://{DOMAIN}/"], DOMAIN, request=http) is True
     body = json.loads(http.calls[0][2])
-    assert body["host"] == "eval.aveto.com" and body["urlList"] == ["https://eval.aveto.com/"]
-    assert body["keyLocation"] == f"https://eval.aveto.com/{ds.indexnow_key('eval.aveto.com')}.txt"
-    assert ds.ping_indexnow(["u"], "eval.aveto.com", request=FakeHTTP({("POST", "/indexnow"): (403, "")})) is False
+    assert body["host"] == DOMAIN and body["urlList"] == [f"https://{DOMAIN}/"]
+    assert body["keyLocation"] == f"https://{DOMAIN}/{ds.indexnow_key(DOMAIN)}.txt"
+    assert ds.ping_indexnow(["u"], DOMAIN, request=FakeHTTP({("POST", "/indexnow"): (403, "")})) is False
 
 
-def test_dns_credentials_are_optional_all_four_or_none(monkeypatch):
-    for n in ds.NIC_VARS:
-        monkeypatch.delenv(n, raising=False)
-    assert ds.nic_credentials() is None
-    for n in ds.NIC_VARS[:3]:
-        monkeypatch.setenv(n, "x")
-    assert ds.nic_credentials() is None  # three of four isn't enough to manage DNS
-    monkeypatch.setenv(ds.NIC_VARS[3], "x")
-    assert ds.nic_credentials() == ("x", "x", "x", "x")
-
-
-def test_deploy_without_dns_credentials_still_publishes_and_never_touches_dns(monkeypatch):
-    for n in ds.NIC_VARS:
-        monkeypatch.delenv(n, raising=False)
-    monkeypatch.setenv("CLOUDFLARE_API_TOKEN", "t")
-    monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "a")
-    calls = []
-    monkeypatch.setattr(ds, "http", FakeHTTP({
-        ("GET", f"/projects/{ds.PROJECT}"): cf_json({"subdomain": "model-ledger.pages.dev"}),
-        ("GET", f"/domains/{ds.DOMAIN}"): cf_json({"name": ds.DOMAIN, "status": "pending"}),
-    }))
-    monkeypatch.setattr(ds, "upload_site", lambda dry_run=False: calls.append("upload"))
-    monkeypatch.setattr(ds, "ensure_indexnow_key_file", lambda *a, **k: None)
-    monkeypatch.setattr(ds, "NicRu", lambda *a, **k: (_ for _ in ()).throw(AssertionError("DNS must not be touched")))
-    monkeypatch.setattr(ds, "verify", lambda cf, url=None, check_domain=True, **k: calls.append(("verify", url, check_domain)) or True)
-    assert ds.main(["deploy"]) == 0
-    assert calls == ["upload", ("verify", "https://model-ledger.pages.dev/", False)]
-
-
-def test_deploy_without_a_configured_domain_touches_no_domain_or_dns(monkeypatch):
-    monkeypatch.setattr(ds, "DOMAIN", "")
-    monkeypatch.setenv("CLOUDFLARE_API_TOKEN", "t")
-    monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "a")
-    seen = []
-    monkeypatch.setattr(ds, "http", FakeHTTP({("GET", f"/projects/{ds.PROJECT}"): cf_json({"subdomain": "model-ledger.pages.dev"})}))
-    monkeypatch.setattr(ds, "upload_site", lambda dry_run=False: seen.append("upload"))
-    monkeypatch.setattr(ds, "verify", lambda cf, url=None, check_domain=True, **k: seen.append((url, check_domain)) or True)
-    monkeypatch.setattr(ds, "ensure_indexnow_key_file", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no domain, no IndexNow")))
-    assert ds.main(["deploy"]) == 0
-    assert seen == ["upload", ("https://model-ledger.pages.dev/", False)]  # the domain route isn't even faked: it must not be called
+# ---------------------------------------------------------------- transport
 
 
 def test_every_request_identifies_itself_because_cloudflare_blocks_the_default_user_agent(monkeypatch):

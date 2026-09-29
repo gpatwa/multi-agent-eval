@@ -321,7 +321,66 @@ def readme_results(data: dict) -> str:
     return "\n".join(lines + [f"* {b}" for b in bullets]) + "\n"
 
 
-RENDERERS = {"stats": stats, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
+# ---------------------------------------------------------------- <head>, sitemap, robots: everything that names the site's URL
+
+TITLE = "LLM Vendor Evaluation on Your Own Tickets | The Model Ledger"  # must equal the page's static <title>
+DESCRIPTION = ("Compare Claude, GPT and Gemini on your own support tickets and policy. Get a ranked scorecard of quality, "
+               "latency, cost and guardrail violations. Open source.")
+KEYWORDS = ("LLM evaluation, model comparison, LLM-as-judge, support ticket triage, AI guardrails, "
+            "prompt injection testing, Claude, GPT, Gemini")
+REPO_URL = "https://github.com/gpatwa/multi-agent-eval"
+OG_ALT = "The Model Ledger: compare LLM vendors on your own tickets and policy"
+
+
+def site_base(data: dict) -> str:
+    return (data.get("site_url") or "").rstrip("/")
+
+
+def head(data: dict) -> str:
+    """The SEO / social block of <head>. URLs come from `site_url`, so moving the site to another domain is one
+    config line; without a site URL the URL-bearing tags are simply left out (never a wrong domain)."""
+    import json
+
+    base = site_base(data)
+    a = lambda text: html.escape(str(text), quote=True)  # noqa: E731
+    lines = [f'<meta name="description" content="{a(DESCRIPTION)}">']
+    if base:
+        lines.append(f'<link rel="canonical" href="{a(base)}/">')
+    lines.append('<meta property="og:type" content="website">')
+    if base:
+        lines.append(f'<meta property="og:url" content="{a(base)}/">')
+    lines += [f'<meta property="og:title" content="{a(TITLE)}">', f'<meta property="og:description" content="{a(DESCRIPTION)}">',
+              '<meta name="twitter:card" content="summary_large_image">', '<meta property="og:site_name" content="The Model Ledger">',
+              '<meta property="og:locale" content="en_US">']
+    if base:
+        lines.append(f'<meta property="og:image" content="{a(base)}/og-image.png">')
+    lines += ['<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">',
+              f'<meta property="og:image:alt" content="{a(OG_ALT)}">']
+    if base:
+        lines.append(f'<meta name="twitter:image" content="{a(base)}/og-image.png">')
+    lines += ['<meta name="theme-color" content="#171B22">', '<meta name="robots" content="index, follow">',
+              '<link rel="icon" href="/favicon.svg" type="image/svg+xml">']
+    site = {"@type": "WebSite", **({"@id": f"{base}/#website", "url": f"{base}/"} if base else {}), "name": "The Model Ledger", "inLanguage": "en"}
+    software = {"@type": "SoftwareSourceCode", **({"@id": f"{base}/#software"} if base else {}), "name": "The Model Ledger (multi-agent-eval)",
+                "description": DESCRIPTION, **({"url": f"{base}/"} if base else {}), "codeRepository": REPO_URL,
+                "programmingLanguage": "Python", "runtimePlatform": "Python 3.13", "keywords": KEYWORDS}
+    ld = json.dumps({"@context": "https://schema.org", "@graph": [site, software]}, indent=1)
+    lines.append(f'<script type="application/ld+json">\n{ld}\n</script>')
+    return "\n" + "\n".join(lines) + "\n"
+
+
+def sitemap(data: dict) -> str:
+    base = site_base(data)
+    urls = f"  <url>\n    <loc>{html.escape(base)}/</loc>\n  </url>\n" if base else ""
+    return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n'
+
+
+def robots(data: dict) -> str:
+    base = site_base(data)
+    return "User-agent: *\nAllow: /\n" + (f"\nSitemap: {base}/sitemap.xml\n" if base else "")
+
+
+RENDERERS = {"head": head, "stats": stats, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
 README_RENDERERS = {"readme_results": readme_results}
 
 
@@ -345,3 +404,17 @@ def render(page: str, data: dict, renderers: dict = RENDERERS) -> str:
 
 def render_readme(text: str, data: dict) -> str:
     return render(text, data, README_RENDERERS)
+
+
+def generated_files(root, data: dict) -> list[tuple]:
+    """Every generated file under `root` and the text it should contain: AUTO regions spliced into the
+    hand-written page and README, plus the wholly generated sitemap.xml and robots.txt. The single list
+    shared by scripts/build_site.py (and CI's freshness check) and the release pipeline."""
+    import pathlib
+
+    root = pathlib.Path(root)
+    docs, page, readme = root / "docs", root / "docs" / "index.html", root / "README.md"
+    files = [(page, render(page.read_text(), data))]
+    if readme.exists():
+        files.append((readme, render_readme(readme.read_text(), data)))
+    return files + [(docs / "sitemap.xml", sitemap(data)), (docs / "robots.txt", robots(data))]

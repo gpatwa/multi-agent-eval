@@ -8,7 +8,7 @@ from html.parser import HTMLParser
 import pytest
 
 from eval_agents.judge import Verdict
-from eval_agents.site import REGION, render, render_readme
+from eval_agents.site import REGION, TITLE, generated_files, head, render, render_readme, robots, sitemap
 from tests.test_publish import CANDS, JUDGE_B, _release, make_run
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -136,3 +136,60 @@ def test_readme_states_only_what_the_data_supports(tmp_path):
     md = render_readme(README, _release(tmp_path))
     assert "| claude |" in md and "Zero guardrail flags" in md and "Spearman ρ = 1.00" in md
     assert "docs/results/public/report.md" in md and "**claude leads on both**" in md
+
+
+# ---------------------------------------------------------------- one site URL, everywhere
+
+
+def test_every_generated_file_is_the_render_of_the_committed_data():
+    for path, text in generated_files(ROOT, DATA):
+        assert path.read_text() == text, f"{path.relative_to(ROOT)} is stale: run python scripts/build_site.py"
+
+
+def test_committed_data_carries_the_site_url_from_release_yaml():
+    import yaml
+
+    site = (yaml.safe_load((ROOT / "release.yaml").read_text()).get("site") or {})["url"].rstrip("/")
+    assert DATA["site_url"] == site and site.startswith("https://")
+
+
+def test_head_urls_follow_the_site_url():
+    import json as _json
+
+    out = head({"site_url": "https://eval.aveto.dev/"})  # a trailing slash must not double up
+    assert '<link rel="canonical" href="https://eval.aveto.dev/">' in out
+    assert 'property="og:url" content="https://eval.aveto.dev/"' in out and 'property="og:image" content="https://eval.aveto.dev/og-image.png"' in out
+    assert 'name="twitter:image" content="https://eval.aveto.dev/og-image.png"' in out
+    ld = _json.loads(out.split('<script type="application/ld+json">')[1].split("</script>")[0])
+    site, software = ld["@graph"]
+    assert site["@id"] == "https://eval.aveto.dev/#website" and software["url"] == "https://eval.aveto.dev/"
+
+
+def test_head_never_names_a_wrong_domain_when_none_is_configured():
+    import json as _json
+
+    out = head({})
+    assert "canonical" not in out and 'og:url' not in out and 'og:image" content' not in out and 'twitter:image' not in out
+    ld = _json.loads(out.split('<script type="application/ld+json">')[1].split("</script>")[0])
+    assert "url" not in ld["@graph"][0] and "@id" not in ld["@graph"][0]
+
+
+def test_sitemap_and_robots_derive_from_the_same_url():
+    assert "<loc>https://eval.aveto.dev/</loc>" in sitemap({"site_url": "https://eval.aveto.dev"})
+    assert robots({"site_url": "https://eval.aveto.dev"}).endswith("Sitemap: https://eval.aveto.dev/sitemap.xml\n")
+    assert "<loc>" not in sitemap({}) and "Sitemap:" not in robots({})
+
+
+def test_the_static_title_matches_the_one_the_head_repeats_in_og_title():
+    assert f"<title>{TITLE}</title>" in PAGE
+
+
+def test_no_stale_domain_is_left_anywhere_outside_the_tests():
+    """The old domain is gone from everything that ships (the site URL lives only in release.yaml)."""
+    stale = "aveto" + ".com"
+    offenders = []
+    for p in list((ROOT / "docs").rglob("*")) + [ROOT / "README.md", ROOT / "release.yaml"] + list((ROOT / "scripts").glob("*.py")) \
+            + list((ROOT / ".github").rglob("*.yml")) + list((ROOT / "eval_agents").glob("*.py")) + list((ROOT / "assets").glob("*")):
+        if p.is_file() and p.suffix in {".html", ".xml", ".txt", ".md", ".yaml", ".yml", ".py", ".json"} and stale in p.read_text():
+            offenders.append(str(p.relative_to(ROOT)))
+    assert not offenders, f"still mentions {stale}: {offenders}"

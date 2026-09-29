@@ -190,14 +190,14 @@ def walkthrough_view(run_dir: pathlib.Path, task_id: str) -> dict | None:
 
 
 def build_release(*, suites: dict[str, pathlib.Path], second: dict[str, pathlib.Path] | None,
-                  walkthrough_task: str, providers: int, suite_order: list[str] | None = None) -> dict:
+                  walkthrough_task: str, providers: int, suite_order: list[str] | None = None, site_url: str = "") -> dict:
     """The published document. `suites[name]` is a merged run directory; `second[name]`
     an optional rejudge of it by a second judge; the first suite is the public one
-    (the walkthrough quotes it)."""
+    (the walkthrough quotes it). `site_url` is where the page is served (release.yaml `site.url`)."""
     order = suite_order or list(suites)
     data = {
         "schema": SCHEMA, "status": "published", "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "providers": providers,
+        "providers": providers, "site_url": site_url,
         "suites": {name: suite_view(suites[name]) for name in order},
         "agreement": {name: agreement_view(suites[name], second[name]) for name in order if second and name in second} or None,
         "walkthrough": walkthrough_view(suites[order[0]], walkthrough_task),
@@ -205,10 +205,10 @@ def build_release(*, suites: dict[str, pathlib.Path], second: dict[str, pathlib.
     return data
 
 
-def pending_data(*, suites: dict[str, dict], providers: int, reason: str) -> dict:
+def pending_data(*, suites: dict[str, dict], providers: int, reason: str, site_url: str = "") -> dict:
     """Placeholder the page renders while no valid results exist. `suites[name]` is
     {"n_tasks": .., "n_guardrail": ..} (sizes only)."""
-    return {"schema": SCHEMA, "status": "pending", "reason": reason, "providers": providers, "suites": suites}
+    return {"schema": SCHEMA, "status": "pending", "reason": reason, "providers": providers, "site_url": site_url, "suites": suites}
 
 
 # ---------------------------------------------------------------- gates

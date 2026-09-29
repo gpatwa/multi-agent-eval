@@ -39,7 +39,7 @@ import yaml
 from .config import load_config, load_tasks
 from .publish import build_release, check_gates, leak_probes
 from .results_io import load_results, load_settings
-from .site import render, render_readme
+from .site import generated_files
 
 REPO = pathlib.Path(__file__).resolve().parent.parent  # where main.py and scripts/ live (may differ from `root` in tests)
 EXIT_OK, EXIT_ERROR, EXIT_BLOCKED, EXIT_WAITING = 0, 1, 2, 75
@@ -60,6 +60,7 @@ class Release:
     candidates: list[str]
     env_unset: list[str] = field(default_factory=list)
     commit_trailer: str = ""
+    site_url: str = ""  # where the page is served (release.yaml site.url); the source of every URL the page names
 
     @classmethod
     def load(cls, path: pathlib.Path) -> "Release":
@@ -70,7 +71,7 @@ class Release:
             require_second_judge=bool(d.get("require_second_judge", False)), walkthrough_task=d["walkthrough_task"],
             min_judge_coverage=float(d.get("min_judge_coverage", 0.9)), suites=d["suites"],
             candidates=[c["name"] for c in cfg["candidates"]], env_unset=d.get("env_unset", []),
-            commit_trailer=d.get("commit_trailer", ""),
+            commit_trailer=d.get("commit_trailer", ""), site_url=((d.get("site") or {}).get("url") or "").rstrip("/"),
         )
 
 
@@ -297,7 +298,8 @@ class Pipeline:
         names = list(self.r.suites)
         second = {s: self.second_dir(s) for s in names if self.r.second_judge_config and self.second_complete(s)}
         data = build_release(suites={s: self.merged_dir(s) for s in names}, second=second or None,
-                             walkthrough_task=self.r.walkthrough_task, providers=len(_PROVIDERS) - 1, suite_order=names)
+                             walkthrough_task=self.r.walkthrough_task, providers=len(_PROVIDERS) - 1, suite_order=names,
+                             site_url=self.r.site_url)
         probes = self.private_probes()
         problems = check_gates(data, required_candidates=self.r.candidates, require_second_judge=self.r.require_second_judge,
                                private_probes=probes, min_coverage=self.r.min_judge_coverage)
@@ -320,22 +322,18 @@ class Pipeline:
         data_path = docs / "data" / "results.json"
         strip = lambda d: {k: v for k, v in d.items() if k != "generated"}  # noqa: E731
         prior = json.loads(data_path.read_text()) if data_path.exists() else {}
-        page, readme = docs / "index.html", self.root / "README.md"
-        stale_text = (page.read_text() != render(page.read_text(), data)
-                      or (readme.exists() and readme.read_text() != render_readme(readme.read_text(), data)))
+        generated = generated_files(self.root, data)  # page, README, sitemap.xml, robots.txt
+        stale_text = any(not p.exists() or p.read_text() != t for p, t in generated)
         changed = strip(prior) != strip(data) or stale_text or any(not p.exists() or p.read_text() != t for p, t in artifacts.items())
         if not changed:
             self.result.state = "current"
             return True
         data_path.parent.mkdir(parents=True, exist_ok=True)
         data_path.write_text(json.dumps(data, indent=2) + "\n")
-        for p, text in artifacts.items():
+        for p, text in [*artifacts.items(), *generated]:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(text)
-        page.write_text(render(page.read_text(), data))
-        if readme.exists():
-            readme.write_text(render_readme(readme.read_text(), data))
-        self.result.actions.append("published data + page + README")
+        self.result.actions.append("published data + page + README + sitemap")
         self.result.state = "published"
         if do_commit:
             self.commit(["docs", "README.md"], f"Publish {self.r.name} results (validated, effort-matched)")

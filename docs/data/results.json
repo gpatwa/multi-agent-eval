@@ -3,6 +3,7 @@
   "status": "pending",
   "reason": "Waiting for GPT at matched reasoning effort and the second-judge comparison.",
   "providers": 19,
+  "site_url": "https://eval.aveto.dev",
   "suites": {
     "public": {
       "n_tasks": 40,
