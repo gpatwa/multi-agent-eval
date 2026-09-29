@@ -195,6 +195,12 @@
   .tested-models .via{font-size:12px; color:var(--slate);}
   .tested-meta{margin-top:10px; font-size:13px; color:var(--slate);}
   .tested-meta b{color:var(--ink); font-weight:500;}
+  .src-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px;}
+  .src-group{padding:16px 18px; border:1px solid var(--line); border-radius:10px; background:var(--surface-raised); min-width:0;}
+  .src-group h3{font-size:15px; font-weight:600; display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;}
+  .src-group ul{list-style:none; margin:0; padding:0; display:grid; gap:6px; font-size:14px;}
+  .src-group a{color:var(--brass-strong); text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:3px; overflow-wrap:anywhere;}
+  .src-group a:hover{text-decoration-color:var(--brass);}
   .prow .fl{color:var(--critical); font-size:11px; margin-left:4px; white-space:nowrap;}
   .prow .nm{overflow:visible; white-space:normal;}
   .pill{display:inline-block; padding:2px 9px; border-radius:99px; font-family:"Geist Mono",monospace; font-size:12px; font-weight:500; background:var(--brass-tint); color:var(--brass-strong);}
@@ -472,6 +478,7 @@
       <a href="#history">History</a>
       <a href="#method">Method</a>
       <a href="#coverage">Coverage</a>
+      <a href="#sources">Sources</a>
     </nav>
     <a class="btn btn-ghost" href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">View on GitHub</a>
   </div>
@@ -808,6 +815,21 @@
     </div>
     <p class="fact">Most speak the same OpenAI-compatible protocol, so a new adapter is about eight lines.</p>
   </section>
+
+  <section id="sources" class="wrap"><!-- AUTO:sources -->
+    <div class="sec-head reveal">
+      <p class="eyebrow">Sources</p>
+      <h2>Where the model names and versions come from</h2>
+      <p class="dek">Each vendor's own pages, so you can check what is current. Names and versions were last checked in September 2026 and will drift as vendors ship.</p>
+    </div>
+    <div class="src-grid reveal">
+      <div class="src-group"><h3>Anthropic <span class="pill ok">tested in the latest run</span></h3><ul><li><a href="https://www.anthropic.com/claude-opus-5-5" target="_blank" rel="noopener">Claude Opus 5.5 announcement</a></li><li><a href="https://www.anthropic.com/news/claude-opus-5" target="_blank" rel="noopener">Claude Opus 5 announcement</a></li><li><a href="https://www.anthropic.com/claude-sonnet-5-5" target="_blank" rel="noopener">Claude Sonnet 5.5 announcement</a></li><li><a href="https://platform.claude.com/docs/en/models/overview" target="_blank" rel="noopener">Claude models overview</a></li></ul></div>
+      <div class="src-group"><h3>OpenAI <span class="pill ok">tested in the latest run</span></h3><ul><li><a href="https://openai.com/index/introducing-gpt-6-sol-and-luna/" target="_blank" rel="noopener">Introducing GPT-6 Sol and Luna</a></li><li><a href="https://developers.openai.com/api/docs/guides/latest-model" target="_blank" rel="noopener">Latest model guidance</a></li><li><a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">API model list</a></li></ul></div>
+      <div class="src-group"><h3>Google <span class="pill ok">tested in the latest run</span></h3><ul><li><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank" rel="noopener">Gemini API models</a></li><li><a href="https://ai.google.dev/gemini-api/docs/changelog" target="_blank" rel="noopener">Gemini API release notes</a></li></ul></div>
+      <div class="src-group"><h3>Meta <span class="pill">not tested here</span></h3><ul><li><a href="https://about.fb.com/news/2026/09/introducing-muse-personal-ai-agent/" target="_blank" rel="noopener">Introducing Muse</a></li><li><a href="https://developer.meta.com/ai/models/muse-spark/" target="_blank" rel="noopener">Muse Spark for developers</a></li><li><a href="https://developer.meta.com/ai/products/meta-model-api/" target="_blank" rel="noopener">Meta Model API</a></li></ul></div>
+      <div class="src-group"><h3>Further reading</h3><ul><li><a href="https://www.databricks.com/blog/how-databricks-rolls-out-frontier-models-14000-employees-day-1" target="_blank" rel="noopener">How Databricks rolls out frontier models to its employees on day 1</a></li></ul></div>
+    </div>
+  <!-- /AUTO:sources -->  </section>
 
   <section class="cta-band">
     <div class="wrap">

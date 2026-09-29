@@ -237,3 +237,19 @@ def test_hero_names_every_tested_model_with_version_path_and_effort(tmp_path):
 def test_pending_hero_names_no_models():
     out = regions(render(PAGE, {**DATA, "status": "pending"}))
     assert "Models tested in the latest run" not in out
+
+
+def test_sources_are_vendor_pages_marked_by_what_was_tested(tmp_path):
+    from eval_agents.site import SOURCES
+
+    urls = [u for links in SOURCES.values() for _, u in links]
+    assert len(urls) == len(set(urls)) and all(u.startswith("https://") for u in urls)
+    r = regions(render(PAGE, _release(tmp_path)))
+    assert all(f'href="{u}"' in r for u in urls) and 'rel="noopener"' in r
+    assert r.count("tested in the latest run</span>") == 3 and "not tested here" in r  # Anthropic, OpenAI, Google; Meta not
+    assert_well_formed(r)
+
+
+def test_pending_sources_claim_nothing_was_tested():
+    r = regions(render(PAGE, {**DATA, "status": "pending"}))
+    assert "Where the model names and versions come from" in r and "tested in the latest run</span>" not in r

@@ -115,6 +115,48 @@ def tested(data: dict) -> str:
             + "\n        ".join(items) + f'\n      </ul>\n      <p class="tested-meta">{meta}. {judges}.</p>\n    ')
 
 
+# ---------------------------------------------------------------- sources
+
+# Primary pages for each vendor's model names and versions, checked 2026-09-29. Only vendors' own pages
+# (plus one methodology write-up); a vendor group is marked "tested" when its model is in the latest run.
+SOURCES = {
+    "Anthropic": [("Claude Opus 5.5 announcement", "https://www.anthropic.com/claude-opus-5-5"),
+                  ("Claude Opus 5 announcement", "https://www.anthropic.com/news/claude-opus-5"),
+                  ("Claude Sonnet 5.5 announcement", "https://www.anthropic.com/claude-sonnet-5-5"),
+                  ("Claude models overview", "https://platform.claude.com/docs/en/models/overview")],
+    "OpenAI": [("Introducing GPT-6 Sol and Luna", "https://openai.com/index/introducing-gpt-6-sol-and-luna/"),
+               ("Latest model guidance", "https://developers.openai.com/api/docs/guides/latest-model"),
+               ("API model list", "https://developers.openai.com/api/docs/models")],
+    "Google": [("Gemini API models", "https://ai.google.dev/gemini-api/docs/models"),
+               ("Gemini API release notes", "https://ai.google.dev/gemini-api/docs/changelog")],
+    "Meta": [("Introducing Muse", "https://about.fb.com/news/2026/09/introducing-muse-personal-ai-agent/"),
+             ("Muse Spark for developers", "https://developer.meta.com/ai/models/muse-spark/"),
+             ("Meta Model API", "https://developer.meta.com/ai/products/meta-model-api/")],
+}
+FURTHER_READING = [("How Databricks rolls out frontier models to its employees on day 1",
+                    "https://www.databricks.com/blog/how-databricks-rolls-out-frontier-models-14000-employees-day-1")]
+
+
+def sources(data: dict) -> str:
+    tested_vendors = set()
+    if data["status"] == "published":
+        public = data["suites"][next(iter(data["suites"]))]
+        tested_vendors = {vendor_of(c["model"], n) for n, c in public["candidates"].items()}
+    head = ('\n    <div class="sec-head reveal">\n      <p class="eyebrow">Sources</p>\n'
+            '      <h2>Where the model names and versions come from</h2>\n'
+            '      <p class="dek">Each vendor\'s own pages, so you can check what is current. Names and versions were last checked '
+            'in September 2026 and will drift as vendors ship.</p>\n    </div>\n')
+    groups = []
+    for vendor, links in SOURCES.items():
+        badge = ('<span class="pill ok">tested in the latest run</span>' if vendor in tested_vendors
+                 else '<span class="pill">not tested here</span>')
+        items = "".join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t)}</a></li>' for t, u in links)
+        groups.append(f'<div class="src-group"><h3>{esc(vendor)} {badge}</h3><ul>{items}</ul></div>')
+    further = "".join(f'<li><a href="{esc(u)}" target="_blank" rel="noopener">{esc(t)}</a></li>' for t, u in FURTHER_READING)
+    return (head + '    <div class="src-grid reveal">\n      ' + "\n      ".join(groups)
+            + f'\n      <div class="src-group"><h3>Further reading</h3><ul>{further}</ul></div>\n    </div>\n  ')
+
+
 # ---------------------------------------------------------------- history
 
 HISTORY_URL = "https://github.com/gpatwa/multi-agent-eval/blob/main/docs/data/history.json"
@@ -537,7 +579,7 @@ def robots(data: dict) -> str:
     return "User-agent: *\nAllow: /\n" + (f"\nSitemap: {base}/sitemap.xml\n" if base else "")
 
 
-RENDERERS = {"head": head, "stats": stats, "panels": panels, "tested": tested, "history": history, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
+RENDERERS = {"head": head, "stats": stats, "panels": panels, "tested": tested, "sources": sources, "history": history, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
 README_RENDERERS = {"readme_results": readme_results}
 
 
