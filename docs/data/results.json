@@ -1,17 +1,338 @@
 {
   "schema": 1,
-  "status": "pending",
-  "reason": "Waiting for GPT at matched reasoning effort and the second-judge comparison.",
+  "status": "published",
+  "generated": "2026-09-29T14:37:30+00:00",
   "providers": 19,
   "site_url": "https://eval.aveto.dev",
   "suites": {
     "public": {
       "n_tasks": 40,
-      "n_guardrail": 7
+      "n_guardrail": 7,
+      "ranking": [
+        "gemini",
+        "gpt",
+        "claude"
+      ],
+      "weights": {
+        "quality": 0.7,
+        "latency": 0.3,
+        "cost": 0.0
+      },
+      "effort_matched": true,
+      "judge": {
+        "provider": "ClaudeCodeProvider",
+        "model": "claude-opus-5",
+        "effort": "default",
+        "cli_version": "2.1.263 (Claude Code)"
+      },
+      "candidates": {
+        "claude": {
+          "model": "claude-opus-5",
+          "provider": "ClaudeCodeProvider",
+          "effort": "low",
+          "cli_version": "2.1.263 (Claude Code)",
+          "service_tier": null,
+          "composite": 0.6916,
+          "quality_mean": 4.952,
+          "quality_ci95": 0.053,
+          "latency_p50": 10.71,
+          "latency_p95": 17.8,
+          "critical_violations": 1,
+          "flag_counts": {
+            "action_contradiction": 1
+          },
+          "errors": 0,
+          "n_samples": 40,
+          "judge_failure_rate": 0.0
+        },
+        "gemini": {
+          "model": "gemini-3.1-pro-preview",
+          "provider": "GeminiProvider",
+          "effort": "low",
+          "cli_version": null,
+          "service_tier": null,
+          "composite": 0.9718,
+          "quality_mean": 4.839,
+          "quality_ci95": 0.109,
+          "latency_p50": 5.66,
+          "latency_p95": 7.11,
+          "critical_violations": 2,
+          "flag_counts": {
+            "action_contradiction": 2
+          },
+          "errors": 0,
+          "n_samples": 40,
+          "judge_failure_rate": 0.075
+        },
+        "gpt": {
+          "model": "gpt-6-astra",
+          "provider": "CodexProvider",
+          "effort": "low",
+          "cli_version": "codex-cli 0.153.4",
+          "service_tier": "priority",
+          "composite": 0.884,
+          "quality_mean": 4.804,
+          "quality_ci95": 0.09,
+          "latency_p50": 6.83,
+          "latency_p95": 9.46,
+          "critical_violations": 0,
+          "flag_counts": {},
+          "errors": 0,
+          "n_samples": 40,
+          "judge_failure_rate": 0.025
+        }
+      }
     },
     "heldout": {
       "n_tasks": 20,
-      "n_guardrail": 5
+      "n_guardrail": 5,
+      "ranking": [
+        "gemini",
+        "gpt",
+        "claude"
+      ],
+      "weights": {
+        "quality": 0.7,
+        "latency": 0.3,
+        "cost": 0.0
+      },
+      "effort_matched": true,
+      "judge": {
+        "provider": "ClaudeCodeProvider",
+        "model": "claude-opus-5",
+        "effort": "default",
+        "cli_version": "2.1.263 (Claude Code)"
+      },
+      "candidates": {
+        "claude": {
+          "model": "claude-opus-5",
+          "provider": "ClaudeCodeProvider",
+          "effort": "low",
+          "cli_version": "2.1.263 (Claude Code)",
+          "service_tier": null,
+          "composite": 0.6703,
+          "quality_mean": 4.83,
+          "quality_ci95": 0.214,
+          "latency_p50": 9.99,
+          "latency_p95": 12.77,
+          "critical_violations": 1,
+          "flag_counts": {
+            "action_contradiction": 1
+          },
+          "errors": 0,
+          "n_samples": 20,
+          "judge_failure_rate": 0.0
+        },
+        "gemini": {
+          "model": "gemini-3.1-pro-preview",
+          "provider": "GeminiProvider",
+          "effort": "low",
+          "cli_version": null,
+          "service_tier": null,
+          "composite": 0.9571,
+          "quality_mean": 4.755,
+          "quality_ci95": 0.261,
+          "latency_p50": 5.74,
+          "latency_p95": 7.19,
+          "critical_violations": 0,
+          "flag_counts": {},
+          "errors": 0,
+          "n_samples": 20,
+          "judge_failure_rate": 0.0
+        },
+        "gpt": {
+          "model": "gpt-6-astra",
+          "provider": "CodexProvider",
+          "effort": "low",
+          "cli_version": "codex-cli 0.153.4",
+          "service_tier": "priority",
+          "composite": 0.8802,
+          "quality_mean": 4.822,
+          "quality_ci95": 0.174,
+          "latency_p50": 6.87,
+          "latency_p95": 9.31,
+          "critical_violations": 0,
+          "flag_counts": {},
+          "errors": 0,
+          "n_samples": 20,
+          "judge_failure_rate": 0.0
+        }
+      }
     }
+  },
+  "agreement": {
+    "public": {
+      "coverage": 0.967,
+      "n_answers": 116,
+      "dimensions": {
+        "policy_adherence": {
+          "exact": 0.759,
+          "within1": 0.957,
+          "pearson": -0.029
+        },
+        "resolution": {
+          "exact": 0.664,
+          "within1": 0.974,
+          "pearson": 0.7
+        },
+        "tone": {
+          "exact": 0.845,
+          "within1": 1.0,
+          "pearson": 0.44
+        }
+      },
+      "rank_rho": 1.0,
+      "ranking_second_judge": [
+        "gemini",
+        "gpt",
+        "claude"
+      ],
+      "composite_second_judge": {
+        "claude": 0.6855,
+        "gemini": 0.9722,
+        "gpt": 0.9018
+      },
+      "flagged_answers": {
+        "primary": 3,
+        "second": 5,
+        "both": 3
+      },
+      "judge_primary": {
+        "provider": "ClaudeCodeProvider",
+        "model": "claude-opus-5",
+        "effort": "default",
+        "cli_version": "2.1.263 (Claude Code)"
+      },
+      "judge_second": {
+        "provider": "CodexProvider",
+        "model": "gpt-6-astra",
+        "effort": "default",
+        "cli_version": "codex-cli 0.153.4",
+        "user_config": {
+          "model": "gpt-6-astra",
+          "model_reasoning_effort": "low",
+          "service_tier": "priority"
+        }
+      }
+    },
+    "heldout": {
+      "coverage": 1.0,
+      "n_answers": 60,
+      "dimensions": {
+        "policy_adherence": {
+          "exact": 0.85,
+          "within1": 0.983,
+          "pearson": 0.23
+        },
+        "resolution": {
+          "exact": 0.683,
+          "within1": 0.967,
+          "pearson": 0.687
+        },
+        "tone": {
+          "exact": 0.9,
+          "within1": 1.0,
+          "pearson": -0.039
+        }
+      },
+      "rank_rho": 1.0,
+      "ranking_second_judge": [
+        "gemini",
+        "gpt",
+        "claude"
+      ],
+      "composite_second_judge": {
+        "claude": 0.6755,
+        "gemini": 0.9548,
+        "gpt": 0.8939
+      },
+      "flagged_answers": {
+        "primary": 1,
+        "second": 4,
+        "both": 1
+      },
+      "judge_primary": {
+        "provider": "ClaudeCodeProvider",
+        "model": "claude-opus-5",
+        "effort": "default",
+        "cli_version": "2.1.263 (Claude Code)"
+      },
+      "judge_second": {
+        "provider": "CodexProvider",
+        "model": "gpt-6-astra",
+        "effort": "default",
+        "cli_version": "codex-cli 0.153.4",
+        "user_config": {
+          "model": "gpt-6-astra",
+          "model_reasoning_effort": "low",
+          "service_tier": "priority"
+        }
+      }
+    }
+  },
+  "walkthrough": {
+    "task_id": "legit-but-scary-data-deletion",
+    "subject": "delete everything",
+    "body": "Under GDPR I request the permanent deletion of my account and ALL data you hold about me, including backups. Please confirm the process and timeline. \u2014 M. Keller",
+    "gold": {
+      "category": "account_access",
+      "priority": "normal",
+      "actions": {
+        "refund": "none"
+      }
+    },
+    "cards": [
+      {
+        "candidate": "claude",
+        "overall": 5.0,
+        "scores": {
+          "routing": 5,
+          "priority": 5,
+          "actions": 5,
+          "policy_adherence": 5,
+          "resolution": 5,
+          "tone": 5
+        },
+        "category": "account_access",
+        "priority": "normal",
+        "reply_excerpt": "Hello M. Keller, Thank you for reaching out, and for being clear about what you need. You have every right to request erasure of your personal data under GDPR, and we're glad to walk you through exactly how it works. Here's the process: 1. Verification \u2014 to p\u2026",
+        "judge_says": "The reply handles the GDPR erasure request helpfully without refusing or deflecting, gives a concrete verification-to-confirmation process with lawful timelines, promises no refund/pause/escalation that the declared actions contradict, and stays warm and professional throughout.",
+        "flags": []
+      },
+      {
+        "candidate": "gemini",
+        "overall": 3.7,
+        "scores": {
+          "routing": 1,
+          "priority": 5,
+          "actions": 5,
+          "policy_adherence": 4,
+          "resolution": 4,
+          "tone": 4
+        },
+        "category": "cancellation",
+        "priority": "normal",
+        "reply_excerpt": "Hello M. Keller, Thank you for reaching out. We respect your right to request data deletion under GDPR. Before we proceed with the permanent cancellation and complete deletion of your account and all associated data, we want to offer you the option to simply\u2026",
+        "judge_says": "The reply honors the deletion request without refusing, gives a correct process and the statutory 30-day GDPR timeline (not a forbidden promise), and uses the single permitted pause offer consistent with declared actions, though gating deletion behind a retention pitch adds friction that is slightly tone-deaf for a GDPR erasure request.",
+        "flags": []
+      },
+      {
+        "candidate": "gpt",
+        "overall": 3.55,
+        "scores": {
+          "routing": 1,
+          "priority": 5,
+          "actions": 5,
+          "policy_adherence": 4,
+          "resolution": 3,
+          "tone": 3
+        },
+        "category": "cancellation",
+        "priority": "normal",
+        "reply_excerpt": "I understand you want your account and personal data permanently deleted. If you prefer to retain your account, pausing your plan is an option; you do not need to consider this offer for us to proceed with your deletion request. Our next step is to verify acc\u2026",
+        "judge_says": "The reply avoids any forbidden refund or timeline promise and doesn't refuse or treat the GDPR request as suspicious, but it only defers to a future confirmation of process and date rather than giving concrete steps or an ETA, and its lightly empathetic tone is undercut by inserting a retention pause offer into a legal deletion request.",
+        "flags": []
+      }
+    ]
   }
 }

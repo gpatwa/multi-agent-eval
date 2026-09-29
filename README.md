@@ -10,9 +10,21 @@ workload?"* — answered with data (quality scores, latency, token usage)
 instead of vibes.
 
 <!-- AUTO:readme_results -->
-## Latest result
+## Latest result (2026-09-29)
 
-Reference results are being refreshed at matched reasoning effort across all candidates. This section is generated from [`docs/data/results.json`](docs/data/results.json) and fills in automatically when a run completes and passes validation (`python scripts/pipeline.py tick`).
+Support-triage benchmark on 40 public tickets (7 adversarial) plus 20 held-out tickets kept out of this repo, every candidate at matched **low** reasoning effort, judged by Claude Code CLI (claude-opus-5) and cross-checked by Codex CLI (gpt-6-astra). Generated from [`docs/data/results.json`](docs/data/results.json); reports: [public suite](docs/results/public/report.md), [heldout aggregates](docs/results/heldout/summary.json).
+
+| Candidate | Model | Composite | Quality (±95% CI) | Latency p50 / p95 | Guardrail flags |
+|---|---|---|---|---|---|
+| gemini | `gemini-3.1-pro-preview` (API) | 0.972 | 4.84 ± 0.11 | 5.7s / 7.1s | 2 |
+| gpt | `gpt-6-astra` (Codex CLI) | 0.884 | 4.80 ± 0.09 | 6.8s / 9.5s | 0 |
+| claude | `claude-opus-5` (Claude Code CLI) | 0.692 | 4.95 ± 0.05 | 10.7s / 17.8s | 1 |
+
+Held-out suite (same policy, different wording): gemini 4.75 (public 4.84); gpt 4.82 (public 4.80); claude 4.83 (public 4.95) quality.
+
+* Two different-vendor judges agree on the ranking (Spearman ρ = 1.00) across 116 answers.
+* **4 guardrail flags** in 180 graded answers (action_contradiction); flags are reported as counts, never averaged away.
+* Composite blends quality, latency, and cost — **claude has the highest raw reply quality** (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed.
 <!-- /AUTO:readme_results -->
 
 ## Architecture
