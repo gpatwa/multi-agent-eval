@@ -41,21 +41,8 @@ from eval_agents.judge import JUDGE_SYSTEM  # noqa: E402
 from eval_agents.agents import Agent  # noqa: E402
 from eval_agents.registry import create_provider  # noqa: E402
 from eval_agents.report import JUDGE_FAILURE_WARN, summarize, to_json, to_markdown, to_summary_json  # noqa: E402
-from eval_agents.runner import CandidateResult, Task, TaskResult  # noqa: E402
-
-
-def load_results(path: pathlib.Path) -> list[TaskResult]:
-    """Rebuild TaskResult objects from a results.json (verdicts dropped)."""
-    data = json.loads((path / "results.json").read_text())
-    out = []
-    for tr in data:
-        task = Task(**tr["task"])
-        results = [
-            CandidateResult(**{k: v for k, v in r.items() if k != "verdict"})
-            for r in tr["results"]
-        ]
-        out.append(TaskResult(task=task, results=results))
-    return out
+from eval_agents.results_io import load_results  # noqa: E402
+from eval_agents.runner import CandidateResult, TaskResult  # noqa: E402
 
 
 MAX_CONSECUTIVE_FAILURES = 5
@@ -76,19 +63,6 @@ def reusable_verdicts(source: list[TaskResult], partial: list[TaskResult]) -> di
             if r.verdict and not r.verdict.parse_error and answers.get(k) == r.answer:
                 reuse[k] = r.verdict
     return reuse
-
-
-def load_results_with_verdicts(path: pathlib.Path) -> list[TaskResult]:
-    """Like load_results, but keeps each stored verdict."""
-    from eval_agents.judge import Verdict
-
-    data = json.loads((path / "results.json").read_text())
-    out = load_results(path)
-    for tr, raw in zip(out, data):
-        for r, rr in zip(tr.results, raw["results"]):
-            if rr.get("verdict"):
-                r.verdict = Verdict(**rr["verdict"])
-    return out
 
 
 def rejudge(results: list[TaskResult], judge: Agent, scorer, reuse: dict | None = None,
@@ -150,7 +124,7 @@ def main(argv=None) -> int:
     results = load_results(args.source)
     reuse = {}
     if args.resume:
-        reuse = reusable_verdicts(results, load_results_with_verdicts(args.resume))
+        reuse = reusable_verdicts(results, load_results(args.resume, with_verdicts=True))
         print(f"resuming: reusing {len(reuse)} verdicts from {args.resume}", file=sys.stderr)
     results, stats = rejudge(results, judge, scorer, reuse, args.max_consecutive_failures)
     print(f"verdicts: {stats['reused']} reused, {stats['judged']} newly judged, {stats['failed']} failed",
