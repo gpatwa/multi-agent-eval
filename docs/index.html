@@ -717,7 +717,15 @@
       <p class="eyebrow">Published history</p>
       <h2>Every published run stays on the record</h2>
     </div>
-    <p class="proof-note">The first row appears here when a run is published.</p>
+    <div class="chart-card reveal">
+      <div class="topic-table"><table class="history-table">
+        <thead><tr><th>Published</th><th>Leader</th><th>Quality</th><th>Flags</th><th>Models</th><th>Changes</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">2026-09-29</th><td>gemini</td><td>gemini 4.84 · gpt 4.80 · claude 4.95</td><td>4</td><td class="mod">gemini-3.1-pro-preview · gpt-6-astra · claude-opus-5</td><td><span class="chg">first published run</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="quality-note">A row is added only when a model, score, judge or flag count changes. <a href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/data/history.json">Raw history</a>.</p>
+    </div>
   <!-- /AUTO:history -->  </section>
 
   <section id="method" class="wrap">
