@@ -14,6 +14,14 @@ ds = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ds)
 
 
+@pytest.fixture(autouse=True)
+def no_network(monkeypatch):
+    """Nothing in this module may reach a real host: `http` raises unless a test installs a fake."""
+    def blocked(method, url, **kw):
+        raise AssertionError(f"test tried to reach the network: {method} {url}")
+    monkeypatch.setattr(ds, "http", blocked)
+
+
 class FakeHTTP:
     """Scripted responses keyed by (method, url-suffix); records every call."""
 
@@ -178,3 +186,32 @@ def test_indexnow_ping_sends_host_key_and_location():
     assert body["host"] == "eval.aveto.com" and body["urlList"] == ["https://eval.aveto.com/"]
     assert body["keyLocation"] == f"https://eval.aveto.com/{ds.indexnow_key('eval.aveto.com')}.txt"
     assert ds.ping_indexnow(["u"], "eval.aveto.com", request=FakeHTTP({("POST", "/indexnow"): (403, "")})) is False
+
+
+def test_dns_credentials_are_optional_all_four_or_none(monkeypatch):
+    for n in ds.NIC_VARS:
+        monkeypatch.delenv(n, raising=False)
+    assert ds.nic_credentials() is None
+    for n in ds.NIC_VARS[:3]:
+        monkeypatch.setenv(n, "x")
+    assert ds.nic_credentials() is None  # three of four isn't enough to manage DNS
+    monkeypatch.setenv(ds.NIC_VARS[3], "x")
+    assert ds.nic_credentials() == ("x", "x", "x", "x")
+
+
+def test_deploy_without_dns_credentials_still_publishes_and_never_touches_dns(monkeypatch):
+    for n in ds.NIC_VARS:
+        monkeypatch.delenv(n, raising=False)
+    monkeypatch.setenv("CLOUDFLARE_API_TOKEN", "t")
+    monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "a")
+    calls = []
+    monkeypatch.setattr(ds, "http", FakeHTTP({
+        ("GET", f"/projects/{ds.PROJECT}"): cf_json({"subdomain": "model-ledger.pages.dev"}),
+        ("GET", f"/domains/{ds.DOMAIN}"): cf_json({"name": ds.DOMAIN, "status": "pending"}),
+    }))
+    monkeypatch.setattr(ds, "upload_site", lambda dry_run=False: calls.append("upload"))
+    monkeypatch.setattr(ds, "ensure_indexnow_key_file", lambda *a, **k: None)
+    monkeypatch.setattr(ds, "NicRu", lambda *a, **k: (_ for _ in ()).throw(AssertionError("DNS must not be touched")))
+    monkeypatch.setattr(ds, "verify", lambda cf, url=None, check_domain=True, **k: calls.append(("verify", url, check_domain)) or True)
+    assert ds.main(["deploy"]) == 0
+    assert calls == ["upload", ("verify", "https://model-ledger.pages.dev/", False)]

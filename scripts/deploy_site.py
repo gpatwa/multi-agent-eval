@@ -89,6 +89,15 @@ def http(method: str, url: str, *, headers=None, data: bytes | None = None, time
         return exc.code, exc.read().decode("utf-8", "replace")
 
 
+NIC_VARS = ("NICRU_USERNAME", "NICRU_PASSWORD", "NICRU_CLIENT_ID", "NICRU_CLIENT_SECRET")
+
+
+def nic_credentials() -> tuple[str, str, str, str] | None:
+    """All four NIC.RU values, or None (DNS management is optional: see cmd_deploy)."""
+    values = tuple(os.environ.get(n) for n in NIC_VARS)
+    return values if all(values) else None
+
+
 def _env(name: str) -> str:
     value = os.environ.get(name)
     if not value:
@@ -100,10 +109,11 @@ def _env(name: str) -> str:
 
 
 class Cloudflare:
-    def __init__(self, token: str, account_id: str, request=http):
+    def __init__(self, token: str, account_id: str, request=None):
         self._headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
         self._base = f"{CF_API}/accounts/{account_id}/pages/projects"
-        self._request = request
+        # Looked up at call time (not bound as a default argument) so tests can replace `http`.
+        self._request = request or (lambda *a, **k: http(*a, **k))
 
     def _call(self, method: str, path: str = "", body: dict | None = None) -> tuple[int, dict]:
         data = json.dumps(body).encode() if body is not None else None
@@ -220,7 +230,8 @@ def plan_dns(records: list[dict], label: str, target: str) -> dict:
 
 
 class NicRu:
-    def __init__(self, username, password, client_id, client_secret, request=http):
+    def __init__(self, username, password, client_id, client_secret, request=None):
+        request = request or (lambda *a, **k: http(*a, **k))
         self._request = request
         status, text = request(
             "POST", f"{NIC_API}/oauth/token",
@@ -275,19 +286,20 @@ class NicRu:
 # ---------------------------------------------------------------- verify
 
 
-def verify(cf: Cloudflare, timeout_s: int = 900) -> bool:
-    """Wait for Cloudflare to activate the domain and the live URL to serve the page.
-    A first deploy waits on DNS propagation + certificate issuance; returns False
-    (not an error) if that's still pending at the timeout — the next run re-checks."""
+def verify(cf: Cloudflare, url: str | None = None, check_domain: bool = True, timeout_s: int = 900) -> bool:
+    """Wait until `url` serves the landing page (and, for the custom domain, Cloudflare reports it
+    active). A first deploy waits on DNS propagation + certificate issuance; returns False (not an
+    error) if that's still pending at the timeout — the next run re-verifies."""
+    url = url or f"https://{DOMAIN}/"
     deadline = time.time() + timeout_s
     domain_state = page_ok = None
     while time.time() < deadline:
-        domain_state = cf.domain_status()
-        if domain_state == "active":
-            status, body = http("GET", f"https://{DOMAIN}/", timeout=15)
+        domain_state = cf.domain_status() if check_domain else "n/a"
+        if domain_state in ("active", "n/a"):
+            status, body = http("GET", url, timeout=15)
             page_ok = status == 200 and VERIFY_MARKER in body
             if page_ok:
-                log(f"live: https://{DOMAIN}/ serves the landing page")
+                log(f"live: {url} serves the landing page")
                 return True
         log(f"waiting: domain {domain_state or 'unknown'}, page {'ok' if page_ok else 'not yet'} …")
         time.sleep(30)
@@ -333,11 +345,16 @@ def cmd_deploy(args) -> int:
     pages_host = cf.ensure_project(dry_run=args.dry_run)
     upload_site(dry_run=args.dry_run)
     cf.ensure_domain(dry_run=args.dry_run)  # before DNS, or Cloudflare 522s the hostname
-    nic = NicRu(_env("NICRU_USERNAME"), _env("NICRU_PASSWORD"), _env("NICRU_CLIENT_ID"), _env("NICRU_CLIENT_SECRET"))
-    nic.ensure_cname(ZONE, cname_label(DOMAIN, ZONE), pages_host, dry_run=args.dry_run)
+    creds = nic_credentials()
+    if creds:
+        NicRu(*creds).ensure_cname(ZONE, cname_label(DOMAIN, ZONE), pages_host, dry_run=args.dry_run)
+    else:
+        # Publishing needs only Cloudflare. Without DNS access the site is still live at its pages.dev address,
+        # and the custom domain (already attached above) activates as soon as NIC.RU credentials exist.
+        log(f"NIC.RU credentials not set: published at https://{pages_host}/ ; {DOMAIN} activates once DNS can be set")
     if args.dry_run or args.no_verify:
         return 0
-    if verify(cf):
+    if verify(cf, url=f"https://{DOMAIN}/" if creds else f"https://{pages_host}/", check_domain=bool(creds)) and creds:
         ping_indexnow([f"https://{DOMAIN}/"])
     return 0
 

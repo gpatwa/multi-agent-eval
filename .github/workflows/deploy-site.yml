@@ -33,8 +33,8 @@ jobs:
       - name: Check credentials
         id: creds
         run: |
-          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$NICRU_USERNAME" ] \
-             && [ -n "$NICRU_PASSWORD" ] && [ -n "$NICRU_CLIENT_ID" ] && [ -n "$NICRU_CLIENT_SECRET" ]; then
+          # Cloudflare's pair is enough to publish (at the pages.dev address); the NIC.RU four add the custom domain.
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "::warning title=Site NOT deployed::Deploy credentials are not set, so this run published nothing (a green check here does not mean the site is live). Run: python scripts/deploy_site.py doctor"
