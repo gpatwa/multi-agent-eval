@@ -16,11 +16,12 @@ import fcntl
 import json
 import pathlib
 import sys
+import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from eval_agents.pipeline import EXIT_OK, Pipeline, Release  # noqa: E402
+from eval_agents.pipeline import EXIT_OK, EXIT_WAITING, Pipeline, Release  # noqa: E402
 
 
 def main(argv=None) -> int:
@@ -29,6 +30,9 @@ def main(argv=None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     t = sub.add_parser("tick")
     t.add_argument("--publish", action="store_true", help="commit and push published results")
+    t.add_argument("--loop", action="store_true", help="repeat while waiting on a quota; stop when published or blocked")
+    t.add_argument("--interval", type=int, default=900, help="seconds between attempts in --loop mode (default 900)")
+    t.add_argument("--max-hours", type=float, default=48, help="give up looping after this long (default 48)")
     sub.add_parser("status")
     a = sub.add_parser("adopt")
     a.add_argument("suite")
@@ -62,10 +66,19 @@ def main(argv=None) -> int:
     except OSError:
         print("another tick is running; nothing to do", file=sys.stderr)
         return EXIT_OK
-    result = pipe.tick(publish=args.publish)
-    print(f"[pipeline] {result.state}" + (f" — waiting on: {'; '.join(result.waiting_on)}" if result.waiting_on else "")
-          + (f" — problems: {'; '.join(result.problems)}" if result.problems else ""), file=sys.stderr)
-    return result.exit_code
+    deadline = time.time() + args.max_hours * 3600
+    while True:
+        # A fresh Pipeline each pass: state on disk is the truth, so a crash or edit between passes is harmless.
+        pipe = Pipeline(Release.load(pathlib.Path(args.release)), ROOT)
+        result = pipe.tick(publish=args.publish)
+        print(f"[pipeline] {result.state}" + (f" — waiting on: {'; '.join(result.waiting_on)}" if result.waiting_on else "")
+              + (f" — problems: {'; '.join(result.problems)}" if result.problems else ""), file=sys.stderr, flush=True)
+        if not args.loop or result.exit_code != EXIT_WAITING:
+            return result.exit_code
+        if time.time() + args.interval > deadline:
+            print(f"[pipeline] still waiting after {args.max_hours}h; giving up (run tick again to continue)", file=sys.stderr)
+            return result.exit_code
+        time.sleep(args.interval)
 
 
 if __name__ == "__main__":
