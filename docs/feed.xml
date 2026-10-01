@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>The Model Ledger: published runs</title>
+  <id>https://eval.aveto.dev/</id>
+  <link href="https://eval.aveto.dev/feed.xml" rel="self"/>
+  <link href="https://eval.aveto.dev/"/>
+  <updated>2026-09-29T16:44:50+00:00</updated>
+  <entry>
+    <title>Run 2026-09-29: gpt-6-astra ranks first</title>
+    <id>https://eval.aveto.dev/#run-1979a77090844db3</id>
+    <updated>2026-09-29T16:44:50+00:00</updated>
+    <link href="https://eval.aveto.dev/#history"/>
+    <summary>gpt-6-astra ranks first. Changes: leader gemini → gpt.</summary>
+  </entry>
+  <entry>
+    <title>Run 2026-09-29: gemini-3.1-pro-preview ranks first</title>
+    <id>https://eval.aveto.dev/#run-b5eed983e33fb46c</id>
+    <updated>2026-09-29T16:21:50+00:00</updated>
+    <link href="https://eval.aveto.dev/#history"/>
+    <summary>gemini-3.1-pro-preview ranks first. First published run.</summary>
+  </entry>
+</feed>

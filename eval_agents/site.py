@@ -557,6 +557,8 @@ def head(data: dict) -> str:
               f'<meta property="og:image:alt" content="{a(OG_ALT)}">']
     if base:
         lines.append(f'<meta name="twitter:image" content="{a(base)}/og-image.png">')
+    if base and (data.get("history") or {}).get("entries"):
+        lines.append(f'<link rel="alternate" type="application/atom+xml" title="The Model Ledger: published runs" href="{a(base)}/feed.xml">')
     lines += ['<meta name="theme-color" content="#171B22">', '<meta name="robots" content="index, follow">',
               '<link rel="icon" href="/favicon.svg" type="image/svg+xml">']
     site = {"@type": "WebSite", **({"@id": f"{base}/#website", "url": f"{base}/"} if base else {}), "name": "The Model Ledger", "inLanguage": "en"}
@@ -619,4 +621,10 @@ def generated_files(root, data: dict, history: dict | None = None) -> list[tuple
     files = [(page, render(page.read_text(), data))]
     if readme.exists():
         files.append((readme, render_readme(readme.read_text(), data)))
-    return files + [(docs / "sitemap.xml", sitemap(data)), (docs / "robots.txt", robots(data))]
+    from .launch import feed
+
+    extra = [(docs / "sitemap.xml", sitemap(data)), (docs / "robots.txt", robots(data))]
+    atom = feed(data, data["history"])
+    if atom:
+        extra.append((docs / "feed.xml", atom))
+    return files + extra

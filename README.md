@@ -400,6 +400,10 @@ Everything on the page that states a result, a count or a URL is generated (see
 `AUTO` regions in `docs/index.html`, `python scripts/build_site.py`); CI fails if
 a generated file differs from the data it's rendered from.
 
+## Sharing the results
+
+`launch/PLAYBOOK.md` says where to post, what to say and who does what. `python scripts/launch_kit.py` writes channel-ready drafts (Show HN, Reddit, an X thread, LinkedIn, a blog outline, GitHub release notes) into `launch/kit/` from the published data, so a draft can't claim more than the data supports; it exits 2 when the results aren't ready to announce, and it never posts anything. Every publish also adds an entry to the Atom feed at `/feed.xml`.
+
 ## Quick start
 
 ```bash

@@ -35,6 +35,16 @@ def sync_repo_metadata() -> None:
           file=sys.stderr, flush=True)
 
 
+def write_launch_kit() -> None:
+    """Best effort: refresh the announcement drafts in launch/kit/ from what was just published. It only writes
+    files (a person posts them), and a failure here never fails a release."""
+    import subprocess
+
+    done = subprocess.run([sys.executable, str(ROOT / "scripts" / "launch_kit.py")], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    out = (done.stdout if done.returncode == 0 else done.stderr).strip().splitlines()
+    print(f"[pipeline] launch kit: {'refreshed in launch/kit/' if done.returncode == 0 else (out[0] if out else 'failed')}", file=sys.stderr, flush=True)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--release", default=str(ROOT / "release.yaml"))
@@ -88,6 +98,7 @@ def main(argv=None) -> int:
         if not args.loop or result.exit_code != EXIT_WAITING:
             if result.state in ("published", "current"):
                 sync_repo_metadata()
+                write_launch_kit()
             return result.exit_code
         if time.time() + args.interval > deadline:
             print(f"[pipeline] still waiting after {args.max_hours}h; giving up (run tick again to continue)", file=sys.stderr)
