@@ -706,3 +706,7 @@ multi-agent-eval/
         ├── gemini_provider.py
         └── mock_provider.py    # offline testing
 ```
+
+## License
+
+[MIT](LICENSE). AutomationBench, used by the optional lane, is a separate project under its own MIT license.

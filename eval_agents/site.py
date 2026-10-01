@@ -564,7 +564,7 @@ def head(data: dict) -> str:
     site = {"@type": "WebSite", **({"@id": f"{base}/#website", "url": f"{base}/"} if base else {}), "name": "The Model Ledger", "inLanguage": "en"}
     software = {"@type": "SoftwareSourceCode", **({"@id": f"{base}/#software"} if base else {}), "name": "The Model Ledger (multi-agent-eval)",
                 "description": DESCRIPTION, **({"url": f"{base}/"} if base else {}), "codeRepository": REPO_URL,
-                "programmingLanguage": "Python", "runtimePlatform": "Python 3.13", "keywords": KEYWORDS}
+                "license": "https://opensource.org/licenses/MIT", "programmingLanguage": "Python", "runtimePlatform": "Python 3.13", "keywords": KEYWORDS}
     ld = json.dumps({"@context": "https://schema.org", "@graph": [site, software]}, indent=1)
     lines.append(f'<script type="application/ld+json">\n{ld}\n</script>')
     return "\n" + "\n".join(lines) + "\n"

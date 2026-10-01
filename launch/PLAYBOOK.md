@@ -56,7 +56,7 @@ Routine re-runs with no headline change only update the feed.
 ## Pre-flight checklist
 
 - [ ] The tested models match what you'd call current. The Claude candidate must be re-run on the latest Opus before a broad launch, or the first comment will be "why not the latest?". See the Sources section on the site.
-- [ ] A **LICENSE** file exists in the repo. The page says "Open source", which is only true with a license.
+- [x] A **LICENSE** file exists in the repo (MIT, added 2026-09-30), so "Open source" on the page is true.
 - [ ] `https://eval.aveto.dev` loads, the Sources links resolve, and `launch/kit/` was regenerated after the last publish.
 - [ ] README results match the site (they are generated from the same data).
 - [ ] You can run the quickstart from a clean clone.

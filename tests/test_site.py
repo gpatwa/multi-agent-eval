@@ -253,3 +253,10 @@ def test_sources_are_vendor_pages_marked_by_what_was_tested(tmp_path):
 def test_pending_sources_claim_nothing_was_tested():
     r = regions(render(PAGE, {**DATA, "status": "pending"}))
     assert "Where the model names and versions come from" in r and "tested in the latest run</span>" not in r
+
+
+def test_the_repo_is_licensed_as_the_page_says():
+    text = (ROOT / "LICENSE").read_text()
+    assert text.startswith("MIT License") and "Permission is hereby granted, free of charge" in text
+    assert '"license": "https://opensource.org/licenses/MIT"' in PAGE  # structured data matches the file
+    assert "[MIT](LICENSE)" in (ROOT / "README.md").read_text()
