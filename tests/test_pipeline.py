@@ -246,6 +246,31 @@ def test_runs_recorded_without_settings_are_rerun_not_trusted(world):
     assert set(",".join(only).split(",")) == {"claude", "gpt", "gemini"}  # every candidate of that run is redone
 
 
+def test_bumping_a_candidates_model_reruns_only_that_candidate(world):
+    fake = FakeExec()
+    p = world.pipeline(fake)
+    world.seed_valid(p, candidates=("claude", "gpt", "gemini"))
+    ran = load_settings(pathlib.Path(p.state["runs"]["public"][0]))["candidates"]
+    p.r.specs = {n: {"model": c["model"], "effort": c.get("effort")} for n, c in ran.items()}
+    assert p.tick().state != "blocked" and not [c for s, c in fake.calls if s == "main.py"]  # config matches what ran: nothing to redo
+    fake.calls.clear()
+    p.r.specs["claude"]["model"] = "claude-next"  # the config now asks for a different Claude
+    best, latest = p.plan("public")
+    assert best["claude"] is None and latest["claude"][1]["why"] == "stale-model" and best["gpt"] and best["gemini"]
+    p.tick()
+    only = {a[a.index("--only") + 1] for s, a in fake.calls if s == "main.py"}
+    assert only == {"claude"}  # the other candidates' valid runs are kept
+
+
+def test_changing_the_effort_makes_old_runs_stale(world):
+    p = world.pipeline(FakeExec())
+    world.seed_valid(p, candidates=("claude", "gpt", "gemini"))
+    ran = load_settings(pathlib.Path(p.state["runs"]["public"][0]))["candidates"]
+    p.r.specs = {n: {"model": c["model"], "effort": "high"} for n, c in ran.items()}
+    best, latest = p.plan("public")
+    assert not any(best.values()) and {v[1]["why"] for v in latest.values()} == {"stale-effort"}
+
+
 def test_held_out_text_in_a_public_artifact_is_refused(world):
     fake = FakeExec()
     p = world.pipeline(fake)

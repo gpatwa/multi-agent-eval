@@ -36,7 +36,7 @@ from datetime import datetime, timezone
 
 import yaml
 
-from .config import load_config, load_tasks
+from .config import load_config, load_tasks, select_effort
 from .history import append as append_history, dump as dump_history, load as load_history, regressions
 from .publish import build_release, check_gates, leak_probes
 from .results_io import load_results, load_settings
@@ -62,17 +62,20 @@ class Release:
     env_unset: list[str] = field(default_factory=list)
     commit_trailer: str = ""
     site_url: str = ""  # where the page is served (release.yaml site.url); the source of every URL the page names
+    specs: dict = field(default_factory=dict)  # candidate name -> {"model", "effort"} the config asks for now
 
     @classmethod
     def load(cls, path: pathlib.Path) -> "Release":
         d = yaml.safe_load(pathlib.Path(path).read_text())
         cfg = load_config(pathlib.Path(path).parent / d["config"])
+        specs = {c["name"]: {"model": c["model"], "effort": select_effort(cfg, c)} for c in cfg["candidates"]}
         return cls(
             name=d["name"], config=d["config"], second_judge_config=d.get("second_judge_config"),
             require_second_judge=bool(d.get("require_second_judge", False)), walkthrough_task=d["walkthrough_task"],
             min_judge_coverage=float(d.get("min_judge_coverage", 0.9)), suites=d["suites"],
             candidates=[c["name"] for c in cfg["candidates"]], env_unset=d.get("env_unset", []),
             commit_trailer=d.get("commit_trailer", ""), site_url=((d.get("site") or {}).get("url") or "").rstrip("/"),
+            specs=specs,
         )
 
 
@@ -160,8 +163,15 @@ class Pipeline:
             return {"ok": False, "why": "quota" if any(QUOTA.search(e) for e in errors) else "error", "detail": errors[0][:160]}
         if c.get("judge_failure_rate", 0.0) > 1 - self.r.min_judge_coverage:
             return {"ok": False, "why": "unjudged", "detail": f"{c['judge_failure_rate']:.0%} of verdicts unjudged"}
-        if not (load_settings(d) or {}).get("candidates", {}).get(candidate):
+        ran = (load_settings(d) or {}).get("candidates", {}).get(candidate)
+        if not ran:
             return {"ok": False, "why": "no-settings", "detail": "run predates settings recording"}
+        # A run only counts for what the config asks for now: bump a model ID or the effort and the old run is stale.
+        want = self.r.specs.get(candidate)
+        if want and ran.get("model") != want["model"]:
+            return {"ok": False, "why": "stale-model", "detail": f"run used {ran.get('model')}, config asks for {want['model']}"}
+        if want and want["effort"] and ran.get("effort") != want["effort"]:
+            return {"ok": False, "why": "stale-effort", "detail": f"run used effort {ran.get('effort')}, config asks for {want['effort']}"}
         return {"ok": True, "why": "", "detail": ""}
 
     def plan(self, suite: str) -> tuple[dict, dict]:

@@ -18,7 +18,7 @@ effort: low
 candidates:
   - name: claude
     provider: claude-code
-    model: claude-opus-5            # skipped automatically if the CLI isn't logged in
+    model: claude-opus-5-5            # skipped automatically if the CLI isn't logged in
   - name: gpt
     provider: codex-cli
     model: gpt-6-astra
