@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-29T16:44:50+00:00",
+  "generated": "2026-10-17T03:47:59+00:00",
   "weights": {
     "quality": 0.7,
     "latency": 0.3,
@@ -7,63 +7,31 @@
   },
   "monthly_volume": null,
   "ranking": [
-    "gemini",
     "gpt",
-    "claude"
+    "claude",
+    "gemini"
   ],
   "candidates": {
     "claude": {
-      "model": "claude-opus-5",
+      "model": "claude-opus-5-5",
       "n_samples": 20,
-      "quality_mean": 4.83,
-      "quality_sd": 0.458,
+      "quality_mean": 4.923,
+      "quality_sd": 0.24,
       "n_tasks_scored": 20,
       "pass_rate": null,
       "pass_all_trials": null,
-      "quality_ci95": 0.214,
-      "latency_p50": 9.99,
-      "latency_p95": 12.77,
-      "latency_mean": 10.71,
+      "quality_ci95": 0.112,
+      "latency_p50": 11.53,
+      "latency_p95": 13.98,
+      "latency_mean": 11.16,
       "input_tokens_avg": 2,
-      "output_tokens_avg": 393,
+      "output_tokens_avg": 406,
       "input_cost_avg": 0.0,
       "output_cost_avg": 0.0,
       "cost_per_task": 0.0,
       "candidate_cost_total": 0.0,
       "judge_input_tokens_total": 40,
-      "judge_output_tokens_total": 4664,
-      "judge_cost_total": 0.0,
-      "judge_cost_per_task": 0.0,
-      "priced": false,
-      "critical_violations": 1,
-      "judge_failures": 0,
-      "judge_failure_rate": 0.0,
-      "flag_counts": {
-        "action_contradiction": 1
-      },
-      "errors": 0,
-      "composite": 0.6703
-    },
-    "gemini": {
-      "model": "gemini-3.1-pro-preview",
-      "n_samples": 20,
-      "quality_mean": 4.755,
-      "quality_sd": 0.558,
-      "n_tasks_scored": 20,
-      "pass_rate": null,
-      "pass_all_trials": null,
-      "quality_ci95": 0.261,
-      "latency_p50": 5.74,
-      "latency_p95": 7.19,
-      "latency_mean": 5.7,
-      "input_tokens_avg": 542,
-      "output_tokens_avg": 159,
-      "input_cost_avg": 0.0,
-      "output_cost_avg": 0.0,
-      "cost_per_task": 0.0,
-      "candidate_cost_total": 0.0,
-      "judge_input_tokens_total": 40,
-      "judge_output_tokens_total": 4566,
+      "judge_output_tokens_total": 4106,
       "judge_cost_total": 0.0,
       "judge_cost_per_task": 0.0,
       "priced": false,
@@ -72,7 +40,39 @@
       "judge_failure_rate": 0.0,
       "flag_counts": {},
       "errors": 0,
-      "composite": 0.9571
+      "composite": 0.7985
+    },
+    "gemini": {
+      "model": "gemini-4-argon",
+      "n_samples": 20,
+      "quality_mean": 4.855,
+      "quality_sd": 0.29,
+      "n_tasks_scored": 20,
+      "pass_rate": null,
+      "pass_all_trials": null,
+      "quality_ci95": 0.136,
+      "latency_p50": 5.43,
+      "latency_p95": 46.27,
+      "latency_mean": 13.53,
+      "input_tokens_avg": 573,
+      "output_tokens_avg": 173,
+      "input_cost_avg": 0.0,
+      "output_cost_avg": 0.0,
+      "cost_per_task": 0.0,
+      "candidate_cost_total": 0.0,
+      "judge_input_tokens_total": 40,
+      "judge_output_tokens_total": 5203,
+      "judge_cost_total": 0.0,
+      "judge_cost_per_task": 0.0,
+      "priced": false,
+      "critical_violations": 3,
+      "judge_failures": 0,
+      "judge_failure_rate": 0.0,
+      "flag_counts": {
+        "action_contradiction": 3
+      },
+      "errors": 0,
+      "composite": 0.6746
     },
     "gpt": {
       "model": "gpt-6-astra",
@@ -102,13 +102,13 @@
       "judge_failure_rate": 0.0,
       "flag_counts": {},
       "errors": 0,
-      "composite": 0.8802
+      "composite": 0.9688
     }
   },
   "evaluation_cost": {
     "judge_priced": false,
     "judge_input_tokens": 120,
-    "judge_output_tokens": 12453,
+    "judge_output_tokens": 12532,
     "judge_cost_total": 0.0,
     "candidate_cost_total": 0.0,
     "run_cost_total": 0.0
@@ -123,13 +123,13 @@
     "candidates": {
       "claude": {
         "provider": "ClaudeCodeProvider",
-        "model": "claude-opus-5",
+        "model": "claude-opus-5-5",
         "effort": "low",
-        "cli_version": "2.1.263 (Claude Code)"
+        "cli_version": "2.1.302 (Claude Code)"
       },
       "gemini": {
         "provider": "GeminiProvider",
-        "model": "gemini-3.1-pro-preview",
+        "model": "gemini-4-argon",
         "effort": "low"
       },
       "gpt": {
@@ -148,11 +148,14 @@
       "provider": "ClaudeCodeProvider",
       "model": "claude-opus-5",
       "effort": "default",
-      "cli_version": "2.1.263 (Claude Code)"
+      "cli_version": "2.1.302 (Claude Code)"
     },
     "merged_from": [
-      "/Users/gopalpatwa/opt/multi-agent-eval/.claude/worktrees/handoff-review-planning-b8ecc2/results-triage-private-run2-low-claude-gemini-filled:claude,gemini",
+      "/Users/gopalpatwa/opt/multi-agent-eval/.claude/worktrees/handoff-review-planning-b8ecc2/.pipeline/runs/heldout/claude-gemini-1792208179:claude,gemini",
       "/Users/gopalpatwa/opt/multi-agent-eval/.claude/worktrees/handoff-review-planning-b8ecc2/.pipeline/runs/heldout/gpt-1790661312:gpt"
+    ],
+    "notes": [
+      "judge CLI version differs across merged runs (2.1.263 (Claude Code), 2.1.302 (Claude Code))"
     ]
   }
 }

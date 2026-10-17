@@ -166,6 +166,149 @@
           "to": "gpt"
         }
       ]
+    },
+    {
+      "published": "2026-10-17T14:15:24+00:00",
+      "judge_second": "gpt-6-astra",
+      "rank_rho": 1.0,
+      "suites": {
+        "public": {
+          "n_tasks": 40,
+          "ranking": [
+            "gpt",
+            "claude",
+            "gemini"
+          ],
+          "judge": "claude-opus-5",
+          "candidates": {
+            "claude": {
+              "model": "claude-opus-5-5",
+              "effort": "low",
+              "composite": 0.7,
+              "quality_mean": 4.938,
+              "latency_p50": 10.9,
+              "critical_violations": 0
+            },
+            "gemini": {
+              "model": "gemini-4-argon",
+              "effort": "low",
+              "composite": 0.6811,
+              "quality_mean": 4.892,
+              "latency_p50": 5.96,
+              "critical_violations": 1
+            },
+            "gpt": {
+              "model": "gpt-6-astra",
+              "effort": "low",
+              "composite": 0.9657,
+              "quality_mean": 4.804,
+              "latency_p50": 6.83,
+              "critical_violations": 0
+            }
+          }
+        },
+        "heldout": {
+          "n_tasks": 20,
+          "ranking": [
+            "gpt",
+            "claude",
+            "gemini"
+          ],
+          "judge": "claude-opus-5",
+          "candidates": {
+            "claude": {
+              "model": "claude-opus-5-5",
+              "effort": "low",
+              "composite": 0.7985,
+              "quality_mean": 4.923,
+              "latency_p50": 11.53,
+              "critical_violations": 0
+            },
+            "gemini": {
+              "model": "gemini-4-argon",
+              "effort": "low",
+              "composite": 0.6746,
+              "quality_mean": 4.855,
+              "latency_p50": 5.43,
+              "critical_violations": 3
+            },
+            "gpt": {
+              "model": "gpt-6-astra",
+              "effort": "low",
+              "composite": 0.9688,
+              "quality_mean": 4.822,
+              "latency_p50": 6.87,
+              "critical_violations": 0
+            }
+          }
+        }
+      },
+      "id": "0972cd3a286586b6",
+      "changes": [
+        {
+          "suite": "public",
+          "candidate": "claude",
+          "kind": "model_changed",
+          "from": "claude-opus-5",
+          "to": "claude-opus-5-5"
+        },
+        {
+          "suite": "public",
+          "candidate": "claude",
+          "kind": "flags_down",
+          "from": 1,
+          "to": 0
+        },
+        {
+          "suite": "public",
+          "candidate": "gemini",
+          "kind": "model_changed",
+          "from": "gemini-3.1-pro-preview",
+          "to": "gemini-4-argon"
+        },
+        {
+          "suite": "public",
+          "candidate": "gemini",
+          "kind": "flags_down",
+          "from": 2,
+          "to": 1
+        },
+        {
+          "suite": "heldout",
+          "candidate": "*",
+          "kind": "leader_changed",
+          "from": "gemini",
+          "to": "gpt"
+        },
+        {
+          "suite": "heldout",
+          "candidate": "claude",
+          "kind": "model_changed",
+          "from": "claude-opus-5",
+          "to": "claude-opus-5-5"
+        },
+        {
+          "suite": "heldout",
+          "candidate": "claude",
+          "kind": "flags_down",
+          "from": 1,
+          "to": 0
+        },
+        {
+          "suite": "heldout",
+          "candidate": "gemini",
+          "kind": "model_changed",
+          "from": "gemini-3.1-pro-preview",
+          "to": "gemini-4-argon"
+        },
+        {
+          "suite": "heldout",
+          "candidate": "gemini",
+          "kind": "flags_up",
+          "from": 0,
+          "to": 3
+        }
+      ]
     }
   ]
 }

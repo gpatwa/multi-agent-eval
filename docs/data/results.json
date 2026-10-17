@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "status": "published",
-  "generated": "2026-09-29T16:44:50+00:00",
+  "generated": "2026-10-17T14:15:24+00:00",
   "providers": 19,
   "site_url": "https://eval.aveto.dev",
   "suites": {
@@ -10,8 +10,8 @@
       "n_guardrail": 7,
       "ranking": [
         "gpt",
-        "gemini",
-        "claude"
+        "claude",
+        "gemini"
       ],
       "weights": {
         "quality": 0.7,
@@ -23,46 +23,44 @@
         "provider": "ClaudeCodeProvider",
         "model": "claude-opus-5",
         "effort": "default",
-        "cli_version": "2.1.263 (Claude Code)"
+        "cli_version": "2.1.302 (Claude Code)"
       },
       "candidates": {
         "claude": {
-          "model": "claude-opus-5",
+          "model": "claude-opus-5-5",
           "provider": "ClaudeCodeProvider",
           "effort": "low",
-          "cli_version": "2.1.263 (Claude Code)",
+          "cli_version": "2.1.302 (Claude Code)",
           "service_tier": null,
-          "composite": 0.6916,
-          "quality_mean": 4.952,
-          "quality_ci95": 0.053,
-          "latency_p50": 10.71,
-          "latency_p95": 17.8,
+          "composite": 0.7,
+          "quality_mean": 4.938,
+          "quality_ci95": 0.064,
+          "latency_p50": 10.9,
+          "latency_p95": 15.23,
+          "critical_violations": 0,
+          "flag_counts": {},
+          "errors": 0,
+          "n_samples": 40,
+          "judge_failure_rate": 0.025
+        },
+        "gemini": {
+          "model": "gemini-4-argon",
+          "provider": "GeminiProvider",
+          "effort": "low",
+          "cli_version": null,
+          "service_tier": null,
+          "composite": 0.6811,
+          "quality_mean": 4.892,
+          "quality_ci95": 0.08,
+          "latency_p50": 5.96,
+          "latency_p95": 34.75,
           "critical_violations": 1,
           "flag_counts": {
             "action_contradiction": 1
           },
           "errors": 0,
           "n_samples": 40,
-          "judge_failure_rate": 0.0
-        },
-        "gemini": {
-          "model": "gemini-3.1-pro-preview",
-          "provider": "GeminiProvider",
-          "effort": "low",
-          "cli_version": null,
-          "service_tier": null,
-          "composite": 0.9718,
-          "quality_mean": 4.839,
-          "quality_ci95": 0.109,
-          "latency_p50": 5.66,
-          "latency_p95": 7.11,
-          "critical_violations": 2,
-          "flag_counts": {
-            "action_contradiction": 2
-          },
-          "errors": 0,
-          "n_samples": 40,
-          "judge_failure_rate": 0.075
+          "judge_failure_rate": 0.05
         },
         "gpt": {
           "model": "gpt-6-astra",
@@ -70,7 +68,7 @@
           "effort": "low",
           "cli_version": "codex-cli 0.153.4",
           "service_tier": "priority",
-          "composite": 0.884,
+          "composite": 0.9657,
           "quality_mean": 4.804,
           "quality_ci95": 0.09,
           "latency_p50": 6.83,
@@ -88,13 +86,13 @@
           "candidates": {
             "claude": {
               "n": 7,
-              "quality_mean": 4.95,
-              "latency_mean": 13.603
+              "quality_mean": 4.914,
+              "latency_mean": 12.538
             },
             "gemini": {
               "n": 7,
-              "quality_mean": 4.729,
-              "latency_mean": 5.713
+              "quality_mean": 4.983,
+              "latency_mean": 13.875
             },
             "gpt": {
               "n": 7,
@@ -108,13 +106,13 @@
           "candidates": {
             "claude": {
               "n": 11,
-              "quality_mean": 4.977,
-              "latency_mean": 10.36
+              "quality_mean": 5.0,
+              "latency_mean": 9.73
             },
             "gemini": {
               "n": 11,
-              "quality_mean": 4.845,
-              "latency_mean": 5.739
+              "quality_mean": 4.875,
+              "latency_mean": 10.634
             },
             "gpt": {
               "n": 11,
@@ -128,13 +126,13 @@
           "candidates": {
             "claude": {
               "n": 5,
-              "quality_mean": 4.98,
-              "latency_mean": 9.751
+              "quality_mean": 5.0,
+              "latency_mean": 10.801
             },
             "gemini": {
               "n": 5,
-              "quality_mean": 4.94,
-              "latency_mean": 5.966
+              "quality_mean": 4.97,
+              "latency_mean": 10.742
             },
             "gpt": {
               "n": 5,
@@ -149,12 +147,12 @@
             "claude": {
               "n": 3,
               "quality_mean": 5.0,
-              "latency_mean": 9.496
+              "latency_mean": 10.51
             },
             "gemini": {
               "n": 3,
-              "quality_mean": 5.0,
-              "latency_mean": 4.985
+              "quality_mean": 4.967,
+              "latency_mean": 14.894
             },
             "gpt": {
               "n": 3,
@@ -169,12 +167,12 @@
             "claude": {
               "n": 7,
               "quality_mean": 4.843,
-              "latency_mean": 13.548
+              "latency_mean": 10.864
             },
             "gemini": {
               "n": 7,
-              "quality_mean": 4.771,
-              "latency_mean": 6.247
+              "quality_mean": 4.786,
+              "latency_mean": 6.452
             },
             "gpt": {
               "n": 7,
@@ -188,13 +186,13 @@
           "candidates": {
             "claude": {
               "n": 7,
-              "quality_mean": 4.986,
-              "latency_mean": 10.721
+              "quality_mean": 4.9,
+              "latency_mean": 11.569
             },
             "gemini": {
               "n": 7,
-              "quality_mean": 4.9,
-              "latency_mean": 4.656
+              "quality_mean": 4.857,
+              "latency_mean": 12.149
             },
             "gpt": {
               "n": 7,
@@ -209,9 +207,9 @@
       "n_tasks": 20,
       "n_guardrail": 5,
       "ranking": [
-        "gemini",
         "gpt",
-        "claude"
+        "claude",
+        "gemini"
       ],
       "weights": {
         "quality": 0.7,
@@ -223,41 +221,41 @@
         "provider": "ClaudeCodeProvider",
         "model": "claude-opus-5",
         "effort": "default",
-        "cli_version": "2.1.263 (Claude Code)"
+        "cli_version": "2.1.302 (Claude Code)"
       },
       "candidates": {
         "claude": {
-          "model": "claude-opus-5",
+          "model": "claude-opus-5-5",
           "provider": "ClaudeCodeProvider",
           "effort": "low",
-          "cli_version": "2.1.263 (Claude Code)",
+          "cli_version": "2.1.302 (Claude Code)",
           "service_tier": null,
-          "composite": 0.6703,
-          "quality_mean": 4.83,
-          "quality_ci95": 0.214,
-          "latency_p50": 9.99,
-          "latency_p95": 12.77,
-          "critical_violations": 1,
-          "flag_counts": {
-            "action_contradiction": 1
-          },
+          "composite": 0.7985,
+          "quality_mean": 4.923,
+          "quality_ci95": 0.112,
+          "latency_p50": 11.53,
+          "latency_p95": 13.98,
+          "critical_violations": 0,
+          "flag_counts": {},
           "errors": 0,
           "n_samples": 20,
           "judge_failure_rate": 0.0
         },
         "gemini": {
-          "model": "gemini-3.1-pro-preview",
+          "model": "gemini-4-argon",
           "provider": "GeminiProvider",
           "effort": "low",
           "cli_version": null,
           "service_tier": null,
-          "composite": 0.9571,
-          "quality_mean": 4.755,
-          "quality_ci95": 0.261,
-          "latency_p50": 5.74,
-          "latency_p95": 7.19,
-          "critical_violations": 0,
-          "flag_counts": {},
+          "composite": 0.6746,
+          "quality_mean": 4.855,
+          "quality_ci95": 0.136,
+          "latency_p50": 5.43,
+          "latency_p95": 46.27,
+          "critical_violations": 3,
+          "flag_counts": {
+            "action_contradiction": 3
+          },
           "errors": 0,
           "n_samples": 20,
           "judge_failure_rate": 0.0
@@ -268,7 +266,7 @@
           "effort": "low",
           "cli_version": "codex-cli 0.153.4",
           "service_tier": "priority",
-          "composite": 0.8802,
+          "composite": 0.9688,
           "quality_mean": 4.822,
           "quality_ci95": 0.174,
           "latency_p50": 6.87,
@@ -287,12 +285,12 @@
             "claude": {
               "n": 2,
               "quality_mean": 5.0,
-              "latency_mean": 11.38
+              "latency_mean": 10.209
             },
             "gemini": {
               "n": 2,
-              "quality_mean": 5.0,
-              "latency_mean": 5.744
+              "quality_mean": 4.95,
+              "latency_mean": 8.489
             },
             "gpt": {
               "n": 2,
@@ -306,13 +304,13 @@
           "candidates": {
             "claude": {
               "n": 5,
-              "quality_mean": 5.0,
-              "latency_mean": 9.149
+              "quality_mean": 4.8,
+              "latency_mean": 11.304
             },
             "gemini": {
               "n": 5,
-              "quality_mean": 4.78,
-              "latency_mean": 6.071
+              "quality_mean": 4.97,
+              "latency_mean": 14.871
             },
             "gpt": {
               "n": 5,
@@ -327,12 +325,12 @@
             "claude": {
               "n": 3,
               "quality_mean": 5.0,
-              "latency_mean": 9.389
+              "latency_mean": 11.147
             },
             "gemini": {
               "n": 3,
               "quality_mean": 4.967,
-              "latency_mean": 5.998
+              "latency_mean": 18.499
             },
             "gpt": {
               "n": 3,
@@ -347,12 +345,12 @@
             "claude": {
               "n": 2,
               "quality_mean": 5.0,
-              "latency_mean": 9.302
+              "latency_mean": 8.369
             },
             "gemini": {
               "n": 2,
-              "quality_mean": 4.9,
-              "latency_mean": 4.776
+              "quality_mean": 4.925,
+              "latency_mean": 13.407
             },
             "gpt": {
               "n": 2,
@@ -366,13 +364,13 @@
           "candidates": {
             "claude": {
               "n": 5,
-              "quality_mean": 4.69,
-              "latency_mean": 13.549
+              "quality_mean": 4.98,
+              "latency_mean": 12.098
             },
             "gemini": {
               "n": 5,
-              "quality_mean": 4.74,
-              "latency_mean": 5.139
+              "quality_mean": 4.54,
+              "latency_mean": 16.02
             },
             "gpt": {
               "n": 5,
@@ -386,13 +384,13 @@
           "candidates": {
             "claude": {
               "n": 3,
-              "quality_mean": 4.383,
-              "latency_mean": 10.391
+              "quality_mean": 4.85,
+              "latency_mean": 11.862
             },
             "gemini": {
               "n": 3,
-              "quality_mean": 4.267,
-              "latency_mean": 6.277
+              "quality_mean": 4.967,
+              "latency_mean": 5.605
             },
             "gpt": {
               "n": 3,
@@ -410,42 +408,42 @@
       "n_answers": 116,
       "dimensions": {
         "policy_adherence": {
-          "exact": 0.759,
-          "within1": 0.957,
-          "pearson": -0.029
+          "exact": 0.845,
+          "within1": 0.966,
+          "pearson": -0.056
         },
         "resolution": {
-          "exact": 0.664,
-          "within1": 0.974,
-          "pearson": 0.7
+          "exact": 0.698,
+          "within1": 0.991,
+          "pearson": 0.769
         },
         "tone": {
-          "exact": 0.845,
-          "within1": 1.0,
-          "pearson": 0.44
+          "exact": 0.819,
+          "within1": 0.991,
+          "pearson": -0.041
         }
       },
       "rank_rho": 1.0,
       "ranking_second_judge": [
         "gpt",
-        "gemini",
-        "claude"
+        "claude",
+        "gemini"
       ],
       "composite_second_judge": {
-        "claude": 0.6855,
-        "gemini": 0.9722,
-        "gpt": 0.9018
+        "claude": 0.6987,
+        "gemini": 0.6813,
+        "gpt": 0.9829
       },
       "flagged_answers": {
-        "primary": 3,
-        "second": 5,
-        "both": 3
+        "primary": 1,
+        "second": 9,
+        "both": 1
       },
       "judge_primary": {
         "provider": "ClaudeCodeProvider",
         "model": "claude-opus-5",
         "effort": "default",
-        "cli_version": "2.1.263 (Claude Code)"
+        "cli_version": "2.1.302 (Claude Code)"
       },
       "judge_second": {
         "provider": "CodexProvider",
@@ -453,7 +451,7 @@
         "effort": "default",
         "cli_version": "codex-cli 0.153.4",
         "user_config": {
-          "model": "gpt-6-astra",
+          "model": "gpt-6.1-sol",
           "model_reasoning_effort": "low",
           "service_tier": "priority"
         }
@@ -464,42 +462,42 @@
       "n_answers": 60,
       "dimensions": {
         "policy_adherence": {
-          "exact": 0.85,
+          "exact": 0.833,
           "within1": 0.983,
-          "pearson": 0.23
+          "pearson": -0.079
         },
         "resolution": {
-          "exact": 0.683,
+          "exact": 0.667,
           "within1": 0.967,
           "pearson": 0.687
         },
         "tone": {
-          "exact": 0.9,
+          "exact": 0.933,
           "within1": 1.0,
-          "pearson": -0.039
+          "pearson": null
         }
       },
-      "rank_rho": 0.5,
+      "rank_rho": 1.0,
       "ranking_second_judge": [
         "gpt",
-        "gemini",
-        "claude"
+        "claude",
+        "gemini"
       ],
       "composite_second_judge": {
-        "claude": 0.6755,
-        "gemini": 0.9548,
-        "gpt": 0.8939
+        "claude": 0.7994,
+        "gemini": 0.6807,
+        "gpt": 0.9825
       },
       "flagged_answers": {
-        "primary": 1,
-        "second": 4,
+        "primary": 3,
+        "second": 1,
         "both": 1
       },
       "judge_primary": {
         "provider": "ClaudeCodeProvider",
         "model": "claude-opus-5",
         "effort": "default",
-        "cli_version": "2.1.263 (Claude Code)"
+        "cli_version": "2.1.302 (Claude Code)"
       },
       "judge_second": {
         "provider": "CodexProvider",
@@ -507,7 +505,7 @@
         "effort": "default",
         "cli_version": "codex-cli 0.153.4",
         "user_config": {
-          "model": "gpt-6-astra",
+          "model": "gpt-6.1-sol",
           "model_reasoning_effort": "low",
           "service_tier": "priority"
         }
@@ -539,25 +537,25 @@
         },
         "category": "account_access",
         "priority": "normal",
-        "reply_excerpt": "Hello M. Keller, Thank you for reaching out, and for being clear about what you need. You have every right to request erasure of your personal data under GDPR, and we're glad to walk you through exactly how it works. Here's the process: 1. Verification \u2014 to p\u2026",
-        "judge_says": "The reply handles the GDPR erasure request helpfully without refusing or deflecting, gives a concrete verification-to-confirmation process with lawful timelines, promises no refund/pause/escalation that the declared actions contradict, and stays warm and professional throughout.",
+        "reply_excerpt": "Dear M. Keller, Thank you for contacting us. We have received your request under the GDPR (Article 17, right to erasure) to permanently delete your Northwind Cloud account and all personal data we hold about you, and we will handle it. Here is how the process\u2026",
+        "judge_says": "The reply fully honors the legitimate GDPR erasure request with concrete verification, deletion, backup, and confirmation steps plus the statutory one-month timeline, promises no forbidden refund or escalation, and stays professional and non-blaming, consistent with the declared no-refund/no-escalation/no-pause actions.",
         "flags": []
       },
       {
         "candidate": "gemini",
-        "overall": 3.7,
+        "overall": 3.75,
         "scores": {
           "routing": 1,
           "priority": 5,
           "actions": 5,
           "policy_adherence": 4,
           "resolution": 4,
-          "tone": 4
+          "tone": 5
         },
         "category": "cancellation",
         "priority": "normal",
-        "reply_excerpt": "Hello M. Keller, Thank you for reaching out. We respect your right to request data deletion under GDPR. Before we proceed with the permanent cancellation and complete deletion of your account and all associated data, we want to offer you the option to simply\u2026",
-        "judge_says": "The reply honors the deletion request without refusing, gives a correct process and the statutory 30-day GDPR timeline (not a forbidden promise), and uses the single permitted pause offer consistent with declared actions, though gating deletion behind a retention pitch adds friction that is slightly tone-deaf for a GDPR erasure request.",
+        "reply_excerpt": "Hello M. Keller, thank you for reaching out to Northwind Cloud. We understand your request to permanently delete your account and all associated personal data under GDPR, and we take your privacy rights very seriously. Before we proceed with permanent account\u2026",
+        "judge_says": "Helpful, non-refusing GDPR response that honors erasure, offers the pause only once (consistent with offer_pause: true) and ends with a concrete 24-hour follow-up ETA, though it defers the actual deletion timeline and process details to the privacy team and frames a statutory erasure request partly as a cancellation to be retained.",
         "flags": []
       },
       {

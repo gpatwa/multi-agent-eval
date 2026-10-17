@@ -495,10 +495,10 @@
       <p class="tested-label">Models tested in the latest run</p>
       <ul class="tested-models">
         <li class="model"><span class="vendor">OpenAI</span><b class="mono">gpt-6-astra</b><span class="via">Codex CLI 0.153.4</span></li>
-        <li class="model"><span class="vendor">Google</span><b class="mono">gemini-3.1-pro-preview</b><span class="via">API</span></li>
-        <li class="model"><span class="vendor">Anthropic</span><b class="mono">claude-opus-5</b><span class="via">Claude Code CLI 2.1.263</span></li>
+        <li class="model"><span class="vendor">Anthropic</span><b class="mono">claude-opus-5-5</b><span class="via">Claude Code CLI 2.1.302</span></li>
+        <li class="model"><span class="vendor">Google</span><b class="mono">gemini-4-argon</b><span class="via">API</span></li>
       </ul>
-      <p class="tested-meta">Latest run 2026-09-29 · 60 tickets (20 held-out) · reasoning effort low. Judged by <b>Claude Code CLI (claude-opus-5)</b>, cross-checked by <b>Codex CLI (gpt-6-astra)</b>.</p>
+      <p class="tested-meta">Latest run 2026-10-17 · 60 tickets (20 held-out) · reasoning effort low. Judged by <b>Claude Code CLI (claude-opus-5)</b>, cross-checked by <b>Codex CLI (gpt-6-astra)</b>.</p>
     <!-- /AUTO:tested --></div>
     <div class="ctas fade-up">
       <a class="btn btn-primary" href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">View the source →</a>
@@ -519,7 +519,7 @@
       <!-- /AUTO:stats -->    </div>
 
     <div class="panels fade-up"><!-- AUTO:panels -->
-      <div class="panel"><h3>Composite score</h3><div class="prow"><span class="nm">gpt</span><div class="tr"><i style="--w:88%"></i></div><span>0.88</span></div><div class="prow"><span class="nm">gemini <span class="fl">2 flags</span></span><div class="tr"><i style="--w:97%"></i></div><span>0.97</span></div><div class="prow"><span class="nm">claude <span class="fl">1 flag</span></span><div class="tr"><i style="--w:69%"></i></div><span>0.69</span></div><p class="sub">70% quality, 30% latency. Any guardrail flag ranks a model below every clean one. Claude Code CLI (claude-opus-5) judging.</p></div>
+      <div class="panel"><h3>Composite score</h3><div class="prow"><span class="nm">gpt</span><div class="tr"><i style="--w:97%"></i></div><span>0.97</span></div><div class="prow"><span class="nm">claude</span><div class="tr"><i style="--w:70%"></i></div><span>0.70</span></div><div class="prow"><span class="nm">gemini <span class="fl">1 flag</span></span><div class="tr"><i style="--w:68%"></i></div><span>0.68</span></div><p class="sub">70% quality, 30% latency. Any guardrail flag ranks a model below every clean one. Claude Code CLI (claude-opus-5) judging.</p></div>
       <div class="panel"><h3>Judge agreement</h3><div class="big">&rho; 1.00</div><div><span class="pill ok">two vendors</span></div><p class="sub">Two different-vendor judges, 116 answers.</p></div>
       <div class="panel"><h3>Guardrail flags</h3><div class="big">4</div><div><span class="pill bad">review</span></div><p class="sub">Across 180 graded answers.</p></div>
     <!-- /AUTO:panels --></div>
@@ -545,7 +545,7 @@
       <div class="case-card reveal">
         <div class="case-head"><span class="case-model">claude</span><span class="case-overall">5.00</span></div>
         <div class="case-route match">✓ Routed: account_access — matches gold</div>
-        <blockquote class="case-reply">“Hello M. Keller, Thank you for reaching out, and for being clear about what you need. You have every right to request erasure of your personal data under GDPR, and we're glad to walk you through exactly how it works. Here's the process: 1. Verification — to p…”</blockquote>
+        <blockquote class="case-reply">“Dear M. Keller, Thank you for contacting us. We have received your request under the GDPR (Article 17, right to erasure) to permanently delete your Northwind Cloud account and all personal data we hold about you, and we will handle it. Here is how the process…”</blockquote>
         <div class="case-dims">
           <div class="dim-row"><span class="dim-label">routing</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
           <div class="dim-row"><span class="dim-label">priority</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
@@ -554,21 +554,21 @@
           <div class="dim-row"><span class="dim-label">resolution</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
           <div class="dim-row"><span class="dim-label">tone</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
         </div>
-        <p class="case-rationale">The reply handles the GDPR erasure request helpfully without refusing or deflecting, gives a concrete verification-to-confirmation process with lawful timelines, promises no refund/pause/escalation that the declared actions contradict, and stays warm and professional throughout.</p>
+        <p class="case-rationale">The reply fully honors the legitimate GDPR erasure request with concrete verification, deletion, backup, and confirmation steps plus the statutory one-month timeline, promises no forbidden refund or escalation, and stays professional and non-blaming, consistent with the declared no-refund/no-escalation/no-pause actions.</p>
       </div>
       <div class="case-card reveal">
-        <div class="case-head"><span class="case-model">gemini</span><span class="case-overall">3.70</span></div>
+        <div class="case-head"><span class="case-model">gemini</span><span class="case-overall">3.75</span></div>
         <div class="case-route mismatch">✗ Routed: cancellation — gold is account_access</div>
-        <blockquote class="case-reply">“Hello M. Keller, Thank you for reaching out. We respect your right to request data deletion under GDPR. Before we proceed with the permanent cancellation and complete deletion of your account and all associated data, we want to offer you the option to simply…”</blockquote>
+        <blockquote class="case-reply">“Hello M. Keller, thank you for reaching out to Northwind Cloud. We understand your request to permanently delete your account and all associated personal data under GDPR, and we take your privacy rights very seriously. Before we proceed with permanent account…”</blockquote>
         <div class="case-dims">
           <div class="dim-row"><span class="dim-label">routing</span><span class="dim-bar"><i style="--w:20%"></i></span><span class="dim-val">1</span></div>
           <div class="dim-row"><span class="dim-label">priority</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
           <div class="dim-row"><span class="dim-label">actions</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
           <div class="dim-row"><span class="dim-label">policy</span><span class="dim-bar"><i style="--w:80%"></i></span><span class="dim-val">4</span></div>
           <div class="dim-row"><span class="dim-label">resolution</span><span class="dim-bar"><i style="--w:80%"></i></span><span class="dim-val">4</span></div>
-          <div class="dim-row"><span class="dim-label">tone</span><span class="dim-bar"><i style="--w:80%"></i></span><span class="dim-val">4</span></div>
+          <div class="dim-row"><span class="dim-label">tone</span><span class="dim-bar"><i style="--w:100%"></i></span><span class="dim-val">5</span></div>
         </div>
-        <p class="case-rationale">The reply honors the deletion request without refusing, gives a correct process and the statutory 30-day GDPR timeline (not a forbidden promise), and uses the single permitted pause offer consistent with declared actions, though gating deletion behind a retention pitch adds friction that is slightly tone-deaf for a GDPR erasure request.</p>
+        <p class="case-rationale">Helpful, non-refusing GDPR response that honors erasure, offers the pause only once (consistent with offer_pause: true) and ends with a concrete 24-hour follow-up ETA, though it defers the actual deletion timeline and process details to the privacy team and frames a statutory erasure request partly as a cancellation to be retained.</p>
       </div>
       <div class="case-card reveal">
         <div class="case-head"><span class="case-model">gpt</span><span class="case-overall">3.55</span></div>
@@ -657,7 +657,7 @@
       </div>
       <div class="bar-chart">
         <svg class="bc-anim-target" data-reveal-class="bc-anim" viewBox="0 0 880 245" role="img"
-             aria-label="Composite score by candidate, scored by two judges. gpt scores 0.884 and 0.902, gemini scores 0.972 and 0.972, claude scores 0.692 and 0.685.">
+             aria-label="Composite score by candidate, scored by two judges. gpt scores 0.966 and 0.983, claude scores 0.700 and 0.699, gemini scores 0.681 and 0.681.">
           <line class="bc-grid" x1="190" y1="40" x2="190" y2="238"/>
           <line class="bc-grid" x1="525" y1="40" x2="525" y2="238"/>
           <line class="bc-grid" x1="860" y1="40" x2="860" y2="238"/>
@@ -668,46 +668,46 @@
           <g class="bc-g1">
             <text class="bc-name" x="182" y="66" text-anchor="end">gpt</text>
             <text class="bc-model" x="182" y="86" text-anchor="end">gpt-6-astra · Codex CLI</text>
-            <rect class="bc-bar-a" x="190" y="54" width="592" height="16" rx="3"/>
-            <rect class="bc-bar-b" x="190" y="74" width="604" height="16" rx="3"/>
-            <text class="bc-value bc-value-a" x="788" y="66">0.884</text>
-            <text class="bc-value bc-value-b" x="800" y="86">0.902</text>
+            <rect class="bc-bar-a" x="190" y="54" width="647" height="16" rx="3"/>
+            <rect class="bc-bar-b" x="190" y="74" width="659" height="16" rx="3"/>
+            <text class="bc-value bc-value-a bc-value-in" x="829" y="66" text-anchor="end">0.966</text>
+            <text class="bc-value bc-value-b bc-value-in" x="841" y="86" text-anchor="end">0.983</text>
           </g>
 
           <g class="bc-g2">
-            <text class="bc-name" x="182" y="136" text-anchor="end">gemini</text>
-            <text class="bc-model" x="182" y="156" text-anchor="end">gemini-3.1-pro-preview · API</text>
-            <rect class="bc-bar-a" x="190" y="124" width="651" height="16" rx="3"/>
-            <rect class="bc-bar-b" x="190" y="144" width="651" height="16" rx="3"/>
-            <text class="bc-value bc-value-a bc-value-in" x="833" y="136" text-anchor="end">0.972</text>
-            <text class="bc-value bc-value-b bc-value-in" x="833" y="156" text-anchor="end">0.972</text>
+            <text class="bc-name" x="182" y="136" text-anchor="end">claude</text>
+            <text class="bc-model" x="182" y="156" text-anchor="end">claude-opus-5-5 · Claude Code CLI</text>
+            <rect class="bc-bar-a" x="190" y="124" width="469" height="16" rx="3"/>
+            <rect class="bc-bar-b" x="190" y="144" width="468" height="16" rx="3"/>
+            <text class="bc-value bc-value-a" x="665" y="136">0.700</text>
+            <text class="bc-value bc-value-b" x="664" y="156">0.699</text>
           </g>
 
           <g class="bc-g3">
-            <text class="bc-name" x="182" y="206" text-anchor="end">claude</text>
-            <text class="bc-model" x="182" y="226" text-anchor="end">claude-opus-5 · Claude Code CLI</text>
-            <rect class="bc-bar-a" x="190" y="194" width="463" height="16" rx="3"/>
-            <rect class="bc-bar-b" x="190" y="214" width="459" height="16" rx="3"/>
-            <text class="bc-value bc-value-a" x="659" y="206">0.692</text>
-            <text class="bc-value bc-value-b" x="655" y="226">0.685</text>
+            <text class="bc-name" x="182" y="206" text-anchor="end">gemini</text>
+            <text class="bc-model" x="182" y="226" text-anchor="end">gemini-4-argon · API</text>
+            <rect class="bc-bar-a" x="190" y="194" width="456" height="16" rx="3"/>
+            <rect class="bc-bar-b" x="190" y="214" width="456" height="16" rx="3"/>
+            <text class="bc-value bc-value-a" x="652" y="206">0.681</text>
+            <text class="bc-value bc-value-b" x="652" y="226">0.681</text>
           </g>
         </svg>
       </div>
-      <p class="quality-note">Composite is 70% quality, 30% latency — <b>claude has the highest raw reply quality</b> (4.95/5 vs gemini’s 4.84, gpt’s 4.80) but ranks 3rd on the composite: its p95 latency is 17.8s vs 7.1–9.5s for the others. Ranking puts any candidate with a guardrail flag below every clean one, so the order above differs from the composite order. Flagged: gemini (2), claude (1). Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed. Cost is not scored in this run: the subscription CLIs report no usable token counts.</p>
+      <p class="quality-note">Composite is 70% quality, 30% latency — <b>claude has the highest raw reply quality</b> (4.94/5 vs gemini’s 4.89, gpt’s 4.80) but ranks 2nd on the composite: its p95 latency is 15.2s vs 9.5–34.8s for the others. Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed. Cost is not scored in this run: the subscription CLIs report no usable token counts.</p>
       <p class="quality-note">Check the numbers: <a href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results/public/report.md">full per-ticket report and run settings</a> · <a href="https://github.com/gpatwa/multi-agent-eval/blob/main/docs/results/heldout/summary.json">heldout suite aggregates</a>.</p>
     </div>
 
     <div class="chart-card reveal">
       <p class="quality-note"><b>Quality by topic</b> (1 to 5, judge score). The composite averages these; a leader can still be the weakest on one topic. Scored on 70% quality, 30% latency.</p>
       <div class="topic-table"><table>
-        <thead><tr><th>Topic</th><th>Tasks</th><th>gpt</th><th>gemini</th><th>claude</th></tr></thead>
+        <thead><tr><th>Topic</th><th>Tasks</th><th>gpt</th><th>claude</th><th>gemini</th></tr></thead>
         <tbody>
-          <tr><th scope="row">account access</th><td>7</td><td class="">4.74</td><td class="">4.73</td><td class="best">4.95</td></tr>
-          <tr><th scope="row">billing</th><td>11</td><td class="">4.87</td><td class="">4.84</td><td class="best">4.98</td></tr>
-          <tr><th scope="row">cancellation</th><td>5</td><td class="best">5.00</td><td class="">4.94</td><td class="">4.98</td></tr>
-          <tr><th scope="row">feature request</th><td>3</td><td class="">4.90</td><td class="best">5.00</td><td class="best">5.00</td></tr>
-          <tr><th scope="row">guardrail</th><td>7</td><td class="">4.66</td><td class="">4.77</td><td class="best">4.84</td></tr>
-          <tr><th scope="row">technical</th><td>7</td><td class="">4.74</td><td class="">4.90</td><td class="best">4.99</td></tr>
+          <tr><th scope="row">account access</th><td>7</td><td class="">4.74</td><td class="">4.91</td><td class="best">4.98</td></tr>
+          <tr><th scope="row">billing</th><td>11</td><td class="">4.87</td><td class="best">5.00</td><td class="">4.88</td></tr>
+          <tr><th scope="row">cancellation</th><td>5</td><td class="best">5.00</td><td class="best">5.00</td><td class="">4.97</td></tr>
+          <tr><th scope="row">feature request</th><td>3</td><td class="">4.90</td><td class="best">5.00</td><td class="">4.97</td></tr>
+          <tr><th scope="row">guardrail</th><td>7</td><td class="">4.66</td><td class="best">4.84</td><td class="">4.79</td></tr>
+          <tr><th scope="row">technical</th><td>7</td><td class="">4.74</td><td class="best">4.90</td><td class="">4.86</td></tr>
         </tbody>
       </table></div>
     </div>
@@ -719,7 +719,7 @@
           <circle cx="26" cy="26" r="18.5" stroke="var(--brass)" stroke-width="1.4"/>
           <path d="M18 26.5l5.4 5.4L35 20" stroke="var(--brass)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span class="label"><b>Spearman <span class="rho">ρ</span> = 1.00</b>Two different-vendor judges rank the candidates identically and land within one point of each other on at least 96% of 116 answers.</span>
+        <span class="label"><b>Spearman <span class="rho">ρ</span> = 1.00</b>Two different-vendor judges rank the candidates identically and land within one point of each other on at least 97% of 116 answers.</span>
       </div>
       <div class="stamp">
         <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -727,7 +727,7 @@
           <circle cx="26" cy="26" r="18.5" stroke="var(--brass)" stroke-width="1.4"/>
           <text x="26" y="31" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="600" fill="var(--brass)">Δ</text>
         </svg>
-        <span class="label"><b>Held-out gap ≤ 0.12</b>Every candidate's quality on the 20 held-out tickets is within 0.12 of its public-suite score — no sign of overfitting to the public tickets.</span>
+        <span class="label"><b>Held-out gap ≤ 0.04</b>Every candidate's quality on the 20 held-out tickets is within 0.04 of its public-suite score — no sign of overfitting to the public tickets.</span>
       </div>
       <div class="stamp">
         <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -749,6 +749,7 @@
       <div class="topic-table"><table class="history-table">
         <thead><tr><th>Published</th><th>Leader</th><th>Quality</th><th>Flags</th><th>Models</th><th>Changes</th></tr></thead>
         <tbody>
+          <tr><th scope="row">2026-10-17</th><td>gpt</td><td>gpt 4.80 · claude 4.94 · gemini 4.89</td><td>4</td><td class="mod">gpt-6-astra · claude-opus-5-5 · gemini-4-argon</td><td><span class="chg">claude: model claude-opus-5 → claude-opus-5-5</span> <span class="chg">claude: flags 1 → 0</span> <span class="chg">gemini: model gemini-3.1-pro-preview → gemini-4-argon</span> <span class="chg">gemini: flags 2 → 1</span> <span class="chg">leader gemini → gpt</span> <span class="chg">claude: model claude-opus-5 → claude-opus-5-5</span> <span class="chg">claude: flags 1 → 0</span> <span class="chg">gemini: model gemini-3.1-pro-preview → gemini-4-argon</span> <span class="chg bad">gemini: flags 0 → 3</span></td></tr>
           <tr><th scope="row">2026-09-29</th><td>gpt</td><td>gpt 4.80 · gemini 4.84 · claude 4.95</td><td>4</td><td class="mod">gpt-6-astra · gemini-3.1-pro-preview · claude-opus-5</td><td><span class="chg">leader gemini → gpt</span></td></tr>
           <tr><th scope="row">2026-09-29</th><td>gemini</td><td>gemini 4.84 · gpt 4.80 · claude 4.95</td><td>4</td><td class="mod">gemini-3.1-pro-preview · gpt-6-astra · claude-opus-5</td><td><span class="chg">first published run</span></td></tr>
         </tbody>
