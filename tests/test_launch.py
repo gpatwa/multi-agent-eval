@@ -17,6 +17,9 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 def _ready(tmp_path):
     data = _release(tmp_path)
     data["site_url"] = "https://eval.example.dev"
+    # Pin the date: _release() stamps "now", which made tests that append a
+    # later fixed-date entry fail once the wall clock passed that date.
+    data["generated"] = "2026-10-01T00:00:00+00:00"
     hist, _ = H.append({"entries": []}, data)
     return data, hist
 

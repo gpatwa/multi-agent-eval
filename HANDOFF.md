@@ -31,11 +31,11 @@ After sign-in, in this order:
 - Flagged models rank below clean ones. MIT license. Dark "instrument panel" design.
 - No manual steps for the user other than credentials. Verify vendor and model claims from primary sources. Never post publicly or open pull requests on other people's repos without asking.
 
-## Model landscape (checked 2026-09-30, mostly primary sources)
+## Model landscape (rechecked 2026-10-16; vendor docs for Anthropic, OpenAI, Google)
 
-- Anthropic: Fable 5.1 (`claude-fable-5-1`, $10/$50), Opus 5.5 (`claude-opus-5-5`, $4/$20), Sonnet 5.5, Haiku 4.5. Opus 5 is legacy.
+- Anthropic: Fable 5.1 (`claude-fable-5-1`, $10/$50), Opus 5.5 (`claude-opus-5-5`, $4/$20), Sonnet 5.5 (`claude-sonnet-5-5`, $2/$10), Haiku 5.5 (`claude-haiku-5-5`, $0.10/$0.50, pitched at routing/classification). Opus 5, Fable 5, Sonnet 5, Haiku 4.5 are legacy. Sonnet/Haiku 5.5 are not staged anywhere yet; they need the Claude login.
 - OpenAI: `gpt-6-astra` ($10/$50), `gpt-6.1-sol` ($2/$10), `gpt-6-luna`. **Only `gpt-6-astra` runs on the ChatGPT-account Codex lane**; Sol, `gpt-6-sol` and Luna return "not supported ... with a ChatGPT account". Sol needs an OpenAI API key (about $1 for the triage suites, an estimate).
-- Google: Pro tier is still `gemini-3.1-pro-preview`. **Gemini 4 Argon** was announced 2026-09-30 as limited preview ("rolling out soon", no API ID). Retry when it reaches the API.
+- Google: **`gemini-4-argon` is GA (2026-10-13)** and staged as the Gemini candidate in `config.triage.mixed.yaml` and `config.triage.mixed.codex-judge.yaml` (live-probed at low/medium/high effort). Price per Google's pricing page: $2 in / $10 out (thinking billed as output) / $0.10 cached through 2026-11-30, then $4 / $20 / $0.20 from 2026-12-01; no prompt-length tiers. Not priced in any config (cost weight 0). `gemini-3.7-flash` and `3.5-flash` are deprecated (route to 3.8 / 3.6).
 - Others (news sites, less certain): Grok 4.7, DeepSeek V4.1 Flash, Qwen3.8-Omni-Flash, GLM 5.3, Kimi K3, Meta Muse Spark 1.3 (via Meta Model API or OpenRouter).
 - The `SOURCES` map in `eval_agents/site.py` drives the page's Sources section. Add Fable 5.1 there when relevant.
 
@@ -62,7 +62,7 @@ After sign-in, in this order:
 
 1. Re-run Claude on Opus 5.5 (blocked on login), then decide whether to add Fable 5.1 as a second Claude tier.
 2. GPT-6.1 Sol and a priced cost lane, both waiting on an `OPENAI_API_KEY` decision.
-3. Retry Gemini 4 Argon when it has an API ID.
+3. Gemini 4 Argon is staged; the pipeline reports Gemini stale for both suites. It runs once the Claude login works (the primary judge is Claude Code).
 4. AutomationBench lane: needs full runs for all three vendors at matched effort with API keys; the single existing Gemini sample cannot be published.
 5. Composite ranking bug for a candidate whose answers all errored; a judge-parse retry; a Codex `service_tier` override (untested).
 6. After the Opus 5.5 run, update the Sources section and README mentions, then offer the launch (blockers are only the Claude re-run now; the license is done).
