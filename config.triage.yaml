@@ -16,7 +16,7 @@ candidates:
     model: gpt-6-astra
   - name: gemini
     provider: gemini
-    model: gemini-3.1-pro-preview
+    model: gemini-4-argon
   - name: glm
     provider: zai
     model: glm-5.3
@@ -46,7 +46,7 @@ scorecard:
   pricing:
     claude: [4.00, 20.00]    # claude-opus-5-5
     gpt: [10.00, 50.00]       # gpt-6-astra
-    gemini: [2.00, 12.00]    # gemini-3.1-pro-preview (<=200k prompts)
+    gemini: [2.00, 10.00]    # gemini-4-argon (until Nov 30 2026; 4.00 / 20.00 from Dec 1)
     glm: [1.40, 4.40]        # glm-5.3
     grok: [2.00, 6.00]       # grok-4.7 (<200k context)
     meta: [1.25, 4.25]      # muse-spark-1.3

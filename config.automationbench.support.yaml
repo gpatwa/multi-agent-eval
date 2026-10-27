@@ -40,7 +40,7 @@ candidates:
     model: gpt-6-astra
   - name: gemini
     provider: gemini
-    model: gemini-3.1-pro-preview
+    model: gemini-4-argon
 
 # The judge grades only the external-facing messages the agent sends (tone,
 # clarity, appropriateness for the recipient, internal-info leaks) — the part AutomationBench's
@@ -60,6 +60,6 @@ scorecard:
   pricing:
     claude: [4.00, 20.00]    # claude-opus-5-5
     gpt: [10.00, 50.00]       # gpt-6-astra
-    gemini: [2.00, 12.00]    # gemini-3.1-pro-preview (<=200k prompts)
-  # Caveat: history grows every turn, and long tasks can push single requests past
-  # Gemini's 200k-token tier, which bills at a higher rate — cost may undercount.
+    gemini: [2.00, 10.00]    # gemini-4-argon (until Nov 30 2026; 4.00 / 20.00 from Dec 1)
+  # Caveat: history grows every turn. gemini-4-argon's pricing page lists no prompt-length tier (the earlier
+  # gemini-3.1-pro-preview billed more past 200k tokens), and its rates double on Dec 1 2026.

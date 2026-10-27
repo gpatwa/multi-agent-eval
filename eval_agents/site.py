@@ -117,17 +117,20 @@ def tested(data: dict) -> str:
 
 # ---------------------------------------------------------------- sources
 
-# Primary pages for each vendor's model names and versions, checked 2026-09-29. Only vendors' own pages
+# Primary pages for each vendor's model names and versions, checked 2026-10-27. Only vendors' own pages
 # (plus one methodology write-up); a vendor group is marked "tested" when its model is in the latest run.
 SOURCES = {
-    "Anthropic": [("Claude Opus 5.5 announcement", "https://www.anthropic.com/claude-opus-5-5"),
-                  ("Claude Opus 5 announcement", "https://www.anthropic.com/news/claude-opus-5"),
-                  ("Claude Sonnet 5.5 announcement", "https://www.anthropic.com/claude-sonnet-5-5"),
-                  ("Claude models overview", "https://platform.claude.com/docs/en/models/overview")],
-    "OpenAI": [("Introducing GPT-6 Sol and Luna", "https://openai.com/index/introducing-gpt-6-sol-and-luna/"),
-               ("Latest model guidance", "https://developers.openai.com/api/docs/guides/latest-model"),
-               ("API model list", "https://developers.openai.com/api/docs/models")],
-    "Google": [("Gemini API models", "https://ai.google.dev/gemini-api/docs/models"),
+    "Anthropic": [("Claude models overview", "https://platform.claude.com/docs/en/models/overview"),
+                  ("Claude Opus 5.5", "https://platform.claude.com/docs/en/models/opus-5-5/overview"),
+                  ("Claude Fable 5.1", "https://platform.claude.com/docs/en/models/fable-5-1/overview"),
+                  ("Claude Haiku 5.5", "https://platform.claude.com/docs/en/models/haiku-5-5/overview"),
+                  ("Claude Sonnet 5.5 announcement", "https://www.anthropic.com/claude-sonnet-5-5")],
+    "OpenAI": [("API model list (GPT-6 Astra, 6.1 Sol, 6.1 Terra, Luna)", "https://developers.openai.com/api/docs/models"),
+               ("Introducing GPT-6 Sol and Luna", "https://openai.com/index/introducing-gpt-6-sol-and-luna/"),
+               ("Latest model guidance", "https://developers.openai.com/api/docs/guides/latest-model")],
+    "Google": [("Introducing Gemini 4 Argon", "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/"),
+               ("Gemini API models", "https://ai.google.dev/gemini-api/docs/models"),
+               ("Gemini API pricing", "https://ai.google.dev/gemini-api/docs/pricing"),
                ("Gemini API release notes", "https://ai.google.dev/gemini-api/docs/changelog")],
     "Meta": [("Introducing Muse", "https://about.fb.com/news/2026/09/introducing-muse-personal-ai-agent/"),
              ("Muse Spark for developers", "https://developer.meta.com/ai/models/muse-spark/"),
@@ -145,7 +148,7 @@ def sources(data: dict) -> str:
     head = ('\n    <div class="sec-head reveal">\n      <p class="eyebrow">Sources</p>\n'
             '      <h2>Where the model names and versions come from</h2>\n'
             '      <p class="dek">Each vendor\'s own pages, so you can check what is current. Names and versions were last checked '
-            'in September 2026 and will drift as vendors ship.</p>\n    </div>\n')
+            'in October 2026 and will drift as vendors ship.</p>\n    </div>\n')
     groups = []
     for vendor, links in SOURCES.items():
         badge = ('<span class="pill ok">tested in the latest run</span>' if vendor in tested_vendors

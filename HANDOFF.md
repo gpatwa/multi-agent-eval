@@ -1,4 +1,4 @@
-# Handoff (written 2026-10-03)
+# Handoff (updated 2026-10-27)
 
 Read this first. It is the state of **The Model Ledger** (repo `gpatwa/multi-agent-eval`) as of the end of the last session. Delete it once you have absorbed it.
 
@@ -8,21 +8,15 @@ A self-hosted, multi-provider LLM evaluation harness with a fully automated resu
 
 ## Where things stand
 
-- Branch `claude/handoff-review-planning-b8ecc2` is in step with `main`. Push to both: `git push origin HEAD:main HEAD:claude/handoff-review-planning-b8ecc2`. CI and the Cloudflare deploy are green on the last commit.
-- **Published run (2026-09-29, effort `low` for all):** rank 1 `gpt-6-astra`, 2 `gemini-3.1-pro-preview`, 3 `claude-opus-5`. Two judges agree (Spearman rho 1.00). Gemini has 2 guardrail flags and Claude 1 on the public suite. Cost is **not scored** (weight 0, nothing priced).
+- Branch `claude/handoff-review-planning-b8ecc2` is in step with `main`. Push to both: `git push origin HEAD:main HEAD:claude/handoff-review-planning-b8ecc2`. Check `gh run list` after every push.
+- **Published run (2026-10-17, effort `low` for all):** rank 1 `gpt-6-astra` (composite 0.97, 0 flags), 2 `claude-opus-5-5` (0.70, 0 flags), 3 `gemini-4-argon` (0.68; 1 flag on the public suite, 3 on held-out). Two judges agree (Spearman rho 1.00). Cost is **not scored** (weight 0, nothing priced). Published history has 3 entries (the third records the Claude and Gemini model swaps).
 - **Ranking rule (user decision):** any candidate with a guardrail flag ranks below every clean candidate; within each group by composite. Implemented in `eval_agents/report.py:rank`, recomputed in `publish.py`.
-- `docs/data/history.json` is append-only (2 entries so far). Page, README, sitemap, robots, `feed.xml` and the results files under `docs/results/` are all generated and live.
-- MIT license added. Launch playbook and drafts exist; **nothing has been posted anywhere.**
+- Page, README results, sitemap, robots, `feed.xml`, `history.json` and `docs/results/` are generated and live. MIT license added. Launch playbook and drafts exist (`launch/PLAYBOOK.md`, `launch/kit/`); **nothing has been posted anywhere.**
+- 2026-10-27: CI on the publish commit had failed because AutomationBench's unpinned `verifiers` resolved to 0.4.0, which removed `verifiers.types`. `requirements-automationbench.txt` now pins `verifiers==0.3.1`. Confirm the next CI run is green.
 
-## The one blocker: the Claude Code login has expired
+## What is blocking: nothing
 
-`claude -p ...` fails with "OAuth session expired and could not be refreshed". The Claude CLI is already updated (2.1.286). The user must run `claude` in a terminal and sign in; that is the only manual step. Until then nothing can run, because the **primary judge is Claude Code too**.
-
-After sign-in, in this order:
-1. Confirm the CLI accepts the model: `env -u ANTHROPIC_AUTH_TOKEN -u ANTHROPIC_BASE_URL claude -p "ok" --output-format json --model claude-opus-5-5 --effort low`. If it is rejected, say so and stop; do not fall back silently.
-2. `config.triage.mixed.yaml` and `config.triage.mixed.codex-judge.yaml` are **already** staged to `claude-opus-5-5` (candidate line only; the judge stays `claude-opus-5`). `python scripts/pipeline.py status` shows Claude "needs run — stale-model" for both suites; GPT and Gemini are kept.
-3. Run `python scripts/pipeline.py tick --publish --loop --interval 900` in the background. It re-runs Claude on both suites, has Codex re-score, applies the gates, publishes, adds a history row (`model claude-opus-5 -> claude-opus-5-5`, plus any quality drop or new flags), and refreshes `launch/kit/`.
-4. Check the live site and CI, then tell the user.
+The Claude Code login works again (checked 2026-10-27: `claude -p ... --model claude-opus-5-5` returns `ok`), and `pipeline.py status` shows every candidate ready for both suites. To refresh results after a model change: edit the candidate line in `config.triage.mixed.yaml` and `config.triage.mixed.codex-judge.yaml` by hand (the pipeline then reports `stale-model` for that candidate only), then run `python scripts/pipeline.py tick --publish --loop --interval 900` in the background. It re-runs only the stale candidate, re-scores with Codex, gates, publishes, adds a history row (with any regression), and refreshes `launch/kit/`. Probe a new model on its CLI first; Codex rejects most non-Astra GPT models on a ChatGPT login.
 
 ## Decisions the user has made (do not relitigate)
 
@@ -31,13 +25,13 @@ After sign-in, in this order:
 - Flagged models rank below clean ones. MIT license. Dark "instrument panel" design.
 - No manual steps for the user other than credentials. Verify vendor and model claims from primary sources. Never post publicly or open pull requests on other people's repos without asking.
 
-## Model landscape (rechecked 2026-10-16; vendor docs for Anthropic, OpenAI, Google)
+## Model landscape (rechecked 2026-10-27; vendor pages for Anthropic, OpenAI, Google)
 
-- Anthropic: Fable 5.1 (`claude-fable-5-1`, $10/$50), Opus 5.5 (`claude-opus-5-5`, $4/$20), Sonnet 5.5 (`claude-sonnet-5-5`, $2/$10), Haiku 5.5 (`claude-haiku-5-5`, $0.10/$0.50, pitched at routing/classification). Opus 5, Fable 5, Sonnet 5, Haiku 4.5 are legacy. Sonnet/Haiku 5.5 are not staged anywhere yet; they need the Claude login.
-- OpenAI: `gpt-6-astra` ($10/$50), `gpt-6.1-sol` ($2/$10), `gpt-6-luna`. **Only `gpt-6-astra` runs on the ChatGPT-account Codex lane**; Sol, `gpt-6-sol` and Luna return "not supported ... with a ChatGPT account". Sol needs an OpenAI API key (about $1 for the triage suites, an estimate).
-- Google: **`gemini-4-argon` is GA (2026-10-13)** and staged as the Gemini candidate in `config.triage.mixed.yaml` and `config.triage.mixed.codex-judge.yaml` (live-probed at low/medium/high effort). Price per Google's pricing page: $2 in / $10 out (thinking billed as output) / $0.10 cached through 2026-11-30, then $4 / $20 / $0.20 from 2026-12-01; no prompt-length tiers. Not priced in any config (cost weight 0). `gemini-3.7-flash` and `3.5-flash` are deprecated (route to 3.8 / 3.6).
-- Others (news sites, less certain): Grok 4.7, DeepSeek V4.1 Flash, Qwen3.8-Omni-Flash, GLM 5.3, Kimi K3, Meta Muse Spark 1.3 (via Meta Model API or OpenRouter).
-- The `SOURCES` map in `eval_agents/site.py` drives the page's Sources section. Add Fable 5.1 there when relevant.
+- Anthropic: Fable 5.1 (`claude-fable-5-1`, $10/$50), Opus 5.5 (`claude-opus-5-5`, $4/$20, the published Claude), Sonnet 5.5 (`claude-sonnet-5-5`, $2/$10), Haiku 5.5 (`claude-haiku-5-5`, from $0.10/$0.50, for routing and classification). Opus 5, Fable 5, Sonnet 5 and Haiku 4.5 are legacy. Fable 5.1, Sonnet 5.5 and Haiku 5.5 have not been tried on the Claude Code CLI.
+- OpenAI: `gpt-6-astra` ($10/$50, the published GPT), `gpt-6.1-sol` ($2/$10), **`gpt-6.1-terra` ($1/$5, new)**, `gpt-6-luna` ($0.10/$0.50). **Only `gpt-6-astra` runs on the ChatGPT-account Codex lane**: Sol, Terra, `gpt-6-sol` and Luna all return "not supported ... with a ChatGPT account" (probed 2026-10-27). The rest need an OpenAI API key (Sol about $1 for the triage suites, an estimate).
+- Google: **`gemini-4-argon` is GA (2026-10-13)** and is the published Gemini. Per Google's pricing page: $2 in / $10 out (thinking billed as output) / $0.10 cached through 2026-11-30, then $4 / $20 / $0.20 from 2026-12-01; no prompt-length tiers. The Pro-tier `gemini-3.1-pro-preview` is still listed. `gemini-3.8-flash` is the newest Flash ($0.75/$3.75 until 2026-12-31).
+- Others (trackers, not vendor pages; less certain): Grok 4.7, DeepSeek V4.1 Flash (refreshed 2026-10-17), Kimi K3.1 Pro (2026-10-23), GLM 5.3, Qwen3.8-Omni-Flash, Meta Muse Spark 1.3. Trackers also list "GPT-6 Pro" and a Claude "Duet" preview; neither appears on the vendors' model pages, so treat them as unverified.
+- The `SOURCES` map in `eval_agents/site.py` drives the page's Sources section (updated 2026-10-27). The README's "Keeping model IDs and pricing current" table and the non-published configs were updated the same day (Gemini candidate to Argon with its pricing); judges were left as they were.
 
 ## How the system works (what you need to know)
 
@@ -56,16 +50,16 @@ After sign-in, in this order:
 - `env_unset` in `release.yaml` strips `ANTHROPIC_AUTH_TOKEN` and `ANTHROPIC_BASE_URL`; the desktop app injects them and they would route the CLI through its proxy.
 - Claude CLI token counts (cached harness tokens) and Codex counts (about 16.7k input for a one-word prompt) are not model cost. Real cost needs an API-key lane.
 - macOS: `sed -i` needs a backup suffix; use Python for edits. The Bash approval check has failed transiently before; waiting and retrying once worked.
-- Tests: `.venv/bin/python -m pytest -q` (378 passed, 19 skipped).
+- Tests: `.venv/bin/python -m pytest -q` (378 passed, 19 skipped). AutomationBench tests only run with `requirements-automationbench.txt` installed (CI does this).
 
 ## Open follow-ups (none blocking)
 
-1. Re-run Claude on Opus 5.5 (blocked on login), then decide whether to add Fable 5.1 as a second Claude tier.
-2. GPT-6.1 Sol and a priced cost lane, both waiting on an `OPENAI_API_KEY` decision.
-3. Gemini 4 Argon is staged; the pipeline reports Gemini stale for both suites. It runs once the Claude login works (the primary judge is Claude Code).
-4. AutomationBench lane: needs full runs for all three vendors at matched effort with API keys; the single existing Gemini sample cannot be published.
-5. Composite ranking bug for a candidate whose answers all errored; a judge-parse retry; a Codex `service_tier` override (untested).
-6. After the Opus 5.5 run, update the Sources section and README mentions, then offer the launch (blockers are only the Claude re-run now; the license is done).
+1. Decide whether to add more tiers as candidates: Claude Fable 5.1 (same price tier as Astra) and Sonnet or Haiku 5.5 via Claude Code (untested on the CLI), and GPT-6.1 Sol or Terra (needs an `OPENAI_API_KEY`).
+2. A priced cost lane for triage (about $5 for all three vendors, an estimate) needs Anthropic and OpenAI API keys. The user chose to skip API keys for now.
+3. AutomationBench lane: needs full runs for all three vendors at matched effort with API keys (about $27 for one trial each, about $80 for three). The user judged it not worth it without a clear return.
+4. Composite ranking bug for a candidate whose answers all errored; a judge-parse retry; a Codex `service_tier` override (untested).
+5. The data side of the launch is ready (published, cross-checked, licensed). The user decides when to post; follow `launch/PLAYBOOK.md`. Re-run `python scripts/launch_kit.py` first.
+6. Argon's price doubles on 2026-12-01; the page does not show cost, but note it if cost scoring is added.
 
 ## User preferences
 

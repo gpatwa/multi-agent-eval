@@ -345,13 +345,14 @@ level for every candidate:
 ```yaml
 effort: low          # low | medium | high | xhigh | max, for every candidate
 candidates:
-  - {name: claude, provider: claude-code, model: claude-opus-5}
+  - {name: claude, provider: claude-code, model: claude-opus-5-5}
   - {name: gpt,    provider: codex-cli,   model: gpt-6-astra}
-  - {name: gemini, provider: gemini,      model: gemini-3.1-pro-preview, effort: low}  # per-candidate override
+  - {name: gemini, provider: gemini,      model: gemini-4-argon, effort: low}  # per-candidate override
 ```
 
-- `low` is the one level Claude, GPT and Gemini all offer (Gemini 3.1 Pro only has
-  `low` and `high`), so it's the default in the mixed, tools and AutomationBench configs.
+- `low` is the one level Claude, GPT and Gemini all offer (Gemini 3.1 Pro only had
+  `low` and `high`; the published run used `low` on `gemini-4-argon` as well), so it's the default in the
+  mixed, tools and AutomationBench configs.
 - It maps to each vendor's own control: Claude API `output_config.effort`, Claude
   Code `--effort`, OpenAI `reasoning_effort`, Codex `model_reasoning_effort`, Gemini
   `thinking_level` (which replaces our old thinking-budget cap).
@@ -454,13 +455,13 @@ report code — subscriptions are just another `Provider` behind the same seam.
 
 Model IDs and per-token prices live **only** in the config files — no code
 change is needed to adopt a new release. Candidate defaults as of
-**September 2026**:
+**October 2026** (checked against each vendor's own model pages on 2026-10-27):
 
 | Provider | Model ID | $/MTok in | $/MTok out |
 |---|---|---|---|
 | Anthropic | `claude-opus-5-5` | 4.00 | 20.00 |
 | OpenAI | `gpt-6-astra` | 10.00 | 50.00 |
-| Google | `gemini-3.1-pro-preview` | 2.00 | 12.00 |
+| Google | `gemini-4-argon` | 2.00 (4.00 from Dec 1) | 10.00 (20.00 from Dec 1) |
 | Z.ai | `glm-5.3` | 1.40 | 4.40 |
 | xAI | `grok-4.7` | 2.00 | 6.00 |
 | Meta | `muse-spark-1.3` | 1.25 | 4.25 |
@@ -471,9 +472,13 @@ original Llama API but re-entered the paid-API business in July 2026 with
 [meta_provider.py](eval_agents/providers/meta_provider.py)). Llama itself
 remains open-weight-only; see the aggregators section below to reach it.
 
-Cheaper tiers worth benchmarking against the flagships: `claude-sonnet-5`,
-`gpt-5.6-terra` / `gpt-5.6-luna` (prev-gen — no GPT-6 mini/nano yet),
-`gemini-3.5-flash`, `glm-5`.
+Higher and cheaper tiers worth benchmarking against these: `claude-fable-5-1`
+($10 / $50, Anthropic's top tier, the same price as `gpt-6-astra`), `claude-sonnet-5-5` ($2 / $10),
+`claude-haiku-5-5` (from $0.10 / $0.50), `gpt-6.1-sol` ($2 / $10), `gpt-6.1-terra` ($1 / $5),
+`gpt-6-luna` ($0.10 / $0.50), `gemini-3.8-flash` ($0.75 / $3.75 until Dec 31 2026), `glm-5`.
+On a ChatGPT-account Codex login only `gpt-6-astra` ran in our check (2026-10-27): `gpt-6.1-sol`, `gpt-6.1-terra`,
+`gpt-6-sol` and `gpt-6-luna` were all rejected ("not supported when using Codex with a ChatGPT account"), so those
+need an OpenAI API key.
 
 ### Open-weight models
 

@@ -3,3 +3,7 @@
 # Pinned to a commit so task content (and therefore scores) can't change under us;
 # bump deliberately and re-baseline.
 automation-bench @ git+https://github.com/zapier/AutomationBench.git@4a8e1061254004d9dac807054eed33fad7d1ff14
+# AutomationBench declares `verifiers>=0.2.0` and imports `verifiers.types`, which verifiers 0.4.0 removed (CI broke
+# on 2026-10-17). 0.3.1 is the newest release that still has it, and it brings `datasets` along. Bump together with the
+# AutomationBench commit above, and re-run tests/test_automationbench.py.
+verifiers==0.3.1

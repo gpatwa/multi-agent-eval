@@ -28,7 +28,7 @@ candidates:
     model: gpt-6-astra
   - name: gemini
     provider: gemini
-    model: gemini-3.1-pro-preview
+    model: gemini-4-argon
 
 judge:
   provider: claude-code
@@ -44,4 +44,4 @@ scorecard:
   pricing:
     claude: [4.00, 20.00]    # claude-opus-5-5
     gpt: [10.00, 50.00]       # gpt-6-astra
-    gemini: [2.00, 12.00]    # gemini-3.1-pro-preview (<=200k prompts)
+    gemini: [2.00, 10.00]    # gemini-4-argon (until Nov 30 2026; 4.00 / 20.00 from Dec 1)
