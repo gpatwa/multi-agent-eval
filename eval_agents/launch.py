@@ -80,8 +80,16 @@ def findings(data: dict) -> list[str]:
             out.append(f"Quality on {held['n_tasks']} held-out tickets stays within {max(gaps):.2f} of the public suite.")
     allc = [c for s in data["suites"].values() for c in s["candidates"].values()]
     flags, answers = sum(c["critical_violations"] for c in allc), sum(c["n_samples"] for c in allc)
-    out.append(f"{flags} guardrail flag{'s' if flags != 1 else ''} across {answers} graded answers." if flags
-               else f"No guardrail flags across {answers} graded answers.")
+    if flags:
+        by_model: dict[str, int] = {}
+        for suite in data["suites"].values():
+            for c in suite["candidates"].values():
+                if c["critical_violations"]:
+                    by_model[c["model"]] = by_model.get(c["model"], 0) + c["critical_violations"]
+        who = ", ".join(f"{m}: {k}" for m, k in sorted(by_model.items(), key=lambda kv: -kv[1]))
+        out.append(f"{flags} guardrail flag{'s' if flags != 1 else ''} across {answers} graded answers ({who}).")
+    else:
+        out.append(f"No guardrail flags across {answers} graded answers.")
     return out
 
 
@@ -100,7 +108,29 @@ def limitations(data: dict) -> list[str]:
         out.append("Latency for CLI candidates includes agent-CLI startup, so it is pipeline time, not model speed.")
     ag = (data.get("agreement") or {}).get(first)
     out.append(f"Judged by {_judge_name(public['judge'])}" + (f", cross-checked by {_judge_name(ag['judge_second'])}." if ag else "."))
+    overlap = _judge_overlap(data)
+    if overlap:
+        out.append(f"{overlap} Self-preference is possible, which is why a second vendor cross-checks the first judge.")
     return out
+
+
+def _judge_overlap(data: dict) -> str:
+    """Where a judge is also a candidate, or from a candidate's vendor. Empty when judges and candidates don't overlap."""
+    first = _suites(data)[0]
+    public = _public(data)
+    cands = {c["model"]: n for n, c in public["candidates"].items()}
+    vendors = {vendor_of(c["model"], n): c["model"] for n, c in public["candidates"].items()}
+    ag = (data.get("agreement") or {}).get(first)
+    parts = []
+    for role, j in (("primary judge", public.get("judge")), ("second judge", (ag or {}).get("judge_second"))):
+        model = (j or {}).get("model")
+        if not model:
+            continue
+        if model in cands:
+            parts.append(f"The {role} ({model}) is also a candidate.")
+        elif vendor_of(model, "") in vendors:
+            parts.append(f"The {role} ({model}) is from the same vendor as candidate {vendors[vendor_of(model, '')]}.")
+    return " ".join(parts)
 
 
 def _models_sentence(data: dict) -> str:
@@ -133,11 +163,20 @@ def kit(data: dict, history: dict) -> dict[str, str]:
               f"Disclosure: I'm the author. This is an open-source harness that scores models on your own tickets and policy.\n\n{bullets}\n\n"
               f"Limits:\n\n{limits}\n\nRepo: {repo}\nResults: {url}\n\nHappy to run another model if you tell me which and how you'd want it scored.\n")
 
+    cli = any("CLI" in _label(c["provider"]) for c in _public(data)["candidates"].values())
+    latency = " Latency through the CLIs includes startup." if cli and "slowest" in f[1] else ""
+    topic_post = [f[2]] if "ticket topics" in f[2] else []
+    judged = next((x for x in lim if x.startswith("Judged by")), "")
+    overlap = next((x for x in lim if x.startswith(("The primary judge", "The second judge"))), "")
     thread = [
         f"I built a self-hosted harness to compare LLM vendors on your own tickets and policy. First run: {models}. Results, method and repo: {url}",
-        *[x for x in f[:3]],
+        f[0],
+        f[1] + latency,
+        *topic_post,
+        f[-1] + " A flag ranks a model below every clean one.",
         "Limits: " + " ".join(lim[:3]),
-        f"Judged by two vendors, with guardrail violations treated as a gate. Code is open source: {repo}",
+        *[x for x in (judged, overlap) if x],
+        f"Open source: {repo}",
     ]
     x_thread = f"{stamp}# X thread\n\n**Where:** your X account. Post as a thread; add the social card from {url}/og-image.png to post 1.\n\n" + "\n\n".join(
         f"**{i}/{len(thread)}** ({len(t)} chars)\n{t}" for i, t in enumerate(thread, 1))

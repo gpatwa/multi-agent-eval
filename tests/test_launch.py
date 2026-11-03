@@ -96,3 +96,38 @@ def test_launch_script_refuses_when_not_ready_and_builds_the_release_command(tmp
     # against the repo's real published data: drafts are written, nothing is posted
     assert mod.main(["--out", str(tmp_path / "kit")]) == 0
     assert (tmp_path / "kit" / "show_hn.md").read_text().startswith("<!-- generated from docs/data/results.json")
+
+
+def test_a_judge_that_is_also_a_candidate_is_disclosed_up_front(tmp_path):
+    data, hist = _ready(tmp_path)
+    models = model_names(data)
+    data["suites"]["public"]["judge"] = {**(data["suites"]["public"].get("judge") or {}), "model": models[0]}
+    data["agreement"]["public"]["judge_second"] = {"provider": "x", "model": "unrelated-judge-9"}
+    lim = " ".join(limitations(data))
+    assert f"The primary judge ({models[0]}) is also a candidate." in lim and "Self-preference is possible" in lim
+    for name in ("show_hn.md", "reddit.md", "linkedin.md", "release_notes.md"):
+        assert "Self-preference is possible" in kit(data, hist)[name], name
+    assert any("Self-preference" in p for p in x_posts(data, hist))
+    # no overlap, no disclosure line
+    data["suites"]["public"]["judge"]["model"] = "unrelated-judge-8"
+    assert "Self-preference" not in " ".join(limitations(data))
+
+
+def test_flags_are_attributed_to_the_model_that_raised_them(tmp_path):
+    data, _ = _ready(tmp_path)
+    for s in data["suites"].values():
+        for c in s["candidates"].values():
+            c["critical_violations"] = 0
+    pub = data["suites"]["public"]["candidates"]
+    name = next(iter(pub))
+    pub[name]["critical_violations"] = 2
+    line = findings(data)[-1]
+    assert f"({pub[name]['model']}: 2)" in line and line.startswith("2 guardrail flags")
+
+
+def test_latency_claim_carries_the_cli_startup_caveat_in_the_thread(tmp_path):
+    data, hist = _ready(tmp_path)
+    posts = x_posts(data, hist)
+    slow = [p for p in posts if "slowest median latency" in p]
+    assert all("startup" in p for p in slow)
+    assert all(len(p) <= X_POST_MAX for p in posts)
