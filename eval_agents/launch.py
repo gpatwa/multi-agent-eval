@@ -192,8 +192,9 @@ def kit(data: dict, history: dict) -> dict[str, str]:
             f"3. The result and what surprised me\n{bullets}\n4. Why a guardrail flag ranks a model down instead of averaging out\n"
             f"5. What this run can't tell you\n{limits}\n6. Run it on your own tickets: {repo}\n")
 
-    release = (f"{stamp}# GitHub release notes\n\n**Where:** `gh release create` (see launch/PLAYBOOK.md; needs your go-ahead)\n\n"
-               f"## Results run {run_date}\n\nModels: {models}.\n\n{bullets}\n\n### Limits\n\n{limits}\n\nFull results: {url}\n")
+    # Public text only (it becomes the release body): no stamp, no instructions to the person posting it.
+    release = (f"## Results run {run_date}\n\nModels: {models}.\n\n{bullets}\n\n### Limits\n\n{limits}\n\n"
+               f"Full results and method: {url}\n")
     return {"show_hn.md": show_hn, "reddit.md": reddit, "x_thread.md": x_thread, "linkedin.md": linkedin, "blog_outline.md": blog,
             "release_notes.md": release}
 

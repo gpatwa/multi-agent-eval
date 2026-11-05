@@ -131,3 +131,34 @@ def test_latency_claim_carries_the_cli_startup_caveat_in_the_thread(tmp_path):
     slow = [p for p in posts if "slowest median latency" in p]
     assert all("startup" in p for p in slow)
     assert all(len(p) <= X_POST_MAX for p in posts)
+
+
+def _launch_script():
+    spec = importlib.util.spec_from_file_location("launch_kit", ROOT / "scripts" / "launch_kit.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_release_is_a_draft_unless_publishing_is_asked_for(tmp_path):
+    mod = _launch_script()
+    data, _ = _ready(tmp_path)
+    notes = tmp_path / "n.md"
+    assert "--draft" in mod.release_command(data, notes) and "--draft" not in mod.release_command(data, notes, draft=False)
+    assert mod.release_command(data, notes)[3] == f"results-{data['generated'][:10]}"
+
+
+def test_an_existing_release_is_updated_if_draft_and_never_touched_if_public():
+    mod = _launch_script()
+    assert mod.release_action(None, publish=False) == "create"
+    assert mod.release_action({"isDraft": True}, publish=False) == "update-draft"
+    assert mod.release_action({"isDraft": True}, publish=True) == "publish-draft"
+    assert mod.release_action({"isDraft": False}, publish=False) == "refuse"
+    assert mod.release_action({"isDraft": False}, publish=True) == "refuse"
+
+
+def test_release_body_is_public_text_only(tmp_path):
+    data, hist = _ready(tmp_path)
+    body = kit(data, hist)["release_notes.md"]
+    assert body.startswith("## Results run") and "generated from" not in body and "Where:" not in body and "go-ahead" not in body
+    assert all(m in body for m in model_names(data)) and "Cost is not scored in this run" in body
