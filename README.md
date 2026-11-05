@@ -455,7 +455,7 @@ report code — subscriptions are just another `Provider` behind the same seam.
 
 Model IDs and per-token prices live **only** in the config files — no code
 change is needed to adopt a new release. Candidate defaults as of
-**October 2026** (checked against each vendor's own model pages on 2026-10-27):
+**November 2026** (checked against each vendor's own model pages on 2026-11-04):
 
 | Provider | Model ID | $/MTok in | $/MTok out |
 |---|---|---|---|
