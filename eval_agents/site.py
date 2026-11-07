@@ -54,31 +54,6 @@ def _suites(data: dict):
 # ---------------------------------------------------------------- stat tiles
 
 
-def stats(data: dict) -> str:
-    suites = data["suites"]
-    total = sum(s["n_tasks"] for s in suites.values())
-    guard = sum(s["n_guardrail"] for s in suites.values())
-    held = sum(s["n_tasks"] for n, s in suites.items() if n != next(iter(suites)))
-    tiles = [
-        (str(data["providers"]), "providers supported", ""),
-        (str(total), f"reference tickets{f' ({held} held-out)' if held else ''}, {guard} adversarial", ""),
-    ]
-    if data["status"] == "published":
-        flags = sum(c["critical_violations"] for s in suites.values() for c in s["candidates"].values())
-        answers = sum(c["n_samples"] for s in suites.values() for c in s["candidates"].values())
-        tiles.append((str(flags), f"guardrail flags in {answers} graded answers", "dot-good" if flags == 0 else "dot-warn"))
-        public = data["agreement"] and data["agreement"].get(next(iter(suites)))
-        if public and public["rank_rho"] is not None:
-            tiles.append((f"{public['rank_rho']:.2f}", "judge rank correlation (ρ)", ""))
-        else:
-            efforts = {c["effort"] for c in suites[next(iter(suites))]["candidates"].values()}
-            if len(efforts) == 1:
-                tiles.append((next(iter(efforts)), "reasoning effort, matched across candidates", ""))
-    return "\n      " + "\n      ".join(
-        f'<div class="stat-tile"><div class="num tab-nums{" " + cls if cls else ""}">{esc(num)}</div>'
-        f'<div class="label">{esc(label)}</div></div>' for num, label, cls in tiles) + "\n      "
-
-
 # ---------------------------------------------------------------- tested models
 
 VENDOR_BY_PREFIX = (("claude", "Anthropic"), ("gpt", "OpenAI"), ("o1", "OpenAI"), ("gemini", "Google"), ("grok", "xAI"),
@@ -87,32 +62,6 @@ VENDOR_BY_PREFIX = (("claude", "Anthropic"), ("gpt", "OpenAI"), ("o1", "OpenAI")
 
 def vendor_of(model: str, fallback: str) -> str:
     return next((v for prefix, v in VENDOR_BY_PREFIX if model.lower().startswith(prefix)), fallback)
-
-
-def tested(data: dict) -> str:
-    """The exact models in the latest published run, with version, access path and effort, above the fold."""
-    if data["status"] != "published":
-        return ""
-    first, rest = _suites(data)
-    public = data["suites"][first]
-    cands = public["candidates"]
-    held = data["suites"][rest[0]]["n_tasks"] if rest else 0
-    efforts = sorted({c["effort"] for c in cands.values()})
-    items = []
-    for n in public["ranking"]:
-        c = cands[n]
-        version = re.sub(r"\s*\(.*?\)|^codex-cli\s+", "", c.get("cli_version") or "").strip()
-        via = _label(c["provider"]) + (f" {version}" if version else "")
-        items.append(f'<li class="model"><span class="vendor">{esc(vendor_of(c["model"], n))}</span>'
-                     f'<b class="mono">{esc(c["model"])}</b><span class="via">{esc(via)}</span></li>')
-    ag = (data.get("agreement") or {}).get(first)
-    judges = f"Judged by <b>{esc(_judge_name(public['judge']))}</b>" + (
-        f", cross-checked by <b>{esc(_judge_name(ag['judge_second']))}</b>" if ag else "")
-    effort = efforts[0] if len(efforts) == 1 else "mixed"
-    meta = (f"Latest run {esc(data['generated'][:10])} · {public['n_tasks'] + held} tickets"
-            + (f" ({held} held-out)" if held else "") + f" · reasoning effort {esc(effort)}")
-    return (f'\n      <p class="tested-label">Models tested in the latest run</p>\n      <ul class="tested-models">\n        '
-            + "\n        ".join(items) + f'\n      </ul>\n      <p class="tested-meta">{meta}. {judges}.</p>\n    ')
 
 
 # ---------------------------------------------------------------- sources
@@ -215,41 +164,104 @@ def score_basis(suite: dict) -> str:
     return ", ".join(f"{v / total:.0%} {k}" for k, v in sorted(w.items(), key=lambda kv: -kv[1]))
 
 
-def panels(data: dict) -> str:
-    """Three instrument panels under the hero. Pending runs show empty tracks and no figures."""
+# ---------------------------------------------------------------- scoreboard (hero)
 
-    def panel(title: str, body: str) -> str:
-        return f'\n      <div class="panel"><h3>{esc(title)}</h3>{body}</div>'
 
-    if data["status"] != "published":
-        rows = "".join('<div class="prow wait"><span class="nm">awaiting run</span><div class="tr"><i></i></div><span>&nbsp;</span></div>'
-                       for _ in range(3))
-        return (panel("Scoreboard", rows + '<p class="sub">Figures appear when a run passes validation.</p>')
-                + panel("Judge agreement", '<div class="big">&mdash;</div><div><span class="pill">pending</span></div>')
-                + panel("Guardrail flags", '<div class="big">&mdash;</div><div><span class="pill">pending</span></div>') + "\n    ")
-    first, _ = _suites(data)
-    public = data["suites"][first]
-    def flag_mark(n: str) -> str:
-        k = public["candidates"][n]["critical_violations"]
-        return f' <span class="fl">{k} flag{"s" if k != 1 else ""}</span>' if k else ""
+def _models_with_flags(data: dict) -> tuple[dict[str, int], int]:
+    """Guardrail flags per model id across every suite, and the number of graded answers."""
+    by_model: dict[str, int] = {}
+    answers = 0
+    for suite in data["suites"].values():
+        for c in suite["candidates"].values():
+            answers += c["n_samples"]
+            if c["critical_violations"]:
+                by_model[c["model"]] = by_model.get(c["model"], 0) + c["critical_violations"]
+    return by_model, answers
 
-    rows = "".join(
-        f'<div class="prow"><span class="nm">{esc(n)}{flag_mark(n)}</span><div class="tr"><i style="--w:{public["candidates"][n]["composite"] * 100:.0f}%"></i></div>'
-        f'<span>{public["candidates"][n]["composite"]:.2f}</span></div>' for n in public["ranking"])
-    ag = (data.get("agreement") or {}).get(first)
-    if ag and ag["rank_rho"] is not None:
-        agree = (f'<div class="big">&rho; {ag["rank_rho"]:.2f}</div><div><span class="pill ok">two vendors</span></div>'
-                 f'<p class="sub">Two different-vendor judges, {ag["n_answers"]} answers.</p>')
+
+def verdict(data: dict) -> str:
+    """One plain sentence per fact worth knowing before reading the table. Empty until results are published."""
+    public = data["suites"][_suites(data)[0]]
+    cands, ranking = public["candidates"], public["ranking"]
+    name = lambda n: f"<b>{esc(cands[n]['model'])}</b>"  # noqa: E731
+    out = [f"{name(ranking[0])} ranks first."]
+    best = max(cands, key=lambda n: cands[n]["quality_mean"])
+    slowest = max(cands, key=lambda n: cands[n]["latency_p50"])
+    if best != ranking[0]:
+        out.append(f"{name(best)} writes the best replies ({cands[best]['quality_mean']:.2f}/5)"
+                   + (" but is the slowest." if best == slowest else "."))
+    flagged, _ = _models_with_flags(data)
+    if flagged:
+        who = ", ".join(f"<b>{esc(m)}</b>" for m in flagged)
+        total = sum(flagged.values())
+        out.append(f"{who} raised {'all ' if len(flagged) == 1 else ''}{total} guardrail flag{'s' if total != 1 else ''}.")
     else:
-        agree = '<div class="big">&mdash;</div><div><span class="pill">one judge</span></div>'
-    all_c = [c for s in data["suites"].values() for c in s["candidates"].values()]
-    flags = sum(c["critical_violations"] for c in all_c)
-    answers = sum(c["n_samples"] for c in all_c)
-    flag = (f'<div class="big">{flags}</div><div><span class="pill {"ok" if flags == 0 else "bad"}">'
-            f'{"none raised" if flags == 0 else "review"}</span></div><p class="sub">Across {answers} graded answers.</p>')
-    return (panel("Composite score", rows + f'<p class="sub">{esc(score_basis(public).capitalize())}. Any guardrail flag ranks a model below every clean one. '
-                                          f'{esc(_judge_name(public["judge"]))} judging.</p>')
-            + panel("Judge agreement", agree) + panel("Guardrail flags", flag) + "\n    ")
+        out.append("No guardrail flags were raised.")
+    return " ".join(out)
+
+
+def scoreboard(data: dict) -> str:
+    """The hero's ranked table: what ran, how it scored, and which models raised flags. Pending runs claim nothing."""
+    if data["status"] != "published":
+        return ('\n      <p class="sb-pending">Reference results are being refreshed. The scoreboard appears here, with every model, '
+                'version and score, when a run passes validation.</p>\n    ')
+    first, rest = _suites(data)
+    public = data["suites"][first]
+    cands, ranking = public["candidates"], public["ranking"]
+    topics = public.get("topics") or {}
+    wins = {n: sum(1 for t in topics.values()
+                   if max(t["candidates"], key=lambda c: t["candidates"][c]["quality_mean"] or 0) == n) for n in cands}
+    rows = []
+    for i, n in enumerate(ranking, 1):
+        c = cands[n]
+        version = re.sub(r"\s*\(.*?\)|^codex-cli\s+", "", c.get("cli_version") or "").strip()
+        via = _label(c["provider"]) + (f" {version}" if version else "")
+        k = c["critical_violations"]
+        flag = (f'<span class="pill bad">{k} flag{"s" if k != 1 else ""}</span>' if k else '<span class="pill ok">clean</span>')
+        cli = "CLI" in _label(c["provider"])
+        rows.append(
+            f'<tr class="{"flagged" if k else ""}">'
+            f'<th scope="row" data-label="Rank"><span class="rank">{i}</span></th>'
+            f'<td class="model" data-label="Model"><div class="mdl"><span class="vendor">{esc(vendor_of(c["model"], n))}</span>'
+            f'<b class="mono">{esc(c["model"])}</b><span class="via">{esc(via)}</span></div></td>'
+            f'<td class="comp" data-label="Composite"><div class="cmp"><span class="tr"><i style="--w:{c["composite"] * 100:.0f}%"></i></span>'
+            f'<span class="num">{c["composite"]:.2f}</span></div></td>'
+            f'<td class="num" data-label="Quality">{c["quality_mean"]:.2f}<small> / 5</small></td>'
+            f'<td class="num" data-label="Median latency">{c["latency_p50"]:.1f}s{"<small> CLI</small>" if cli else ""}</td>'
+            f'<td data-label="Guardrail">{flag}</td>'
+            + (f'<td class="num" data-label="Best topics">{wins[n]}<small> of {len(topics)}</small></td>' if topics else "")
+            + "</tr>")
+    head_topics = "<th>Best topics</th>" if topics else ""
+    ag = (data.get("agreement") or {}).get(first)
+    held = data["suites"][rest[0]]["n_tasks"] if rest else 0
+    efforts = sorted({c["effort"] for c in cands.values()})
+    meta = (f"Latest run {esc(data['generated'][:10])} · {public['n_tasks'] + held} tickets"
+            + (f" ({held} held-out)" if held else "") + f" · reasoning effort {esc(efforts[0] if len(efforts) == 1 else 'mixed')}"
+            + f" · judged by <b>{esc(_judge_name(public['judge']))}</b>"
+            + (f", cross-checked by <b>{esc(_judge_name(ag['judge_second']))}</b> (&rho; {ag['rank_rho']:.2f})"
+               if ag and ag["rank_rho"] is not None else ""))
+    notes = [f"Composite is {score_basis(public)}. Any guardrail flag ranks a model below every clean one."]
+    if not (public.get("weights") or {}).get("cost"):
+        notes.append("Cost is not scored in this run.")
+    if any("CLI" in _label(c["provider"]) for c in cands.values()):
+        notes.append("Latency marked CLI includes agent-CLI startup.")
+    return (f'\n      <p class="verdict">{verdict(data)}</p>\n      <div class="sb-scroll"><table class="scoreboard">\n        <thead><tr>'
+            f'<th>Rank</th><th>Model</th><th>Composite</th><th>Quality</th><th>Latency</th><th>Guardrail</th>{head_topics}</tr></thead>\n        <tbody>\n          '
+            + "\n          ".join(rows) + f'\n        </tbody>\n      </table></div>\n      <p class="sb-meta">{meta}.</p>\n'
+            f'      <p class="sb-meta">{esc(" ".join(notes))}</p>\n    ')
+
+
+def readout(data: dict) -> str:
+    """Findings and limits side by side, so the caveats are never below the fold. Pending runs claim nothing."""
+    from .launch import findings, limitations
+
+    head = ('\n    <div class="sec-head reveal">\n      <p class="eyebrow">The read-out</p>\n'
+            '      <h2>What this run shows, and what it can&rsquo;t</h2>\n    </div>\n')
+    if data["status"] != "published":
+        return head + '    <p class="proof-note">The findings and limits of the latest run appear here once it is published.</p>\n  '
+    lis = lambda items: "".join(f"<li>{esc(x)}</li>" for x in items)  # noqa: E731
+    return (head + '    <div class="readout reveal">\n      <div class="ro-col"><h3>Findings</h3><ul>' + lis(findings(data)) + '</ul></div>\n'
+            '      <div class="ro-col limits"><h3>Limits</h3><ul>' + lis(limitations(data)) + '</ul></div>\n    </div>\n  ')
 
 
 # ---------------------------------------------------------------- walkthrough
@@ -584,7 +596,7 @@ def robots(data: dict) -> str:
     return "User-agent: *\nAllow: /\n" + (f"\nSitemap: {base}/sitemap.xml\n" if base else "")
 
 
-RENDERERS = {"head": head, "stats": stats, "panels": panels, "tested": tested, "sources": sources, "history": history, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
+RENDERERS = {"head": head, "scoreboard": scoreboard, "readout": readout, "sources": sources, "history": history, "walkthrough": walkthrough, "proof": proof, "method_judges": method_judges}
 README_RENDERERS = {"readme_results": readme_results}
 
 

@@ -57,7 +57,7 @@ def test_committed_page_is_the_render_of_the_committed_data():
 def test_render_is_idempotent_and_requires_every_region():
     assert render(render(PAGE, DATA), DATA) == render(PAGE, DATA)
     with pytest.raises(KeyError, match="missing AUTO region"):
-        render(PAGE.replace("<!-- AUTO:stats -->", "").replace("<!-- /AUTO:stats -->", ""), DATA)
+        render(PAGE.replace("<!-- AUTO:scoreboard -->", "").replace("<!-- /AUTO:scoreboard -->", ""), DATA)
 
 
 def test_pending_page_makes_no_result_claims():
@@ -94,9 +94,9 @@ def test_violations_are_counted_never_called_zero(tmp_path):
     from eval_agents.publish import build_release
     data = build_release(suites={"public": public}, second=None, walkthrough_task="t3", providers=19)
     r = regions(render(PAGE, data))
-    assert "Zero violations" not in r and "1 guardrail flag" in r and "policy_critical" in r and 'dot-warn">1<' in r
+    assert "Zero violations" not in r and "1 guardrail flag" in r and "policy_critical" in r
     # the scoreboard marks the flagged candidate and says the flags are outside the composite
-    assert r.count('class="fl">1 flag<') == 1 and "ranks a model below every clean one" in r
+    assert r.count('class="pill bad">1 flag<') == 1 and r.count('<tr class="flagged">') == 1 and "ranks a model below every clean one" in r
 
 
 def test_text_from_data_is_escaped(tmp_path):
@@ -224,19 +224,56 @@ def test_composite_description_names_only_what_was_weighted(tmp_path):
     assert "Composite is 70% quality, 15% latency, 15% cost" in r and "Cost is not scored" not in r
 
 
-def test_hero_names_every_tested_model_with_version_path_and_effort(tmp_path):
+def test_scoreboard_leads_with_every_tested_model_in_rank_order(tmp_path):
     data = _release(tmp_path)
-    out = regions(render(PAGE, data))
-    block = out.split("Models tested in the latest run")[1].split("</p>", 2)[1]
-    for cand in data["suites"]["public"]["candidates"].values():
-        assert f'<b class="mono">{cand["model"]}</b>' in block
-    assert "reasoning effort low" in out and "Judged by" in out
-    assert_well_formed(out)
+    r = regions(render(PAGE, data))
+    board = r.split('<table class="scoreboard">')[1].split("</table>")[0]
+    public = data["suites"]["public"]
+    models = [public["candidates"][n]["model"] for n in public["ranking"]]
+    positions = [board.index(f'<b class="mono">{m}</b>') for m in models]
+    assert positions == sorted(positions)  # best first
+    for n in public["ranking"]:
+        c = public["candidates"][n]
+        assert f'{c["composite"]:.2f}' in board and f'{c["quality_mean"]:.2f}' in board and f'{c["latency_p50"]:.1f}s' in board
+    assert "reasoning effort low" in r and "judged by" in r and "Composite is 70% quality, 30% latency" in r
+    assert board.count('data-label="Model"') == len(models)  # every cell labelled so the table stacks on a phone
+    assert_well_formed(r)
 
 
-def test_pending_hero_names_no_models():
+def test_verdict_states_the_leader_the_best_writer_and_who_raised_flags(tmp_path):
+    from eval_agents.site import verdict
+
+    data = _release(tmp_path)
+    public = data["suites"]["public"]
+    lead = public["candidates"][public["ranking"][0]]["model"]
+    text = verdict(data)
+    assert text.startswith(f"<b>{lead}</b> ranks first.")
+    flagged = {c["model"] for c in public["candidates"].values() if c["critical_violations"]}
+    assert all(f"<b>{m}</b>" in text for m in flagged) or "No guardrail flags" in text
+    for s in data["suites"].values():
+        for c in s["candidates"].values():
+            c["critical_violations"] = 0
+    assert "No guardrail flags were raised." in verdict(data)
+
+
+def test_readout_puts_findings_and_limits_side_by_side(tmp_path):
+    from eval_agents.launch import findings, limitations
+
+    data = _release(tmp_path)
+    r = regions(render(PAGE, data))
+    ro = r.split('<div class="readout reveal">')[1]
+    assert 'class="ro-col"' in ro and 'class="ro-col limits"' in ro
+    import html as _h
+    for line in findings(data) + limitations(data):
+        assert _h.escape(line, quote=False) in ro
+    assert_well_formed(r)
+
+
+def test_pending_hero_and_readout_claim_nothing():
     out = regions(render(PAGE, {**DATA, "status": "pending"}))
-    assert "Models tested in the latest run" not in out
+    assert "Reference results are being refreshed" in out and 'class="scoreboard"' not in out
+    assert 'class="verdict"' not in out and 'class="readout' not in out and "<h3>Findings</h3>" not in out
+    assert "appear here once it is published" in out
 
 
 def test_sources_are_vendor_pages_marked_by_what_was_tested(tmp_path):
