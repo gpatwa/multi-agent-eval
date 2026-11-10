@@ -311,7 +311,11 @@
         "Competitor figures (GPT-6 Astra, Gemini 4 Carbon) are as presented by Anthropic. Gemini 4 Carbon is on Google's own model page (see above).",
         "Anthropic's table also has cybersecurity and protein-design rows that use Mythos 5.2, which is restricted access; they are left out here.",
         "Our note: AutomationBench is a benchmark this project has an adapter for, but we have not run it, so none of these scores are ours."
-      ]
+      ],
+      "model_ids": {
+        "Opus 5.5": "claude-opus-5-5",
+        "GPT-6 Astra": "gpt-6-astra"
+      }
     }
   ],
   "trackers": [

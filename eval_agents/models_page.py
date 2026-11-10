@@ -59,6 +59,9 @@ def validate(m: dict) -> None:
             if not c.get(k):
                 raise ModelsDataError(f"claims entry missing {k!r}: {c.get('title')}")
         date.fromisoformat(c["date"])
+        unknown = set(c.get("model_ids", {})) - set(c["models"])
+        if unknown:
+            raise ModelsDataError(f"model_ids names models not in the table: {sorted(unknown)}")
         for r in c["rows"]:
             extra = set(r["scores"]) - set(c["models"])
             if extra:
@@ -133,6 +136,68 @@ def claims_section(m: dict) -> str:
     return head + "".join(_claim_table(c) for c in claims)
 
 
+def _num(text: str) -> float | None:
+    m = re.match(r"\s*([\d.]+)", text or "")
+    return float(m.group(1)) if m else None
+
+
+def head_to_head(claim: dict, a: str, b: str) -> tuple[int, int, int]:
+    """(a ahead, b ahead, tied) over the benchmarks where the claim reports both. Higher is better on every row."""
+    wa = wb = tie = 0
+    for r in claim["rows"]:
+        x, y = _num(r["scores"].get(a)), _num(r["scores"].get(b))
+        if x is None or y is None:
+            continue
+        wa, wb, tie = wa + (x > y), wb + (y > x), tie + (x == y)
+    return wa, wb, tie
+
+
+def combined_section(m: dict, data: dict) -> str:
+    """Public numbers beside our own, pair by pair. Raw scores are never averaged across benchmarks (different
+    scales, effort settings and model sets); the comparison is who leads whom, counted per benchmark, then set
+    against who leads in our run. Only models both sides cover can be compared, and the section says which cannot."""
+    if data.get("status") != "published":
+        return ""
+    suite = data["suites"][next(iter(data["suites"]))]
+    ours = {c["model"]: c for c in suite["candidates"].values()}
+    lines, covered = [], set()
+    for claim in m.get("claims", []):
+        ids = claim.get("model_ids", {})
+        tested = [(n, i) for n, i in ids.items() if i in ours]
+        covered |= {i for _, i in tested}
+        for k, (na, ia) in enumerate(tested):
+            for nb, ib in tested[k + 1:]:
+                wa, wb, tie = head_to_head(claim, na, nb)
+                n = wa + wb + tie
+                if n < 3:
+                    continue
+                pub = (f"{na} ahead on {wa} of {n}, {nb} on {wb}" + (f", {tie} tied" if tie else ""))
+                qa, qb = ours[ia]["quality_mean"], ours[ib]["quality_mean"]
+                ca, cb = ours[ia]["composite"], ours[ib]["composite"]
+                lead_q = na if qa > qb else nb
+                lead_c = na if ca > cb else nb
+                lead_pub = na if wa > wb else nb if wb > wa else None
+                verdict = ("agrees with" if lead_pub == lead_q else "differs from") if lead_pub else "cannot be compared with"
+                comp = (f" Overall, our composite puts {lead_c} first because it also scores latency, not just quality."
+                        if lead_c != lead_q else "")
+                lines.append(
+                    f'<div class="src-group"><h3>{esc(na)} vs {esc(nb)}</h3>'
+                    f'<p><strong>Vendor-reported ({esc(claim["vendor"])}), {n} benchmarks:</strong> {esc(pub)}.</p>'
+                    f'<p><strong>Our run, {suite["n_tasks"]} support tickets:</strong> {esc(lead_q)} scores higher on reply quality '
+                    f'({max(qa, qb):.2f} vs {min(qa, qb):.2f} out of 5), which {verdict} the public tally.{esc(comp)}</p></div>')
+    missing = sorted(n for n, c in ((c["model"], c) for c in ours.values()) if n not in covered)
+    gap = (f'<p class="mnote">Not comparable yet: {esc(", ".join(missing))} {"appears" if len(missing) == 1 else "appear"} in none of the public tables above, '
+           'so there is nothing to set our result against.</p>') if missing else ""
+    if not lines:
+        return ""
+    head = ('<div class="sec-head reveal"><p class="eyebrow">Public numbers beside ours</p>'
+            '<h2>Does the public picture match what we measured?</h2>'
+            '<p class="dek">We do not average scores across benchmarks: they use different scales, effort settings and model sets. '
+            'Instead we count who leads whom on each public benchmark, then set that beside who leads on our own tickets. '
+            'The public side is vendor-reported, so it can lean toward its author. Independent benchmarks are not included yet.</p></div>')
+    return head + '<div class="src-grid reveal">' + "".join(lines) + "</div>" + gap
+
+
 def ours_section(data: dict) -> str:
     if data.get("status") != "published":
         return ""
@@ -194,7 +259,7 @@ def render_page(index_html: str, m: dict, data: dict, base: str) -> str:
              '<h1>Models and releases, in one place</h1>'
              '<p class="dek">What Anthropic, OpenAI and Google currently list, what they report about it, and which of it we have '
              'measured ourselves. Each row links to the page it came from.</p></div></section>')
-    sections = [models_section(m, data), claims_section(m), ours_section(data), trackers_section(m)]
+    sections = [models_section(m, data), claims_section(m), combined_section(m, data), ours_section(data), trackers_section(m)]
     body = "\n".join(f'  <section class="wrap-wide">{s}</section>' for s in sections if s)
     return (f'<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             + "\n".join(meta) + f'\n<title>{esc(TITLE)}</title>\n{fonts}\n{style}\n</head>\n<body>\n\n{header}\n\n<main id="top">\n{intro}\n{body}\n</main>\n\n'

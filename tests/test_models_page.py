@@ -115,3 +115,35 @@ def test_models_page_is_generated_and_in_the_sitemap():
 def test_unreviewed_ids_are_shown_not_hidden():
     out = mp.models_section({**GOOD, "unreviewed": {"OpenAI": ["gpt-7-nova"]}}, {"status": "pending"})
     assert "not yet reviewed here: gpt-7-nova" in out
+
+
+CLAIM = {"vendor": "V", "models": ["A", "B", "C"], "model_ids": {"A": "id-a", "B": "id-b"},
+         "rows": [{"benchmark": f"b{i}", "scores": sc} for i, sc in enumerate(
+             [{"A": "50%", "B": "40%"}, {"A": "30%", "B": "40%"}, {"A": "9%", "B": "7%"}, {"A": "1%"}])]}
+PUB = {"status": "published", "suites": {"public": {"n_tasks": 40, "candidates": {
+    "x": {"model": "id-a", "quality_mean": 4.0, "composite": 0.5}, "y": {"model": "id-b", "quality_mean": 3.0, "composite": 0.9},
+    "z": {"model": "id-c", "quality_mean": 3.5, "composite": 0.6}}}}}
+
+
+def test_head_to_head_counts_only_benchmarks_both_models_report():
+    assert mp.head_to_head(CLAIM, "A", "B") == (2, 1, 0)
+
+
+def test_combined_compares_public_tally_with_our_quality_and_says_when_composite_differs():
+    out = mp.combined_section({"claims": [CLAIM]}, PUB)
+    assert "A ahead on 2 of 3, B on 1" in out and "4.00 vs 3.00" in out and "agrees with" in out
+    assert "composite puts B first" in out
+    assert "id-c appears in none" in out
+
+
+def test_combined_shows_nothing_before_results_are_published_or_with_too_few_shared_benchmarks():
+    assert mp.combined_section({"claims": [CLAIM]}, {"status": "pending"}) == ""
+    thin = {**CLAIM, "rows": CLAIM["rows"][:2]}
+    assert mp.combined_section({"claims": [thin]}, PUB) == ""
+
+
+def test_model_ids_must_name_models_in_the_table():
+    bad = copy.deepcopy(GOOD)
+    bad["claims"][0]["model_ids"] = {"Nope": "x"}
+    with pytest.raises(mp.ModelsDataError, match="model_ids"):
+        mp.validate(bad)
