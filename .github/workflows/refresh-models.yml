@@ -1,0 +1,48 @@
+name: Refresh model releases
+
+# Re-reads the vendors' own model pages once a day and, when something changed, commits docs/data/models.json and
+# the regenerated docs/models.html, then starts the site deploy. Anthropic's rows are rewritten from its model pages;
+# OpenAI and Google pages are watched and any new model ID is listed on the page as "not yet reviewed". A vendor
+# page that cannot be read fails this job (exit 3) instead of quietly leaving old data. See scripts/refresh_models.py.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: refresh-models
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements-lock.txt
+      - name: Refresh from vendor pages
+        run: python scripts/refresh_models.py | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Commit and deploy if changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "Model data unchanged." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "model-ledger-bot"
+          git config user.email "model-ledger-bot@users.noreply.github.com"
+          git add docs/data/models.json docs/models.html
+          git commit -m "Refresh model releases from vendor pages"
+          git push origin HEAD:main
+          gh workflow run deploy-site.yml --ref main

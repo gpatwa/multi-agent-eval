@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Current Claude, GPT and Gemini models with IDs, prices and release dates from the vendors&#x27; own pages, plus the benchmark numbers vendors report, kept separate from our measured results.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#171B22">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://eval.aveto.dev/models">
+<meta property="og:url" content="https://eval.aveto.dev/models">
+<meta property="og:image" content="https://eval.aveto.dev/og-image.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Model Releases and Vendor-Reported Benchmarks | The Model Ledger">
+<meta property="og:description" content="Current Claude, GPT and Gemini models with IDs, prices and release dates from the vendors&#x27; own pages, plus the benchmark numbers vendors report, kept separate from our measured results.">
+<meta name="twitter:card" content="summary_large_image">
+<title>Model Releases and Vendor-Reported Benchmarks | The Model Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Instrument panel: dark-first. Amber is the one accent; green/red are status only. */
+  :root{
+    --ink:#E9ECF1;
+    --surface:#0C0E12;
+    --surface-raised:#14181F;
+    --line:#232833;
+    --slate:#8D95A3;
+    --brass:#F2B84B;
+    --brass-strong:#FFD07A;
+    --brass-tint:#2B2412;
+    --on-brass:#1A1204;
+    --good:#6FD39A;
+    --critical:#F08A78;
+    --chart-a:#F2B84B;
+    --chart-b:#6EA8FF;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 28px -14px rgba(0,0,0,0.6);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"]{
+    --ink:#12151B; --surface:#F5F6F8; --surface-raised:#FFFFFF; --line:#DADDE3; --slate:#5B6270;
+    --brass:#9A6A00; --brass-strong:#7A5200; --brass-tint:#FBEFD0; --on-brass:#FFFFFF;
+    --good:#1F7A4D; --critical:#B23B28; --chart-a:#B27800; --chart-b:#2A5BD7;
+    --shadow: 0 1px 2px rgba(18,21,27,0.06), 0 8px 24px -12px rgba(18,21,27,0.18);
+    color-scheme: light;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--surface);
+    color:var(--ink);
+    font-family:"Geist", ui-sans-serif, system-ui, sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:"Geist", ui-sans-serif, system-ui, sans-serif;
+    font-weight:600;
+    letter-spacing:-0.03em;
+    line-height:1.12;
+    text-wrap:balance;
+    margin:0;
+    color:var(--ink);
+  }
+  p{margin:0;}
+  a{color:inherit;}
+  .mono{font-family:"Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;}
+  .tab-nums{font-variant-numeric:tabular-nums;}
+
+  .eyebrow{
+    font-family:"Geist Mono", monospace;
+    font-size:12px;
+    letter-spacing:0.11em;
+    text-transform:uppercase;
+    color:var(--brass);
+    font-weight:500;
+  }
+
+  .wrap{max-width:920px; margin:0 auto; padding:0 28px;}
+  .wrap-wide{max-width:1080px; margin:0 auto; padding:0 28px;}
+
+  /* ---------- header ---------- */
+  header{
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    max-width:1080px; margin:0 auto; padding:18px 28px;
+    display:flex; align-items:center; justify-content:space-between; gap:24px;
+  }
+  .wordmark{
+    display:flex; align-items:baseline; gap:8px;
+    font-family:"Geist", sans-serif; font-weight:700; font-size:19px;
+    letter-spacing:-0.01em;
+    text-decoration:none;
+  }
+  .wordmark .dot{color:var(--brass);}
+  nav.links{display:flex; gap:26px; align-items:center;}
+  nav.links a{
+    font-size:13.5px; text-decoration:none; color:var(--slate);
+    border-bottom:1px solid transparent;
+  }
+  nav.links a:hover{color:var(--ink); border-bottom-color:var(--brass);}
+  nav.links a:focus-visible, .btn:focus-visible{outline:2px solid var(--brass); outline-offset:3px;}
+  @media (max-width:1000px){ nav.links{display:none;} }
+
+  .btn{
+    font-family:"Geist Mono", monospace; font-size:13px; font-weight:500;
+    text-decoration:none; padding:9px 16px; border-radius:3px;
+    display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+  }
+  .btn-primary{background:var(--brass); color:var(--on-brass);}
+  .btn-primary:hover{background:var(--brass-strong);}
+  .btn-ghost{border:1px solid var(--line); color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--brass);}
+
+  /* ---------- hero ---------- */
+  .hero{padding:76px 0 56px;}
+  .hero h1{font-size:clamp(34px, 4.6vw, 52px); max-width:22ch;}
+  .hero .lede{
+    margin-top:18px; max-width:68ch; font-size:18px; color:var(--slate); line-height:1.6;
+  }
+  .hero .ctas{display:flex; gap:14px; margin-top:32px; flex-wrap:wrap;}
+
+  @keyframes pl-pop{
+    0%{opacity:0; transform:scale(0.85);}
+    70%{opacity:1;}
+    100%{opacity:1; transform:scale(1);}
+  }
+
+
+  /* ---------- hero scoreboard ---------- */
+  .hero{padding:52px 0 40px;}
+  .scoreboard-wrap{margin-top:30px;}
+  .verdict{font-size:19px; line-height:1.5; max-width:62ch; color:var(--slate);}
+  .verdict b{color:var(--ink); font-family:"Geist Mono",monospace; font-weight:600; font-size:0.92em;}
+  .sb-scroll{margin-top:18px; border:1px solid var(--line); border-radius:12px; background:var(--surface-raised); box-shadow:var(--shadow); overflow-x:auto;}
+  .scoreboard{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums;}
+  .scoreboard th, .scoreboard td{padding:14px 16px; text-align:left; vertical-align:middle; border-bottom:1px solid var(--line);}
+  .scoreboard tbody tr:last-child > *{border-bottom:none;}
+  .scoreboard thead th{font-family:"Geist Mono",monospace; font-size:11px; font-weight:500; letter-spacing:0.07em; text-transform:uppercase; color:var(--slate); white-space:nowrap;}
+  .scoreboard .rank{display:inline-grid; place-items:center; width:34px; height:34px; border-radius:8px; background:var(--brass-tint); color:var(--brass-strong); font-family:"Geist Mono",monospace; font-weight:600; font-size:16px;}
+  .scoreboard tbody tr:first-child .rank{background:var(--brass); color:var(--on-brass);}
+  .scoreboard tr.flagged .rank{background:var(--line); color:var(--slate);}
+  .scoreboard .mdl{display:grid; gap:1px; min-width:190px;}
+  .scoreboard .mdl .vendor{font-size:12px; color:var(--brass-strong);}
+  .scoreboard .mdl b{font-size:16px; font-weight:600; overflow-wrap:anywhere;}
+  .scoreboard .mdl .via{font-size:12px; color:var(--slate);}
+  .scoreboard .cmp{display:grid; grid-template-columns:minmax(80px,140px) auto; gap:10px; align-items:center;}
+  .scoreboard .tr{display:block; height:10px; background:var(--line); border-radius:3px; overflow:hidden;}
+  .scoreboard .tr i{display:block; height:100%; background:var(--brass); border-radius:3px; width:var(--w,0%);}
+  .scoreboard tr.flagged .tr i{background:var(--slate);}
+  .scoreboard .num{font-family:"Geist Mono",monospace; font-size:15px; white-space:nowrap;}
+  .scoreboard small{color:var(--slate); font-size:11px;}
+  .sb-meta{margin-top:10px; font-size:13px; color:var(--slate); max-width:90ch;}
+  .sb-meta b{color:var(--ink); font-weight:500;}
+  .sb-pending{margin-top:20px; padding:18px 20px; border:1px dashed var(--line); border-radius:10px; color:var(--slate);}
+  .hero .ctas{margin-top:26px;}
+  .pill{display:inline-block; padding:2px 9px; border-radius:99px; font-family:"Geist Mono",monospace; font-size:12px; font-weight:500; background:var(--brass-tint); color:var(--brass-strong);}
+  .pill.ok{background:color-mix(in srgb,var(--good) 18%,transparent); color:var(--good);}
+  .pill.bad{background:color-mix(in srgb,var(--critical) 18%,transparent); color:var(--critical);}
+  @media (max-width:760px){
+    .scoreboard thead{display:none;}
+    .scoreboard, .scoreboard tbody{display:block;}
+    .scoreboard tbody tr{display:grid; grid-template-columns:repeat(4,1fr); gap:10px 12px; padding:16px; border-bottom:1px solid var(--line); align-items:start;}
+    .scoreboard tbody tr:last-child{border-bottom:none;}
+    .scoreboard th, .scoreboard td{border:none; padding:0;}
+    .scoreboard tbody tr > th[scope=row]{grid-column:1; grid-row:1;}
+    .scoreboard td.model{grid-column:2 / -1; grid-row:1;}
+    .scoreboard .mdl{min-width:0;}
+    .scoreboard td.comp{grid-column:1 / -1;}
+    .scoreboard .cmp{grid-template-columns:1fr auto;}
+    .scoreboard td[data-label="Quality"], .scoreboard td[data-label="Guardrail"]{grid-column:1 / 3;}
+    .scoreboard td[data-label="Median latency"], .scoreboard td[data-label="Best topics"]{grid-column:3 / 5;}
+    .scoreboard td[data-label]::before{content:attr(data-label); display:block; font-family:"Geist Mono",monospace; font-size:10px; letter-spacing:0.07em; text-transform:uppercase; color:var(--slate); margin-bottom:2px;}
+    .scoreboard td.model::before{display:none;}
+  }
+  @media (max-width:520px){ .wordmark{white-space:nowrap; font-size:17px;} .nav-inner{padding-inline:16px; gap:12px;} .wrap,.wrap-wide{padding-inline:16px;} .btn{padding:8px 12px;} .verdict{font-size:17px;} }
+
+  /* ---------- per-topic table, history, sources ---------- */
+  .topic-table{overflow-x:auto; margin-top:10px;}
+  .topic-table table{width:100%; border-collapse:collapse; font-family:"Geist Mono",monospace; font-size:13px; font-variant-numeric:tabular-nums;}
+  .topic-table th, .topic-table td{padding:8px 12px; text-align:right; border-bottom:1px solid var(--line);}
+  .topic-table thead th{font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--slate); font-weight:500;}
+  .topic-table th:first-child, .topic-table td:first-child{text-align:left;}
+  .topic-table tbody th{font-weight:500; text-transform:capitalize;}
+  .topic-table td.best{color:var(--brass-strong); font-weight:600;}
+  .history-table td.mod{color:var(--slate); text-align:left; white-space:nowrap;}
+  .history-table td, .history-table th{text-align:left; vertical-align:top;}
+  .chg{display:inline-block; margin:0 6px 4px 0; padding:1px 8px; border-radius:99px; background:var(--brass-tint); color:var(--brass-strong); font-size:12px;}
+  .chg.bad{background:color-mix(in srgb,var(--critical) 18%,transparent); color:var(--critical);}
+  .src-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px;}
+  .src-group{padding:16px 18px; border:1px solid var(--line); border-radius:10px; background:var(--surface-raised); min-width:0;}
+  .src-group h3{font-size:15px; font-weight:600; display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px;}
+  .src-group ul{list-style:none; margin:0; padding:0; display:grid; gap:6px; font-size:14px;}
+  .src-group a{color:var(--brass-strong); text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:3px; overflow-wrap:anywhere;}
+  .src-group a:hover{text-decoration-color:var(--brass);}
+
+  /* ---------- read-out: findings and limits ---------- */
+  .readout{display:grid; grid-template-columns:1.2fr 1fr; gap:12px;}
+  @media (max-width:860px){ .readout{grid-template-columns:1fr;} }
+  .ro-col{padding:20px 22px; border:1px solid var(--line); border-radius:12px; background:var(--surface-raised); min-width:0;}
+  .ro-col.limits{border-style:dashed; background:transparent;}
+  .ro-col h3{font-family:"Geist Mono",monospace; font-size:12px; font-weight:500; letter-spacing:0.07em; text-transform:uppercase; color:var(--slate); margin-bottom:12px;}
+  .ro-col ul{list-style:none; margin:0; padding:0; display:grid; gap:12px; font-size:15px; line-height:1.5;}
+  .ro-col li{padding-left:16px; position:relative;}
+  .ro-col li::before{content:""; position:absolute; left:0; top:0.62em; width:6px; height:6px; border-radius:2px; background:var(--brass);}
+  .ro-col.limits li::before{background:var(--slate);}
+  .ro-col.limits ul{color:var(--slate); font-size:14px;}
+
+  /* ---------- walkthrough: one real ticket, three real replies ---------- */
+  .ticket-card{
+    border-left:3px solid var(--brass); background:var(--surface-raised);
+    border-radius:4px; box-shadow:var(--shadow); padding:20px 24px; margin-bottom:20px;
+  }
+  .ticket-meta{
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px 16px;
+    margin-bottom:10px; font-family:"Geist Mono",monospace; font-size:11.5px; color:var(--slate);
+  }
+  .ticket-meta .gold{color:var(--ink);}
+  .ticket-body{font-size:15px; color:var(--ink); line-height:1.6; max-width:66ch;}
+
+  .case-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  @media (max-width:860px){ .case-grid{grid-template-columns:1fr;} }
+
+  .case-card{
+    background:var(--surface-raised); border:1px solid var(--line); border-radius:4px;
+    box-shadow:var(--shadow); padding:20px; display:flex; flex-direction:column; gap:13px;
+  }
+  .case-head{display:flex; justify-content:space-between; align-items:baseline;}
+  .case-model{font-family:"Geist Mono",monospace; font-weight:600; font-size:15px; color:var(--ink);}
+  .case-overall{font-family:"Geist Mono",monospace; font-size:22px; font-weight:500; color:var(--ink);}
+
+  .case-route{
+    font-family:"Geist Mono",monospace; font-size:11.5px; width:fit-content;
+  }
+  .case-route.match{color:var(--good);}
+  .case-route.mismatch{color:var(--critical);}
+
+  .case-reply{
+    margin:0; font-size:13px; color:var(--slate); line-height:1.6;
+    border-left:2px solid var(--line); padding-left:12px;
+  }
+
+  .case-dims{display:grid; gap:6px;}
+  .dim-row{display:grid; grid-template-columns:74px 1fr 16px; align-items:center; gap:8px;}
+  .dim-label{
+    font-family:"Geist Mono",monospace; font-size:10px; letter-spacing:0.03em;
+    text-transform:uppercase; color:var(--slate);
+  }
+  .dim-bar{height:6px; background:var(--line); border-radius:3px; overflow:hidden;}
+  .dim-bar i{display:block; height:100%; background:var(--brass); border-radius:3px; width:var(--w, 100%);}
+  .dim-val{font-family:"Geist Mono",monospace; font-size:11px; color:var(--ink); text-align:right;}
+
+  .case-rationale{margin:0; font-size:12px; color:var(--slate); line-height:1.55;}
+  .case-rationale::before, .case-rationale::after{content:'"';}
+
+  .reveal.reveal-init .dim-bar i{width:0;}
+  .reveal.reveal-init.is-visible .dim-bar i{width:var(--w); transition:width 0.7s cubic-bezier(.2,.8,.2,1) 0.15s;}
+  .case-grid .case-card:nth-child(2){transition-delay:0.08s;}
+  .case-grid .case-card:nth-child(3){transition-delay:0.16s;}
+
+  .trust-line{margin-top:20px; font-size:14px; color:var(--slate);}
+  .trust-line b{color:var(--ink); font-weight:600;}
+
+
+
+  /* ---------- section scaffolding ---------- */
+  section{padding:64px 0;}
+  section + section{border-top:1px solid var(--line);}
+  .sec-head{margin-bottom:36px; max-width:62ch;}
+  .sec-head h2{font-size:clamp(24px,3vw,32px); margin-top:10px;}
+  .sec-head .dek{margin-top:12px; color:var(--slate); font-size:15.5px;}
+
+  /* ---------- problem grid ---------- */
+  .problem-grid{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:4px; overflow:hidden;}
+  @media (max-width:680px){ .problem-grid{grid-template-columns:1fr;} }
+  .problem-card{background:var(--surface-raised); padding:26px 28px;}
+  .problem-card q{
+    display:block; font-family:"Geist", sans-serif; font-weight:600;
+    letter-spacing:-0.01em;
+    font-size:19px; color:var(--ink); quotes:none; margin-bottom:10px; line-height:1.3;
+  }
+  .problem-card p{font-size:14.5px; color:var(--slate);}
+
+  /* ---------- use cases ---------- */
+  .usecase{
+    display:grid; grid-template-columns:220px 1fr; gap:28px;
+    padding:26px 0; border-top:1px solid var(--line);
+  }
+  .usecase:first-of-type{border-top:none;}
+  @media (max-width:680px){ .usecase{grid-template-columns:1fr; gap:8px;} }
+  .usecase h3{font-size:18px; font-weight:600;}
+  .usecase .mech{font-size:14.5px; color:var(--slate);}
+  .usecase .mech .flag{
+    display:inline-block; margin-top:9px; font-family:"Geist Mono",monospace;
+    font-size:11.5px; color:var(--brass-strong); background:var(--brass-tint);
+    padding:2px 7px; border-radius:2px; letter-spacing:0.02em;
+  }
+
+  /* ---------- proof / scorecard chart ---------- */
+  .proof-note{font-size:14.5px; color:var(--slate); max-width:66ch; margin-bottom:32px;}
+  .proof-note b{color:var(--ink);}
+  .dot-good{color:var(--good); font-weight:600;}
+  .dot-warn{color:var(--critical); font-weight:600;}
+
+  .chart-card{
+    border:1px solid var(--line); border-radius:4px; background:var(--surface-raised);
+    box-shadow:var(--shadow); padding:22px 24px 16px;
+  }
+  .chart-legend{display:flex; gap:22px; margin-bottom:6px; flex-wrap:wrap;}
+  .chart-legend .sw{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--slate);}
+  .chart-legend .sw i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+  .chart-legend .sw.a i{background:var(--chart-a);}
+  .chart-legend .sw.b i{background:var(--chart-b);}
+  .bar-chart{overflow-x:auto;}
+  .bar-chart svg{width:100%; height:auto; min-width:560px; display:block;}
+  .bc-grid{stroke:var(--line); stroke-width:1;}
+  .bc-tick{font-family:"Geist Mono",monospace; font-size:10.5px; fill:var(--slate);}
+  .bc-name{font-family:"Geist", sans-serif; font-size:13.5px; font-weight:600; fill:var(--ink);}
+  .bc-model{font-family:"Geist Mono",monospace; font-size:10px; fill:var(--slate);}
+  .bc-value{font-family:"Geist Mono",monospace; font-size:11px; fill:var(--ink);}
+  .bc-value-in{fill:#1A1204; font-weight:600;}
+  .stamp .label b .rho{text-transform:none;}
+  .bc-bar-a{fill:var(--chart-a); transform-box:fill-box; transform-origin:left center;}
+  .bc-bar-b{fill:var(--chart-b); transform-box:fill-box; transform-origin:left center;}
+  .quality-note{margin-top:16px; font-size:13px; color:var(--slate);}
+  .quality-note b{color:var(--ink);}
+
+  @media (prefers-reduced-motion:no-preference){
+    .bc-anim .bc-bar-a, .bc-anim .bc-bar-b{transform:scaleX(0); animation:bc-grow 0.6s cubic-bezier(.2,.8,.2,1) forwards;}
+    .bc-anim .bc-value{opacity:0; animation:pl-pop 0.3s ease-out forwards;}
+    .bc-anim .bc-g1 .bc-bar-a{animation-delay:0.05s;} .bc-anim .bc-g1 .bc-bar-b{animation-delay:0.15s;}
+    .bc-anim .bc-g2 .bc-bar-a{animation-delay:0.25s;} .bc-anim .bc-g2 .bc-bar-b{animation-delay:0.35s;}
+    .bc-anim .bc-g3 .bc-bar-a{animation-delay:0.45s;} .bc-anim .bc-g3 .bc-bar-b{animation-delay:0.55s;}
+    .bc-anim .bc-g1 .bc-value-a{animation-delay:0.55s;} .bc-anim .bc-g1 .bc-value-b{animation-delay:0.65s;}
+    .bc-anim .bc-g2 .bc-value-a{animation-delay:0.75s;} .bc-anim .bc-g2 .bc-value-b{animation-delay:0.85s;}
+    .bc-anim .bc-g3 .bc-value-a{animation-delay:0.95s;} .bc-anim .bc-g3 .bc-value-b{animation-delay:1.05s;}
+    @keyframes bc-grow{to{transform:scaleX(1);}}
+  }
+
+  .verdict-row{
+    display:flex; gap:28px; flex-wrap:wrap; margin-top:22px; align-items:center;
+  }
+  .stamp{display:flex; align-items:center; gap:12px;}
+  .stamp svg{flex:none;}
+  .stamp .label{font-size:13.5px; color:var(--slate); max-width:30ch;}
+  .stamp .label b{color:var(--ink); display:block; font-family:"Geist Mono",monospace; font-size:12px; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:2px;}
+
+  /* ---------- method ---------- */
+  .method-list{display:grid; gap:0;}
+  .method-item{
+    display:grid; grid-template-columns:34px 1fr; gap:16px;
+    padding:20px 0; border-top:1px solid var(--line);
+  }
+  .method-item:first-child{border-top:none;}
+  .method-item .mk{color:var(--brass); font-family:"Geist Mono", monospace; font-size:15px; font-weight:500;}
+  .method-item h3{font-size:16.5px; font-weight:600; margin-bottom:6px;}
+  .method-item p{font-size:14.5px; color:var(--slate);}
+
+  /* ---------- coverage ---------- */
+  .roster{display:grid; gap:18px;}
+  .roster-row{display:grid; grid-template-columns:150px 1fr; gap:18px; align-items:baseline; padding:14px 0; border-top:1px solid var(--line);}
+  .roster-row:first-child{border-top:none;}
+  @media (max-width:680px){ .roster-row{grid-template-columns:1fr; gap:6px;} }
+  .roster-row .cat{font-family:"Geist Mono",monospace; font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--slate);}
+  .roster-row .vendors{font-size:14.5px;}
+  .roster-row .vendors .sep{color:var(--line); margin:0 8px;}
+  .fact{margin-top:26px; font-size:14px; color:var(--slate); border-left:2px solid var(--brass); padding-left:14px;}
+
+  /* ---------- CTA band ---------- */
+  .cta-band{background:var(--surface-raised); color:var(--ink); border-top:1px solid var(--line);}
+  .cta-band .wrap{padding:56px 28px; display:flex; justify-content:space-between; align-items:center; gap:32px; flex-wrap:wrap;}
+  .cta-band h2{color:var(--ink); font-size:clamp(24px,3vw,30px); max-width:20ch;}
+  .cta-band .cmd{
+    font-family:"Geist Mono",monospace; font-size:13px; background:rgba(128,128,128,0.14);
+    border:1px solid rgba(128,128,128,0.30); border-radius:4px; padding:16px 18px;
+    color:var(--ink); opacity:0.9; line-height:1.7; white-space:pre; overflow-x:auto; max-width:100%;
+  }
+  .cta-band-inner{display:flex; flex-direction:column; gap:18px; max-width:520px;}
+  .cta-band .btn-primary{background:var(--brass); color:var(--on-brass);}
+  .cta-band .btn-primary:hover{background:var(--brass-strong); color:var(--on-brass);}
+
+  /* ---------- footer ---------- */
+  footer{padding:34px 0 48px;}
+  footer .fine{font-size:12.5px; color:var(--slate); max-width:70ch; line-height:1.7;}
+  footer .fine + .fine{margin-top:8px;}
+  footer a{text-decoration:underline; text-decoration-color:var(--line);}
+
+
+  /* ---------- tightened lower sections ---------- */
+  section{padding:48px 0;}
+  .sec-head{margin-bottom:24px;}
+  .problem-card{padding:20px 22px;}
+  .problem-card q{font-size:17px; margin-bottom:6px;}
+  .problem-card p{font-size:14px;}
+  .usecase-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:680px){ .usecase-grid{grid-template-columns:1fr;} }
+  .usecase-grid .usecase{display:grid; grid-template-columns:1fr; gap:8px; align-content:start; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--surface-raised);}
+  .usecase-grid .usecase p{font-size:14px; color:var(--slate);}
+  .usecase-grid .usecase .flag{width:fit-content; font-family:"Geist Mono",monospace; font-size:11.5px; color:var(--brass-strong); background:var(--brass-tint); padding:2px 8px; border-radius:4px;}
+  .method-list{grid-template-columns:1fr 1fr; gap:12px;}
+  @media (max-width:680px){ .method-list{grid-template-columns:1fr;} }
+  .method-item, .method-item:first-child{border:1px solid var(--line); border-radius:10px; background:var(--surface-raised); padding:18px 20px; grid-template-columns:28px 1fr; gap:12px;}
+  .method-item p{font-size:14px;}
+  .roster-row{padding:10px 0;}
+  .fact{margin-top:16px;}
+  .cta-band .wrap{padding-block:40px;}
+
+  /* ---------- scroll-triggered reveal ---------- */
+  /* Default: fully visible. .reveal-init (hiding state) and .is-visible (the
+     reveal itself) are only ever added by JS, and only after confirming
+     IntersectionObserver exists and motion is not reduced — see the script
+     at the end of the page. A page with JS disabled, or that script failing
+     outright, never applies .reveal-init, so content stays visible always. */
+  .reveal.reveal-init{opacity:0; transform:translateY(16px);}
+  .reveal.reveal-init.is-visible{
+    opacity:1; transform:translateY(0);
+    transition:opacity 0.55s ease-out, transform 0.55s ease-out;
+  }
+  .problem-card.reveal:nth-child(2){transition-delay:0.07s;}
+  .problem-card.reveal:nth-child(3){transition-delay:0.14s;}
+  .problem-card.reveal:nth-child(4){transition-delay:0.21s;}
+  .usecase.reveal:nth-of-type(2){transition-delay:0.07s;}
+  .usecase.reveal:nth-of-type(3){transition-delay:0.14s;}
+  .usecase.reveal:nth-of-type(4){transition-delay:0.21s;}
+  .method-item.reveal:nth-child(2){transition-delay:0.07s;}
+  .method-item.reveal:nth-child(3){transition-delay:0.14s;}
+  .method-item.reveal:nth-child(4){transition-delay:0.21s;}
+  .roster-row.reveal:nth-child(2){transition-delay:0.06s;}
+  .roster-row.reveal:nth-child(3){transition-delay:0.12s;}
+  .roster-row.reveal:nth-child(4){transition-delay:0.18s;}
+  .roster-row.reveal:nth-child(5){transition-delay:0.24s;}
+  .verdict-row.reveal .stamp:nth-child(2){transition-delay:0.1s;}
+
+  @media (prefers-reduced-motion:no-preference){
+    .fade-up{animation:fadeUp 0.5s ease-out both;}
+    .fade-up:nth-child(2){animation-delay:0.05s;}
+    .fade-up:nth-child(3){animation-delay:0.10s;}
+    .fade-up:nth-child(4){animation-delay:0.15s;}
+    .fade-up:nth-child(5){animation-delay:0.20s;}
+    .fade-up:nth-child(6){animation-delay:0.25s;}
+    .fade-up:nth-child(7){animation-delay:0.30s;}
+    .fade-up:nth-child(8){animation-delay:0.35s;}
+    @keyframes fadeUp{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  }
+
+  .models h3, .claim h3{font-size:17px; font-weight:600; margin:28px 0 10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .models td, .models th{vertical-align:top; text-align:left;}
+  .models td:nth-child(5), .models th:nth-child(5){text-align:right;}
+  .models th[scope=row]{text-transform:none;}
+  .models code{font-family:"Geist Mono",monospace; font-size:12.5px; white-space:nowrap;}
+  .claim td, .claim th{vertical-align:top;}
+  .mnote{font-size:12px; color:var(--slate); font-family:"Geist",sans-serif; font-weight:400;}
+  .claim{margin-top:28px;} .claim .topic-table table th:not(:first-child){white-space:nowrap;}
+  .claim th[scope=row]{text-transform:none;}
+  .caveats{margin:10px 0 0; padding-left:18px; font-size:13.5px; color:var(--slate); display:grid; gap:4px;}
+  .page-top{padding-top:56px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-inner">
+    <a class="wordmark" href="/">The Model Ledger<span class="dot">.</span></a>
+    <nav class="links">
+      <a href="/#results">Results</a>
+      <a href="/#readout">Findings</a>
+      <a href="/#proof">Proof</a>
+      <a href="/#walkthrough">Walkthrough</a>
+      <a href="/#history">History</a>
+      <a href="/#method">Method</a>
+      <a href="/#sources">Sources</a>
+      <a href="/models" aria-current="page">Models</a>
+    </nav>
+    <a class="btn btn-ghost" href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">View on GitHub</a>
+  </div>
+</header>
+
+<main id="top">
+<section class="wrap page-top"><div class="sec-head"><p class="eyebrow">Models</p><h1>Models and releases, in one place</h1><p class="dek">What Anthropic, OpenAI and Google currently list, what they report about it, and which of it we have measured ourselves. Each row links to the page it came from.</p></div></section>
+  <section class="wrap-wide"><div class="sec-head reveal"><p class="eyebrow">Model releases</p><h2>What each vendor lists as current</h2><p class="dek">Read from each vendor's own pages, last checked 2026-11-10. "Tested here" means the model is a candidate in the latest published run. A blank release date means the vendor page does not give one.</p></div><div class="topic-table models reveal"><h3>OpenAI</h3><table><thead><tr><th>Model</th><th class="l">API ID</th><th>Status</th><th>Released</th><th>Price per 1M tokens (in / out)</th><th class="l">Vendor page</th></tr></thead><tbody><tr><th scope="row">GPT-6 Astra <span class="pill ok">tested here</span><br><span class="mnote">Tested here on the Codex CLI lane. Price as checked 2026-11-04.</span></th><td class="l"><code>gpt-6-astra</code></td><td><span class="pill ok">latest</span></td><td>not stated</td><td>$10 / $50</td><td class="l"><a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">GPT-6 Luna<br><span class="mnote">Price as checked 2026-11-04.</span></th><td class="l"><code>gpt-6-luna</code></td><td><span class="pill">current</span></td><td>not stated</td><td>$0.10 / $0.50</td><td class="l"><a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">GPT-6.1 Sol<br><span class="mnote">Needs an OpenAI API key to run; not available on the ChatGPT-account Codex lane. Price as checked 2026-11-04.</span></th><td class="l"><code>gpt-6.1-sol</code></td><td><span class="pill">current</span></td><td>not stated</td><td>$2 / $10</td><td class="l"><a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">GPT-6.1 Terra<br><span class="mnote">Needs an OpenAI API key to run. Price as checked 2026-11-04.</span></th><td class="l"><code>gpt-6.1-terra</code></td><td><span class="pill">current</span></td><td>not stated</td><td>$1 / $5</td><td class="l"><a href="https://developers.openai.com/api/docs/models" target="_blank" rel="noopener">source</a></td></tr></tbody></table></div><div class="topic-table models reveal"><h3>Google</h3><table><thead><tr><th>Model</th><th class="l">API ID</th><th>Status</th><th>Released</th><th>Price per 1M tokens (in / out)</th><th class="l">Vendor page</th></tr></thead><tbody><tr><th scope="row">Gemini 4 Carbon<br><span class="mnote">Google&#x27;s most capable reasoning model. Not on the free tier. The model page says latest update November 2026; no release date is given. Not tested here yet.</span></th><td class="l"><code>gemini-4-carbon</code></td><td><span class="pill ok">latest</span></td><td>not stated</td><td>$2 / $10 until 2026-11-30, then $4 / $20</td><td class="l"><a href="https://aistudio.google.com/docs/models" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Gemini 3.8 Flash<br><span class="mnote">Price as checked 2026-11-04.</span></th><td class="l"><code>gemini-3.8-flash</code></td><td><span class="pill">current</span></td><td>not stated</td><td>$0.75 / $3.75 until 2026-12-31</td><td class="l"><a href="https://aistudio.google.com/docs/models" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Gemini 4 Argon <span class="pill ok">tested here</span><br><span class="mnote">Tested here via the Gemini API. Google describes it as the efficient Gemini 4 model, with lower token spend per turn than Carbon.</span></th><td class="l"><code>gemini-4-argon</code></td><td><span class="pill">current</span></td><td>2026-10-13</td><td>$2 / $10 until 2026-11-30, then $4 / $20</td><td class="l"><a href="https://aistudio.google.com/docs/models" target="_blank" rel="noopener">source</a></td></tr></tbody></table></div><div class="topic-table models reveal"><h3>Anthropic</h3><table><thead><tr><th>Model</th><th class="l">API ID</th><th>Status</th><th>Released</th><th>Price per 1M tokens (in / out)</th><th class="l">Vendor page</th></tr></thead><tbody><tr><th scope="row">Claude Fable 5.2</th><td class="l"><code>claude-fable-5-2</code></td><td><span class="pill ok">latest</span></td><td>2026-11-09</td><td>$8 / $40</td><td class="l"><a href="https://platform.claude.com/docs/en/models/fable-5-2/overview" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Claude Haiku 5.5</th><td class="l"><code>claude-haiku-5-5</code></td><td><span class="pill ok">latest</span></td><td>2026-10-07</td><td>from $0.10 / from $0.50</td><td class="l"><a href="https://platform.claude.com/docs/en/models/haiku-5-5/overview" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Claude Opus 5.5 <span class="pill ok">tested here</span></th><td class="l"><code>claude-opus-5-5</code></td><td><span class="pill ok">latest</span></td><td>2026-09-22</td><td>$4 / $20</td><td class="l"><a href="https://platform.claude.com/docs/en/models/opus-5-5/overview" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Claude Sonnet 5.5</th><td class="l"><code>claude-sonnet-5-5</code></td><td><span class="pill ok">latest</span></td><td>2026-09-28</td><td>$2 / $10</td><td class="l"><a href="https://platform.claude.com/docs/en/models/sonnet-5-5/overview" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Claude Mythos 5</th><td class="l"><code>claude-mythos-5</code></td><td><span class="pill">restricted access</span></td><td>2026-06-09</td><td>$10 / $50</td><td class="l"><a href="https://platform.claude.com/docs/en/models/mythos-5/overview" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Claude Mythos 5.1</th><td class="l"><code>claude-mythos-5-1</code></td><td><span class="pill">restricted access</span></td><td>2026-09-01</td><td>$10 / $50</td><td class="l"><a href="https://platform.claude.com/docs/en/models/mythos-5-1/overview" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Claude Mythos 5.2</th><td class="l"><code>claude-mythos-5-2</code></td><td><span class="pill">restricted access</span></td><td>2026-11-09</td><td>$8 / $40</td><td class="l"><a href="https://platform.claude.com/docs/en/models/mythos-5-2/overview" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Claude Fable 5</th><td class="l"><code>claude-fable-5</code></td><td><span class="pill">legacy</span></td><td>2026-06-09</td><td>$10 / $50</td><td class="l"><a href="https://platform.claude.com/docs/en/models/fable-5/overview" target="_blank" rel="noopener">source</a></td></tr><tr><th scope="row">Claude Fable 5.1</th><td class="l"><code>claude-fable-5-1</code></td><td><span class="pill">legacy</span></td><td>2026-09-01</td><td>$10 / $50</td><td class="l"><a href="https://platform.claude.com/docs/en/models/fable-5-1/overview" target="_blank" rel="noopener">source</a></td></tr></tbody></table></div><p class="mnote">Listed on OpenAI's page but not yet reviewed here: gpt-5.6-cyber, gpt-6-cyber.</p><p class="mnote">Listed on Google's page but not yet reviewed here: gemini-25-flash, gemini-25-pro, gemini-3.6-flash.</p></section>
+  <section class="wrap-wide"><div class="sec-head reveal"><p class="eyebrow">Vendor-reported benchmarks</p><h2>What vendors say, kept apart from what we measured</h2><p class="dek">These numbers come from the vendors' own announcements. We did not run them and cannot vouch for the setups, so they are not part of our ranking. Each table keeps the vendor's own footnotes. Where one of these benchmarks is something this project can run, we say whether it has.</p></div><div class="claim reveal"><h3>Claude Fable 5.2 and Mythos 5.2 announcement <span class="pill">reported by Anthropic</span></h3><p class="mnote">2026-11-09 · <a href="https://www.anthropic.com/claude-fable-and-mythos-5-2" target="_blank" rel="noopener">source</a></p><div class="topic-table"><table><thead><tr><th>Benchmark</th><th>Fable 5.2</th><th>Fable 5.1</th><th>Opus 5.5</th><th>GPT-6 Astra</th><th>Gemini 4 Carbon</th></tr></thead><tbody><tr><th scope="row">FrontierCode 2.0<br><span class="mnote">Agentic coding</span></th><td>49.1%<br><span class="mnote">Xhigh effort</span></td><td>32.4%<br><span class="mnote">Xhigh effort</span></td><td>45.5%</td><td>42.8%</td><td>41.1%<br><span class="mnote">Medium effort</span></td></tr><tr><th scope="row">FrontierSWE v2<br><span class="mnote">Agentic coding</span></th><td>69.9%</td><td>56.3%</td><td>62.3%</td><td>65.5%</td><td>61.2%</td></tr><tr><th scope="row">AutomationBench<br><span class="mnote">Business workflows</span></th><td>51.4%</td><td>31.4%</td><td>42.5%</td><td>41.4%</td><td>53.9%</td></tr><tr><th scope="row">Terminal-Bench-Science 0.1<br><span class="mnote">Agentic scientific research</span></th><td>74.6%<br><span class="mnote">Mythos 5.2: 75.3%</span></td><td>52.6%</td><td>58.7%</td><td>68.1%</td><td>64.8%</td></tr><tr><th scope="row">WANDR (relaxed score)<br><span class="mnote">Agentic search</span></th><td>82.1%</td><td>68.7%</td><td>72.3%</td><td>—</td><td>—</td></tr><tr><th scope="row">OSWorld 2.1 (offline set, partial)<br><span class="mnote">Computer use</span></th><td>89.3%</td><td>83.5%</td><td>87.2%</td><td>79.5%</td><td>81.5%</td></tr><tr><th scope="row">RoboDojo Sim<br><span class="mnote">Robotics</span></th><td>64.9%<br><span class="mnote">run internally</span></td><td>27.6%</td><td>39.4%</td><td>29.8%</td><td>—</td></tr><tr><th scope="row">AA-Briefcase v1.1<br><span class="mnote">Knowledge work</span></th><td>66.1%<br><span class="mnote">rubric</span></td><td>61.5%<br><span class="mnote">rubric</span></td><td>61.2%<br><span class="mnote">rubric</span></td><td>52.0%<br><span class="mnote">rubric</span></td><td>61.8%<br><span class="mnote">rubric</span></td></tr><tr><th scope="row">Remote Labor Index<br><span class="mnote">Knowledge work</span></th><td>41.3%<br><span class="mnote">High effort</span></td><td>17.9%</td><td>21.3%</td><td>20.8%</td><td>—</td></tr><tr><th scope="row">Humanity&#x27;s Last Exam (with tools)<br><span class="mnote">Multidisciplinary reasoning</span></th><td>74.2%</td><td>65.6%</td><td>67.7%</td><td>57.2%</td><td>—</td></tr><tr><th scope="row">Chartography (no tools)<br><span class="mnote">Visual chart recognition</span></th><td>73.4%</td><td>44.8%</td><td>64.4%</td><td>71.0%</td><td>72.5%</td></tr></tbody></table></div><ul class="caveats"><li>Anthropic&#x27;s table: Fable 5.2, Fable 5.1 and Opus 5.5 scores are with safeguards on unless noted; all scores are each model&#x27;s highest-available effort unless noted.</li><li>Competitor figures (GPT-6 Astra, Gemini 4 Carbon) are as presented by Anthropic. Gemini 4 Carbon is on Google&#x27;s own model page (see above).</li><li>Anthropic&#x27;s table also has cybersecurity and protein-design rows that use Mythos 5.2, which is restricted access; they are left out here.</li><li>Our note: AutomationBench is a benchmark this project has an adapter for, but we have not run it, so none of these scores are ours.</li></ul></div></section>
+  <section class="wrap-wide"><div class="sec-head reveal"><p class="eyebrow">Our own numbers</p><h2>Measured on the same tickets, same effort</h2><p class="dek">The ranking on the <a href="/#results">front page</a> is what this project measured: one workload (support-ticket triage), matched reasoning effort, two judges from different vendors. It is a different kind of evidence from the tables above.</p></div></section>
+  <section class="wrap-wide"><div class="sec-head reveal"><p class="eyebrow">Other trackers</p><h2>Secondary sources</h2><p class="dek">Aggregators list releases faster than vendors confirm them, and they disagree with each other and with the vendor pages. Use them to spot a new name, then check the vendor page. Nothing on this site relies on them.</p></div><div class="src-group reveal"><ul><li><a href="https://llmgateway.io/timeline" target="_blank" rel="noopener">LLM Gateway release timeline</a></li><li><a href="https://opper.ai/model-releases" target="_blank" rel="noopener">Opper model release tracker</a></li><li><a href="https://llm-stats.com/llm-updates" target="_blank" rel="noopener">LLM Stats updates</a></li><li><a href="https://artificialwatch.com/releases" target="_blank" rel="noopener">ArtificialWatch releases</a></li><li><a href="https://pricepertoken.com/news/model-releases" target="_blank" rel="noopener">Price Per Token: new models</a></li><li><a href="https://benchlm.ai/model-updates" target="_blank" rel="noopener">BenchLM model updates</a></li></ul></div></section>
+</main>
+
+<footer class="wrap">
+  <p class="fine">Northwind Cloud is a synthetic reference company built for this project's test suite — not a real customer, and this page is not a testimonial from one. Model IDs and pricing for Anthropic, OpenAI and Google were checked against those vendors' own pages on 2026-11-04; other providers' defaults may lag. All of it will drift as vendors ship new releases.</p>
+  <p class="fine">An open evaluation framework, not a hosted service — <a href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">github.com/gpatwa/multi-agent-eval</a>.</p>
+</footer>
+
+<script>
+(function () {
+  // Content is fully visible by default (see the plain .reveal rule above).
+  // Only hide-then-reveal if motion is allowed AND IntersectionObserver
+  // exists — otherwise this function does nothing and everything just stays
+  // visible, which is the safe outcome either way.
+  if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: no-preference)').matches) return;
+  if (!('IntersectionObserver' in window)) return;
+
+  var targets = document.querySelectorAll('.reveal, .bc-anim-target');
+  if (!targets.length) return;
+
+  // Only .reveal elements need a pre-hidden state; .bc-anim-target already
+  // renders its complete resting frame without the "bc-anim" class — adding
+  // that class just switches on its internal grow-in animation.
+  document.querySelectorAll('.reveal').forEach(function (el) {
+    el.classList.add('reveal-init');
+  });
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      var addClass = entry.target.dataset.revealClass || 'is-visible';
+      entry.target.classList.add(addClass);
+      io.unobserve(entry.target);
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+
+  targets.forEach(function (el) { io.observe(el); });
+
+  // Safety net: nothing stays hidden longer than this no matter what.
+  setTimeout(function () {
+    targets.forEach(function (el) {
+      el.classList.add(el.classList.contains('bc-anim-target') ? 'bc-anim' : 'is-visible');
+    });
+  }, 5000);
+})();
+</script>
+</body>
+</html>

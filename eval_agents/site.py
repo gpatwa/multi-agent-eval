@@ -587,7 +587,7 @@ def head(data: dict) -> str:
 
 def sitemap(data: dict) -> str:
     base = site_base(data)
-    urls = f"  <url>\n    <loc>{html.escape(base)}/</loc>\n  </url>\n" if base else ""
+    urls = "".join(f"  <url>\n    <loc>{html.escape(base)}{path}</loc>\n  </url>\n" for path in ("/", "/models")) if base else ""
     return f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n'
 
 
@@ -637,8 +637,15 @@ def generated_files(root, data: dict, history: dict | None = None) -> list[tuple
     if readme.exists():
         files.append((readme, render_readme(readme.read_text(), data)))
     from .launch import feed
+    from .models_page import load as load_models
+    from .models_page import render_page as render_models_page
+    from .models_page import validate as validate_models
 
     extra = [(docs / "sitemap.xml", sitemap(data)), (docs / "robots.txt", robots(data))]
+    models = load_models(docs / "data" / "models.json")
+    if models:
+        validate_models(models)
+        extra.append((docs / "models.html", render_models_page(page.read_text(), models, data, site_base(data))))
     atom = feed(data, data["history"])
     if atom:
         extra.append((docs / "feed.xml", atom))

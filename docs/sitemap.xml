@@ -3,4 +3,7 @@
   <url>
     <loc>https://eval.aveto.dev/</loc>
   </url>
+  <url>
+    <loc>https://eval.aveto.dev/models</loc>
+  </url>
 </urlset>
