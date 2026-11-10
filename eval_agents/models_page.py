@@ -59,6 +59,8 @@ def validate(m: dict) -> None:
             if not c.get(k):
                 raise ModelsDataError(f"claims entry missing {k!r}: {c.get('title')}")
         date.fromisoformat(c["date"])
+        if c.get("kind", "vendor") not in ("vendor", "independent"):
+            raise ModelsDataError(f"{c['title']}: kind must be 'vendor' or 'independent'")
         unknown = set(c.get("model_ids", {})) - set(c["models"])
         if unknown:
             raise ModelsDataError(f"model_ids names models not in the table: {sorted(unknown)}")
@@ -107,6 +109,10 @@ def models_section(m: dict, data: dict) -> str:
     return head + "".join(_vendor_table(v, es, tested) for v, es in by_vendor.items()) + seen
 
 
+def _label(c: dict) -> str:
+    return "independent" if c.get("kind") == "independent" else f"reported by {esc(c['vendor'])}"
+
+
 def _claim_table(c: dict) -> str:
     th = "".join(f"<th>{esc(n)}</th>" for n in c["models"])
     body = []
@@ -118,7 +124,7 @@ def _claim_table(c: dict) -> str:
             cells.append(f'<td>{esc(v) if v else "—"}' + (f'<br><span class="mnote">{esc(note)}</span>' if v and note else "") + "</td>")
         body.append(f'<tr><th scope="row">{esc(r["benchmark"])}<br><span class="mnote">{esc(r.get("area", ""))}</span></th>{"".join(cells)}</tr>')
     caveats = "".join(f"<li>{esc(x)}</li>" for x in c.get("caveats", []))
-    return (f'<div class="claim reveal"><h3>{esc(c["title"])} <span class="pill">reported by {esc(c["vendor"])}</span></h3>'
+    return (f'<div class="claim reveal"><h3>{esc(c["title"])} <span class="pill{" ok" if c.get("kind") == "independent" else ""}">{_label(c)}</span></h3>'
             f'<p class="mnote">{esc(c["date"])} · {_link(c["source"], "source")}</p>'
             f'<div class="topic-table"><table><thead><tr><th>Benchmark</th>{th}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
             f'<ul class="caveats">{caveats}</ul></div>')
@@ -129,10 +135,10 @@ def claims_section(m: dict) -> str:
     if not claims:
         return ""
     head = ('<div class="sec-head reveal"><p class="eyebrow">Vendor-reported benchmarks</p>'
-            '<h2>What vendors say, kept apart from what we measured</h2>'
-            '<p class="dek">These numbers come from the vendors\' own announcements. We did not run them and cannot vouch for the '
-            'setups, so they are not part of our ranking. Each table keeps the vendor\'s own footnotes. Where one of these '
-            'benchmarks is something this project can run, we say whether it has.</p></div>')
+            '<h2>What vendors and independent testers say, kept apart from what we measured</h2>'
+            '<p class="dek">Vendor-reported tables come from the vendors\' own announcements and keep their footnotes. Independent '
+            'tables come from a third party that runs the tests itself. We ran none of them, so none are part of our ranking, '
+            'and effort settings differ between tables: read the effort label before comparing.</p></div>')
     return head + "".join(_claim_table(c) for c in claims)
 
 
@@ -153,49 +159,71 @@ def head_to_head(claim: dict, a: str, b: str) -> tuple[int, int, int]:
 
 
 def combined_section(m: dict, data: dict) -> str:
-    """Public numbers beside our own, pair by pair. Raw scores are never averaged across benchmarks (different
-    scales, effort settings and model sets); the comparison is who leads whom, counted per benchmark, then set
-    against who leads in our run. Only models both sides cover can be compared, and the section says which cannot."""
+    """Public numbers beside our own, pair by pair, in one table. Raw scores are never averaged across benchmarks
+    (different scales, effort settings and model sets): each public table is reduced to who leads whom and by how
+    many benchmarks, then set against who leads in our run. Only models both sides cover can be compared."""
     if data.get("status") != "published":
         return ""
     suite = data["suites"][next(iter(data["suites"]))]
     ours = {c["model"]: c for c in suite["candidates"].values()}
-    lines, covered = [], set()
-    for claim in m.get("claims", []):
-        ids = claim.get("model_ids", {})
+    our_effort = next((c.get("effort") for c in suite["candidates"].values() if c.get("effort")), None)
+    claims = [c for c in m.get("claims", []) if sum(i in ours for i in c.get("model_ids", {}).values()) >= 2]
+    short = {n: n for c in claims for n in c.get("model_ids", {})}
+    pairs: dict[tuple[str, str], dict] = {}  # (id a, id b) -> {"names": (na, nb), claim index -> (wa, wb, tie)}
+    covered = set()
+    for ci, claim in enumerate(claims):
+        ids = claim["model_ids"]
         tested = [(n, i) for n, i in ids.items() if i in ours]
         covered |= {i for _, i in tested}
         for k, (na, ia) in enumerate(tested):
             for nb, ib in tested[k + 1:]:
-                wa, wb, tie = head_to_head(claim, na, nb)
-                n = wa + wb + tie
-                if n < 3:
-                    continue
-                pub = (f"{na} ahead on {wa} of {n}, {nb} on {wb}" + (f", {tie} tied" if tie else ""))
-                qa, qb = ours[ia]["quality_mean"], ours[ib]["quality_mean"]
-                ca, cb = ours[ia]["composite"], ours[ib]["composite"]
-                lead_q = na if qa > qb else nb
-                lead_c = na if ca > cb else nb
-                lead_pub = na if wa > wb else nb if wb > wa else None
-                verdict = ("agrees with" if lead_pub == lead_q else "differs from") if lead_pub else "cannot be compared with"
-                comp = (f" Overall, our composite puts {lead_c} first because it also scores latency, not just quality."
-                        if lead_c != lead_q else "")
-                lines.append(
-                    f'<div class="src-group"><h3>{esc(na)} vs {esc(nb)}</h3>'
-                    f'<p><strong>Vendor-reported ({esc(claim["vendor"])}), {n} benchmarks:</strong> {esc(pub)}.</p>'
-                    f'<p><strong>Our run, {suite["n_tasks"]} support tickets:</strong> {esc(lead_q)} scores higher on reply quality '
-                    f'({max(qa, qb):.2f} vs {min(qa, qb):.2f} out of 5), which {verdict} the public tally.{esc(comp)}</p></div>')
-    missing = sorted(n for n, c in ((c["model"], c) for c in ours.values()) if n not in covered)
-    gap = (f'<p class="mnote">Not comparable yet: {esc(", ".join(missing))} {"appears" if len(missing) == 1 else "appear"} in none of the public tables above, '
-           'so there is nothing to set our result against.</p>') if missing else ""
-    if not lines:
+                counts = head_to_head(claim, na, nb)
+                if sum(counts) >= 3:
+                    pairs.setdefault((ia, ib), {"names": (na, nb)})[ci] = counts
+    if not pairs:
         return ""
+    heads = "".join(
+        f'<th>{esc(c["vendor"] if c.get("kind") != "independent" else "Independent")}'
+        f'<br><span class="mnote">{esc(c["title"].split(", ", 1)[-1] if c.get("kind") == "independent" else "vendor-reported")}'
+        f'{"" if not c.get("effort") or c["effort"] == our_effort else " · not our effort"}</span></th>' for c in claims)
+    tally = [[0, 0, 0] for _ in claims]  # per public table: pairs, agree with our quality leader, agree with our composite leader
+    body = []
+    for (ia, ib), pr in pairs.items():
+        na, nb = pr["names"]
+        qa, qb = ours[ia]["quality_mean"], ours[ib]["quality_mean"]
+        ca, cb = ours[ia]["composite"], ours[ib]["composite"]
+        lead_q, lead_c = (na if qa > qb else nb), (na if ca > cb else nb)
+        cells = []
+        for ci in range(len(claims)):
+            if ci not in pr:
+                cells.append("<td>—</td>")
+                continue
+            wa, wb, tie = pr[ci]
+            lead = na if wa > wb else nb if wb > wa else None
+            tally[ci][0] += 1
+            tally[ci][1] += lead == lead_q
+            tally[ci][2] += lead == lead_c
+            cells.append(f'<td>{esc(lead + " " + str(max(wa, wb)) + "–" + str(min(wa, wb))) if lead else "split " + str(wa) + "–" + str(wb)}</td>')
+        body.append(f'<tr><th scope="row">{esc(na)} vs {esc(nb)}</th>'
+                    f'<td>{esc(lead_q)}<br><span class="mnote">{max(qa, qb):.2f} vs {min(qa, qb):.2f} of 5</span></td>'
+                    f'<td>{esc(lead_c)}<br><span class="mnote">{max(ca, cb):.2f} vs {min(ca, cb):.2f}</span></td>{"".join(cells)}</tr>')
+    table = (f'<div class="topic-table reveal"><table><thead><tr><th>Pair</th><th>Our run: better replies<br><span class="mnote">{suite["n_tasks"]} tickets, {esc(our_effort or "")} effort</span></th>'
+             f'<th>Our run: composite<br><span class="mnote">quality and latency</span></th>{heads}</tr></thead><tbody>{"".join(body)}</tbody></table></div>')
+    summary = "".join(
+        f'<li><strong>{esc(c["vendor"])}{", " + esc(c["title"].split(", ", 1)[-1]) if c.get("kind") == "independent" else " (vendor-reported)"}:</strong> '
+        f'its leader matches our better-replies leader in {t[1]} of {t[0]} pairs and our composite leader in {t[2]} of {t[0]}.</li>'
+        for c, t in zip(claims, tally) if t[0])
+    missing = sorted(n for n in ours if n not in covered)
+    gap = (f'<p class="mnote">Not comparable yet: {esc(", ".join(missing))} {"appears" if len(missing) == 1 else "appear"} in none of the '
+           'public tables, so there is nothing to set our result against.</p>') if missing else ""
     head = ('<div class="sec-head reveal"><p class="eyebrow">Public numbers beside ours</p>'
             '<h2>Does the public picture match what we measured?</h2>'
             '<p class="dek">We do not average scores across benchmarks: they use different scales, effort settings and model sets. '
-            'Instead we count who leads whom on each public benchmark, then set that beside who leads on our own tickets. '
-            'The public side is vendor-reported, so it can lean toward its author. Independent benchmarks are not included yet.</p></div>')
-    return head + '<div class="src-grid reveal">' + "".join(lines) + "</div>" + gap
+            'Each public table is reduced to who leads whom and on how many benchmarks, then set beside who leads on our own tickets. '
+            'Where they disagree, our use case is telling you something the public numbers do not. Vendor-reported tables can lean '
+            'toward their author; independent ones are the better cross-check, and only the table at our run\'s effort is a fair match. '
+            'With three models tested, agreement is encouraging but not proof.</p></div>')
+    return head + table + f'<ul class="caveats reveal">{summary}</ul>' + gap
 
 
 def ours_section(data: dict) -> str:

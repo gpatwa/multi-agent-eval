@@ -42,7 +42,9 @@ def test_tested_badge_comes_from_the_published_run_not_the_data():
 
 def test_claims_are_labelled_as_vendor_reported_and_say_we_did_not_run_them():
     out = mp.claims_section(GOOD)
-    assert "reported by Anthropic" in out and "We did not run them" in out
+    assert "reported by Anthropic" in out and "We ran none of them" in out
+    ind = mp.claims_section({"claims": [{**GOOD["claims"][0], "kind": "independent", "vendor": "Artificial Analysis"}]})
+    assert ">independent<" in ind and "reported by Artificial Analysis" not in ind
 
 
 def test_missing_score_renders_a_dash_not_a_zero():
@@ -129,11 +131,20 @@ def test_head_to_head_counts_only_benchmarks_both_models_report():
     assert mp.head_to_head(CLAIM, "A", "B") == (2, 1, 0)
 
 
-def test_combined_compares_public_tally_with_our_quality_and_says_when_composite_differs():
+def test_combined_table_sets_each_public_leader_beside_our_two_leaders():
     out = mp.combined_section({"claims": [CLAIM]}, PUB)
-    assert "A ahead on 2 of 3, B on 1" in out and "4.00 vs 3.00" in out and "agrees with" in out
-    assert "composite puts B first" in out
+    assert "A vs B" in out and "A 2–1" in out          # public tally: A ahead on 2 of 3
+    assert "4.00 vs 3.00" in out and "0.90 vs 0.50" in out  # our quality, our composite
+    assert "matches our better-replies leader in 1 of 1 pairs and our composite leader in 0 of 1" in out
     assert "id-c appears in none" in out
+
+
+def test_combined_flags_tables_that_are_not_at_our_effort():
+    pub = copy.deepcopy(PUB)
+    for c in pub["suites"]["public"]["candidates"].values():
+        c["effort"] = "low"
+    out = mp.combined_section({"claims": [{**CLAIM, "kind": "independent", "title": "X, high effort", "effort": "high"}]}, pub)
+    assert "not our effort" in out
 
 
 def test_combined_shows_nothing_before_results_are_published_or_with_too_few_shared_benchmarks():
@@ -147,3 +158,18 @@ def test_model_ids_must_name_models_in_the_table():
     bad["claims"][0]["model_ids"] = {"Nope": "x"}
     with pytest.raises(mp.ModelsDataError, match="model_ids"):
         mp.validate(bad)
+
+
+AA_PAGE = ('{"slug":"m-low","name":"M (Low)","intelligenceIndex":40.0,"scores":{"automationbench-aa":0.5,"aa-briefcase":1200.4}},'
+           '{"slug":"m-low","name":"M (Low)"},{"slug":"n-low","name":"N (Low)","intelligenceIndex":45.0,"scores":{"automationbench-aa":0.6}}')
+
+
+def test_artificial_analysis_parser_keeps_the_fuller_duplicate_and_tiers_leave_gaps_not_guesses(monkeypatch):
+    from datetime import date
+    page = AA_PAGE.replace('"', '\\"')  # the page embeds its JSON escaped inside a string
+    rows = rm.parse_artificial_analysis(page)
+    assert rows["m-low"]["intelligenceIndex"] == 40.0
+    monkeypatch.setattr(rm, "AA_MODELS", {"M": ("id-m", {"low": "m-low"}), "N": ("id-n", {"low": "n-low"}), "O": ("id-o", {"low": "o-low"})})
+    (claim,) = rm.aa_claims(rows, date(2026, 11, 10))
+    assert claim["kind"] == "independent" and claim["models"] == ["M", "N"] and claim["effort"] == "low"
+    assert {r["benchmark"] for r in claim["rows"]} == {"Intelligence Index", "AutomationBench-AA"}  # a row needs 2 models

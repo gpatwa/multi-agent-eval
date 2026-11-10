@@ -316,6 +316,206 @@
         "Opus 5.5": "claude-opus-5-5",
         "GPT-6 Astra": "gpt-6-astra"
       }
+    },
+    {
+      "kind": "independent",
+      "title": "Artificial Analysis, low effort",
+      "vendor": "Artificial Analysis",
+      "date": "2026-11-10",
+      "source": "https://artificialanalysis.ai/leaderboards/models",
+      "effort": "low",
+      "models": [
+        "Opus 5.5",
+        "GPT-6 Astra"
+      ],
+      "model_ids": {
+        "Opus 5.5": "claude-opus-5-5",
+        "GPT-6 Astra": "gpt-6-astra"
+      },
+      "rows": [
+        {
+          "benchmark": "Intelligence Index",
+          "area": "Composite of AA's evaluations",
+          "scores": {
+            "Opus 5.5": "34.8",
+            "GPT-6 Astra": "43.3"
+          }
+        },
+        {
+          "benchmark": "AutomationBench-AA",
+          "area": "Business workflows",
+          "scores": {
+            "Opus 5.5": "52.9%",
+            "GPT-6 Astra": "59.1%"
+          }
+        },
+        {
+          "benchmark": "AA-Briefcase",
+          "area": "Knowledge work (Elo-style)",
+          "scores": {
+            "Opus 5.5": "1279",
+            "GPT-6 Astra": "1256"
+          }
+        },
+        {
+          "benchmark": "Terminal-Bench-Science 0.1",
+          "area": "Agentic scientific research",
+          "scores": {
+            "Opus 5.5": "24.3%",
+            "GPT-6 Astra": "37.1%"
+          }
+        },
+        {
+          "benchmark": "Humanity's Last Exam",
+          "area": "Multidisciplinary reasoning",
+          "scores": {
+            "Opus 5.5": "48.3%",
+            "GPT-6 Astra": "49.2%"
+          }
+        }
+      ],
+      "caveats": [
+        "Independent: Artificial Analysis runs these evaluations itself and names the variants (Opus 5.5: Claude Opus 5.5 (Low, Default Fallback); GPT-6 Astra: GPT-6 Astra (Low)).",
+        "Our own run used low effort, so this is the table to compare against."
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Artificial Analysis, high effort",
+      "vendor": "Artificial Analysis",
+      "date": "2026-11-10",
+      "source": "https://artificialanalysis.ai/leaderboards/models",
+      "effort": "high",
+      "models": [
+        "Opus 5.5",
+        "GPT-6 Astra",
+        "Gemini 4 Argon"
+      ],
+      "model_ids": {
+        "Opus 5.5": "claude-opus-5-5",
+        "GPT-6 Astra": "gpt-6-astra",
+        "Gemini 4 Argon": "gemini-4-argon"
+      },
+      "rows": [
+        {
+          "benchmark": "Intelligence Index",
+          "area": "Composite of AA's evaluations",
+          "scores": {
+            "Opus 5.5": "51.8",
+            "GPT-6 Astra": "54.8",
+            "Gemini 4 Argon": "50.4"
+          }
+        },
+        {
+          "benchmark": "AutomationBench-AA",
+          "area": "Business workflows",
+          "scores": {
+            "Opus 5.5": "63.2%",
+            "GPT-6 Astra": "66.6%",
+            "Gemini 4 Argon": "77.5%"
+          }
+        },
+        {
+          "benchmark": "AA-Briefcase",
+          "area": "Knowledge work (Elo-style)",
+          "scores": {
+            "Opus 5.5": "1682",
+            "GPT-6 Astra": "1505",
+            "Gemini 4 Argon": "1484"
+          }
+        },
+        {
+          "benchmark": "Terminal-Bench-Science 0.1",
+          "area": "Agentic scientific research",
+          "scores": {
+            "Opus 5.5": "49.0%",
+            "GPT-6 Astra": "59.5%",
+            "Gemini 4 Argon": "52.9%"
+          }
+        },
+        {
+          "benchmark": "Humanity's Last Exam",
+          "area": "Multidisciplinary reasoning",
+          "scores": {
+            "Opus 5.5": "55.6%",
+            "GPT-6 Astra": "53.1%",
+            "Gemini 4 Argon": "57.1%"
+          }
+        }
+      ],
+      "caveats": [
+        "Independent: Artificial Analysis runs these evaluations itself and names the variants (Opus 5.5: Claude Opus 5.5 (High, Default Fallback); GPT-6 Astra: GPT-6 Astra (High); Gemini 4 Argon: Gemini 4 Argon (High)).",
+        "Effort labels are Artificial Analysis's. Our own run used low effort; compare only against the low-effort table."
+      ]
+    },
+    {
+      "kind": "independent",
+      "title": "Artificial Analysis, highest effort listed",
+      "vendor": "Artificial Analysis",
+      "date": "2026-11-10",
+      "source": "https://artificialanalysis.ai/leaderboards/models",
+      "effort": "highest",
+      "models": [
+        "Opus 5.5",
+        "GPT-6 Astra",
+        "Gemini 4 Argon"
+      ],
+      "model_ids": {
+        "Opus 5.5": "claude-opus-5-5",
+        "GPT-6 Astra": "gpt-6-astra",
+        "Gemini 4 Argon": "gemini-4-argon"
+      },
+      "rows": [
+        {
+          "benchmark": "Intelligence Index",
+          "area": "Composite of AA's evaluations",
+          "scores": {
+            "Opus 5.5": "59.1",
+            "GPT-6 Astra": "56.9",
+            "Gemini 4 Argon": "50.4"
+          }
+        },
+        {
+          "benchmark": "AutomationBench-AA",
+          "area": "Business workflows",
+          "scores": {
+            "Opus 5.5": "69.5%",
+            "GPT-6 Astra": "68.5%",
+            "Gemini 4 Argon": "77.5%"
+          }
+        },
+        {
+          "benchmark": "AA-Briefcase",
+          "area": "Knowledge work (Elo-style)",
+          "scores": {
+            "Opus 5.5": "1801",
+            "GPT-6 Astra": "1569",
+            "Gemini 4 Argon": "1484"
+          }
+        },
+        {
+          "benchmark": "Terminal-Bench-Science 0.1",
+          "area": "Agentic scientific research",
+          "scores": {
+            "Opus 5.5": "59.0%",
+            "GPT-6 Astra": "63.3%",
+            "Gemini 4 Argon": "52.9%"
+          }
+        },
+        {
+          "benchmark": "Humanity's Last Exam",
+          "area": "Multidisciplinary reasoning",
+          "scores": {
+            "Opus 5.5": "61.4%",
+            "GPT-6 Astra": "54.7%",
+            "Gemini 4 Argon": "57.1%"
+          }
+        }
+      ],
+      "caveats": [
+        "Independent: Artificial Analysis runs these evaluations itself and names the variants (Opus 5.5: Claude Opus 5.5 (Max, Default Fallback); GPT-6 Astra: GPT-6 Astra (Max); Gemini 4 Argon: Gemini 4 Argon (High)).",
+        "Effort labels are Artificial Analysis's. Our own run used low effort; compare only against the low-effort table."
+      ]
     }
   ],
   "trackers": [
