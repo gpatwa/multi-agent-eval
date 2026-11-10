@@ -173,3 +173,15 @@ def test_artificial_analysis_parser_keeps_the_fuller_duplicate_and_tiers_leave_g
     (claim,) = rm.aa_claims(rows, date(2026, 11, 10))
     assert claim["kind"] == "independent" and claim["models"] == ["M", "N"] and claim["effort"] == "low"
     assert {r["benchmark"] for r in claim["rows"]} == {"Intelligence Index", "AutomationBench-AA"}  # a row needs 2 models
+
+
+def test_not_included_sources_are_listed_with_their_reason():
+    out = mp.claims_section({**GOOD, "not_included": [{"name": "Vendor X post", "reason": "page blocks fetches", "source": "https://x.test/p"}]})
+    assert "Not included: Vendor X post" in out and "page blocks fetches" in out
+
+
+def test_a_pair_listed_in_opposite_orders_by_two_sources_is_one_row_with_matching_counts():
+    flipped = {**CLAIM, "title": "T2", "models": ["B", "A"], "model_ids": {"B": "id-b", "A": "id-a"}}
+    out = mp.combined_section({"claims": [CLAIM, flipped]}, PUB)
+    assert out.count("A vs B") + out.count("B vs A") == 1
+    assert out.count("A 2–1") == 2  # both sources agree A leads 2 of 3 once the orientation is normalised

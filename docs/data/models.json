@@ -318,6 +318,218 @@
       }
     },
     {
+      "title": "Gemini 4 Argon announcement",
+      "vendor": "Google",
+      "date": "2026-09-30",
+      "source": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/",
+      "models": [
+        "Gemini 4 Argon",
+        "GPT-6 Astra",
+        "Fable 5.1",
+        "Opus 5.5"
+      ],
+      "model_ids": {
+        "Gemini 4 Argon": "gemini-4-argon",
+        "GPT-6 Astra": "gpt-6-astra",
+        "Opus 5.5": "claude-opus-5-5"
+      },
+      "rows": [
+        {
+          "benchmark": "Vals Index",
+          "area": "Knowledge work",
+          "scores": {
+            "Gemini 4 Argon": "68.9%",
+            "GPT-6 Astra": "63.1%",
+            "Fable 5.1": "65.8%",
+            "Opus 5.5": "67.0%"
+          }
+        },
+        {
+          "benchmark": "AutomationBench",
+          "area": "Business workflows",
+          "scores": {
+            "Gemini 4 Argon": "51.3%",
+            "GPT-6 Astra": "41.4%",
+            "Fable 5.1": "31.4%",
+            "Opus 5.5": "42.5%"
+          }
+        },
+        {
+          "benchmark": "Vals Finance Agent v2",
+          "area": "Knowledge work",
+          "scores": {
+            "Gemini 4 Argon": "65.4%",
+            "GPT-6 Astra": "53.5%",
+            "Fable 5.1": "58.9%",
+            "Opus 5.5": "58.6%"
+          }
+        },
+        {
+          "benchmark": "Harvey's Legal Agent Benchmark",
+          "area": "Knowledge work",
+          "scores": {
+            "Gemini 4 Argon": "19.6%",
+            "GPT-6 Astra": "5.4%",
+            "Fable 5.1": "6.7%",
+            "Opus 5.5": "3.8%"
+          }
+        },
+        {
+          "benchmark": "DeepSWE v1.1",
+          "area": "Agentic coding",
+          "scores": {
+            "Gemini 4 Argon": "77.9%",
+            "GPT-6 Astra": "74.1%",
+            "Fable 5.1": "67.4%",
+            "Opus 5.5": "74.2%"
+          }
+        },
+        {
+          "benchmark": "FrontierSWE v2",
+          "area": "Agentic coding",
+          "scores": {
+            "Gemini 4 Argon": "55.0%",
+            "GPT-6 Astra": "65.5%",
+            "Fable 5.1": "56.3%",
+            "Opus 5.5": "62.3%"
+          }
+        },
+        {
+          "benchmark": "Vibe Code Bench",
+          "area": "Agentic coding",
+          "scores": {
+            "Gemini 4 Argon": "91.9%",
+            "GPT-6 Astra": "89.6%",
+            "Fable 5.1": "90.3%",
+            "Opus 5.5": "90.3%"
+          }
+        },
+        {
+          "benchmark": "Terminal-Bench 4.0",
+          "area": "Agentic coding",
+          "scores": {
+            "Gemini 4 Argon": "57.4%",
+            "GPT-6 Astra": "58.2%",
+            "Fable 5.1": "57.9%",
+            "Opus 5.5": "66.4%"
+          }
+        },
+        {
+          "benchmark": "PostTrainBench",
+          "area": "ML engineering",
+          "scores": {
+            "Gemini 4 Argon": "45.3%",
+            "GPT-6 Astra": "44.3%",
+            "Fable 5.1": "40.2%",
+            "Opus 5.5": "49.3%"
+          }
+        },
+        {
+          "benchmark": "Terminal-Bench Science 0.1",
+          "area": "Science and math",
+          "scores": {
+            "Gemini 4 Argon": "57.6%",
+            "GPT-6 Astra": "68.1%",
+            "Fable 5.1": "52.6%",
+            "Opus 5.5": "63.3%"
+          }
+        },
+        {
+          "benchmark": "LABBench 2",
+          "area": "Science and math",
+          "scores": {
+            "Gemini 4 Argon": "88.8%",
+            "GPT-6 Astra": "85.4%",
+            "Fable 5.1": "68.6%",
+            "Opus 5.5": "73.1%"
+          }
+        },
+        {
+          "benchmark": "RiemannBench",
+          "area": "Science and math",
+          "scores": {
+            "Gemini 4 Argon": "76.0%",
+            "GPT-6 Astra": "72.0%",
+            "Fable 5.1": "65.6%",
+            "Opus 5.5": "69.6%"
+          }
+        },
+        {
+          "benchmark": "GraphWalks, up to 128k (BFS F1)",
+          "area": "Long context",
+          "scores": {
+            "Gemini 4 Argon": "99.7%",
+            "GPT-6 Astra": "98.7%",
+            "Fable 5.1": "91.4%",
+            "Opus 5.5": "90.6%"
+          }
+        },
+        {
+          "benchmark": "GraphWalks, 256k to 1M (BFS F1)",
+          "area": "Long context",
+          "scores": {
+            "Gemini 4 Argon": "84.2%",
+            "GPT-6 Astra": "71.8%",
+            "Fable 5.1": "65.0%",
+            "Opus 5.5": "66.8%"
+          }
+        },
+        {
+          "benchmark": "Agent's Last Exam (pass rate)",
+          "area": "Computer use",
+          "scores": {
+            "Gemini 4 Argon": "39.5%",
+            "GPT-6 Astra": "34.2%",
+            "Opus 5.5": "38.2%"
+          }
+        },
+        {
+          "benchmark": "OSWorld-2.0 (offline subset, partial score)",
+          "area": "Computer use",
+          "scores": {
+            "Gemini 4 Argon": "69.2%",
+            "GPT-6 Astra": "72.6%"
+          }
+        },
+        {
+          "benchmark": "Chartography",
+          "area": "Multimodal understanding",
+          "scores": {
+            "Gemini 4 Argon": "71.6%",
+            "GPT-6 Astra": "71.0%",
+            "Fable 5.1": "46.2%",
+            "Opus 5.5": "66.3%"
+          }
+        },
+        {
+          "benchmark": "LVBench",
+          "area": "Multimodal understanding",
+          "scores": {
+            "Gemini 4 Argon": "91.7%",
+            "GPT-6 Astra": "87.5%",
+            "Fable 5.1": "79.7%",
+            "Opus 5.5": "83.7%"
+          }
+        },
+        {
+          "benchmark": "CWE-bench v1",
+          "area": "Cybersecurity",
+          "scores": {
+            "Gemini 4 Argon": "68.0%",
+            "GPT-6 Astra": "68.0%",
+            "Fable 5.1": "58.0%",
+            "Opus 5.5": "67.0%"
+          }
+        }
+      ],
+      "caveats": [
+        "Transcribed from the benchmark table image in Google's announcement (published 2026-09-30); Google's methodology page for these evaluations is deepmind.google/models/evals-methodology/gemini-4-argon, which we have not read.",
+        "Google's table is its own run: some rows differ from Anthropic's table for the same models (for example Terminal-Bench Science 0.1, Opus 5.5: 63.3% here, 58.7% in Anthropic's).",
+        "Google reports Argon ahead on AutomationBench (51.3%); Anthropic's later table reports Fable 5.2 at 51.4% and Gemini 4 Carbon at 53.9% on the same benchmark name. Settings may differ.",
+        "Google's announcement also reports figures without a table, such as LVBench 91.7%, which is in the table above."
+      ]
+    },
+    {
       "kind": "independent",
       "title": "Artificial Analysis, low effort",
       "vendor": "Artificial Analysis",
@@ -554,5 +766,12 @@
       "gemini-25-pro",
       "gemini-3.6-flash"
     ]
-  }
+  },
+  "not_included": [
+    {
+      "name": "OpenAI GPT-6 Astra announcement (2026-09-03)",
+      "source": "https://community.openai.com/t/introducing-gpt-6-astra-the-most-intelligent-and-aligned-model-in-the-world/1394703",
+      "reason": "OpenAI's own post (openai.com) refuses automated fetches (403), and its benchmark charts are images we could not retrieve, so no OpenAI-reported numbers are shown. Its comparison set is also reported to be GPT-5.6 Sol and Claude Fable 5.1, neither of which this project tests, so it could not be set against our run anyway. Google's table above does include GPT-6 Astra."
+    }
+  ]
 }

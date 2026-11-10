@@ -139,7 +139,10 @@ def claims_section(m: dict) -> str:
             '<p class="dek">Vendor-reported tables come from the vendors\' own announcements and keep their footnotes. Independent '
             'tables come from a third party that runs the tests itself. We ran none of them, so none are part of our ranking, '
             'and effort settings differ between tables: read the effort label before comparing.</p></div>')
-    return head + "".join(_claim_table(c) for c in claims)
+    skipped = "".join(
+        f'<p class="mnote reveal"><strong>Not included: {esc(n["name"])}.</strong> {esc(n["reason"])} {_link(n["source"], "source")}</p>'
+        for n in m.get("not_included", []))
+    return head + "".join(_claim_table(c) for c in claims) + skipped
 
 
 def _num(text: str) -> float | None:
@@ -178,8 +181,11 @@ def combined_section(m: dict, data: dict) -> str:
         for k, (na, ia) in enumerate(tested):
             for nb, ib in tested[k + 1:]:
                 counts = head_to_head(claim, na, nb)
-                if sum(counts) >= 3:
-                    pairs.setdefault((ia, ib), {"names": (na, nb)})[ci] = counts
+                if sum(counts) < 3:
+                    continue
+                if ia > ib:  # one canonical order per pair, whichever way a source lists its columns
+                    (na, ia), (nb, ib), counts = (nb, ib), (na, ia), (counts[1], counts[0], counts[2])
+                pairs.setdefault((ia, ib), {"names": (na, nb)})[ci] = counts
     if not pairs:
         return ""
     heads = "".join(
@@ -188,7 +194,7 @@ def combined_section(m: dict, data: dict) -> str:
         f'{"" if not c.get("effort") or c["effort"] == our_effort else " · not our effort"}</span></th>' for c in claims)
     tally = [[0, 0, 0] for _ in claims]  # per public table: pairs, agree with our quality leader, agree with our composite leader
     body = []
-    for (ia, ib), pr in pairs.items():
+    for (ia, ib), pr in sorted(pairs.items()):
         na, nb = pr["names"]
         qa, qb = ours[ia]["quality_mean"], ours[ib]["quality_mean"]
         ca, cb = ours[ia]["composite"], ours[ib]["composite"]
