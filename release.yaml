@@ -14,7 +14,7 @@ suites:
 
 # The Claude desktop app injects these for its own session. Left set, the Claude Code CLI and
 # the SDK talk through the app's proxy instead of using your subscription / API key.
-env_unset: [ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL]
+env_unset: [ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL]
 
 commit_trailer: "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
