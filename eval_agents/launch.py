@@ -146,7 +146,7 @@ def kit(data: dict, history: dict) -> dict[str, str]:
     """File name -> text for every channel."""
     url, repo = site_base(data), REPO_URL
     f, lim, models = findings(data), limitations(data), _models_sentence(data)
-    run_date = data["generated"][:10]
+    run_date = (data.get("run_date") or data["generated"])[:10]
     bullets = "\n".join(f"- {x}" for x in f)
     limits = "\n".join(f"- {x}" for x in lim)
     stamp = f"<!-- generated from docs/data/results.json (run {run_date}); regenerate with scripts/launch_kit.py, do not edit numbers by hand -->\n"

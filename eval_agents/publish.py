@@ -271,7 +271,11 @@ def build_release(*, suites: dict[str, pathlib.Path], second: dict[str, pathlib.
             apply_flag_rule(views[name], suites[name], second[name])
         else:
             views[name]["flag_rule"] = "primary_only"
+    # When the answers were produced and judged, which is not when this document was assembled: re-publishing the
+    # same runs under a new rule must not make them look newer.
+    stamps = [_summary(d).get("generated") for d in [*suites.values(), *(second or {}).values()]]
     data = {
+        "run_date": max((t for t in stamps if t), default=None),
         "schema": SCHEMA, "status": "published", "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "providers": providers, "site_url": site_url,
         "suites": views,

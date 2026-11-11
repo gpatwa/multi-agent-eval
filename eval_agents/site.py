@@ -257,7 +257,7 @@ def scoreboard(data: dict) -> str:
     ag = (data.get("agreement") or {}).get(first)
     held = data["suites"][rest[0]]["n_tasks"] if rest else 0
     efforts = sorted({c["effort"] for c in cands.values()})
-    meta = (f"Latest run {esc(data['generated'][:10])} · {public['n_tasks'] + held} tickets"
+    meta = (f"Latest run {esc((data.get('run_date') or data['generated'])[:10])} · {public['n_tasks'] + held} tickets"
             + (f" ({held} held-out)" if held else "") + f" · reasoning effort {esc(efforts[0] if len(efforts) == 1 else 'mixed')}"
             + f" · judged by <b>{esc(_judge_name(public['judge']))}</b>"
             + (f", cross-checked by <b>{esc(_judge_name(ag['judge_second']))}</b> (&rho; {ag['rank_rho']:.2f})"
@@ -514,7 +514,7 @@ def method_judges(data: dict) -> str:
 
 def readme_results(data: dict) -> str:
     """The README's results section, as markdown (same data and claims policy as the page)."""
-    when = data.get("generated", "")[:10]
+    when = (data.get("run_date") or data.get("generated", ""))[:10]
     if data["status"] != "published":
         return ("\n## Latest result\n\nReference results are being refreshed at matched reasoning effort across all "
                 "candidates. This section is generated from [`docs/data/results.json`](docs/data/results.json) and fills in "
