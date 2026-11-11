@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "checked": "2026-11-10",
+  "checked": "2026-11-11",
   "models": [
     {
       "vendor": "OpenAI",
@@ -533,7 +533,7 @@
       "kind": "independent",
       "title": "Artificial Analysis, low effort",
       "vendor": "Artificial Analysis",
-      "date": "2026-11-10",
+      "date": "2026-11-11",
       "source": "https://artificialanalysis.ai/leaderboards/models",
       "effort": "low",
       "models": [
@@ -595,7 +595,7 @@
       "kind": "independent",
       "title": "Artificial Analysis, high effort",
       "vendor": "Artificial Analysis",
-      "date": "2026-11-10",
+      "date": "2026-11-11",
       "source": "https://artificialanalysis.ai/leaderboards/models",
       "effort": "high",
       "models": [
@@ -664,7 +664,7 @@
       "kind": "independent",
       "title": "Artificial Analysis, highest effort listed",
       "vendor": "Artificial Analysis",
-      "date": "2026-11-10",
+      "date": "2026-11-11",
       "source": "https://artificialanalysis.ai/leaderboards/models",
       "effort": "highest",
       "models": [
