@@ -10,7 +10,7 @@ workload?"* — answered with data (quality scores, latency, token usage)
 instead of vibes.
 
 <!-- AUTO:readme_results -->
-## Latest result (2026-11-11)
+## Latest result (2026-10-17)
 
 Support-triage benchmark on 40 public tickets (7 adversarial) plus 20 held-out tickets kept out of this repo, every candidate at matched **low** reasoning effort, judged by Claude Code CLI (claude-opus-5) and cross-checked by Codex CLI (gpt-6-astra). Generated from [`docs/data/results.json`](docs/data/results.json); reports: [public suite](docs/results/public/report.md), [heldout aggregates](docs/results/heldout/summary.json).
 
