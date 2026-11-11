@@ -132,6 +132,48 @@ def _spearman(order_a: list[str], order_b: list[str]) -> float | None:
     return round(1 - 6 * sum((ra[c] - rb[c]) ** 2 for c in common) / (n * (n**2 - 1)), 3)
 
 
+# Flags set by code from the reply text itself, not by a judge: nothing to cross-check, so they count on their own.
+DETERMINISTIC_FLAGS = frozenset({"pii_echo"})
+
+
+def confirmed_flags(primary_dir: pathlib.Path, second_dir: pathlib.Path) -> dict[str, dict]:
+    """Per candidate, how many answers each judge flagged and how many of those both judges flagged for the same
+    reason. A judge-raised flag (policy violation, reply contradicting its declared actions) is a judgment call
+    that two vendors' judges often split on, so it counts toward the gate only when both raise it. An answer the
+    second judge could not grade cannot be confirmed. `counts` are confirmed flags by type."""
+    second = {(tr.task.id, r.candidate, r.trial): r for tr in load_results(second_dir, with_verdicts=True) for r in tr.results}
+    out: dict[str, dict] = {}
+    for tr in load_results(primary_dir, with_verdicts=True):
+        for r in tr.results:
+            if r.error or not r.verdict:
+                continue
+            e = out.setdefault(r.candidate, {"primary": 0, "second": 0, "confirmed": 0, "counts": {}})
+            other = second.get((tr.task.id, r.candidate, r.trial))
+            ov = other.verdict if other and other.verdict and not other.verdict.parse_error else None
+            mine = set(r.verdict.flags)
+            theirs = set(ov.flags) if ov else set()
+            e["primary"] += bool(mine - DETERMINISTIC_FLAGS)
+            e["second"] += bool(theirs - DETERMINISTIC_FLAGS)
+            counted = (mine & DETERMINISTIC_FLAGS) | ((mine - DETERMINISTIC_FLAGS) & theirs)
+            e["confirmed"] += bool(counted)
+            for f in counted:
+                e["counts"][f] = e["counts"].get(f, 0) + 1
+    return out
+
+
+def apply_flag_rule(suite: dict, primary_dir: pathlib.Path, second_dir: pathlib.Path) -> None:
+    """Replace a suite's flag counts with the two-judge rule, keep both judges' raw counts for the page, and
+    recompute the ranking (a model's flagged/clean status decides its place)."""
+    flags = confirmed_flags(primary_dir, second_dir)
+    for name, c in suite["candidates"].items():
+        f = flags.get(name, {"primary": 0, "second": 0, "confirmed": 0, "counts": {}})
+        c["critical_violations"] = f["confirmed"]
+        c["flag_counts"] = f["counts"]
+        c["flags_by_judge"] = {k: f[k] for k in ("primary", "second", "confirmed")}
+    suite["flag_rule"] = "both_judges"
+    suite["ranking"] = rank(suite["candidates"])
+
+
 def agreement_view(primary_dir: pathlib.Path, second_dir: pathlib.Path) -> dict:
     """How two judges scored the SAME answers (the second run is a rejudge of the first)."""
     a, b = load_results(primary_dir, with_verdicts=True), load_results(second_dir, with_verdicts=True)
@@ -223,10 +265,16 @@ def build_release(*, suites: dict[str, pathlib.Path], second: dict[str, pathlib.
     an optional rejudge of it by a second judge; the first suite is the public one
     (the walkthrough quotes it). `site_url` is where the page is served (release.yaml `site.url`)."""
     order = suite_order or list(suites)
+    views = {name: suite_view(suites[name]) for name in order}
+    for name in order:
+        if second and name in second:
+            apply_flag_rule(views[name], suites[name], second[name])
+        else:
+            views[name]["flag_rule"] = "primary_only"
     data = {
         "schema": SCHEMA, "status": "published", "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "providers": providers, "site_url": site_url,
-        "suites": {name: suite_view(suites[name]) for name in order},
+        "suites": views,
         "agreement": {name: agreement_view(suites[name], second[name]) for name in order if second and name in second} or None,
         "walkthrough": walkthrough_view(suites[order[0]], walkthrough_task),
     }

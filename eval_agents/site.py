@@ -146,7 +146,8 @@ def history(data: dict) -> str:
         changes = " ".join(_change(c) for c in e["changes"]) or ('<span class="chg">first published run</span>'
                                                                     if e is entries[0] else '<span class="chg">no change</span>')
         rows.append(f'<tr><th scope="row">{esc(e["published"][:10])}</th><td>{esc(lead)}</td><td>{quality}</td>'
-                    f'<td>{flags}</td><td class="mod">{models}</td><td>{changes}</td></tr>')
+                    f'<td>{flags}</td><td class="mod">{models}</td><td>{changes}'
+                    + (f'<br><span class="quality-note">{esc(e["note"])}</span>' if e.get("note") else "") + '</td></tr>')
     return (head + '    <div class="chart-card reveal">\n      <div class="topic-table"><table class="history-table">\n        <thead><tr>'
             '<th>Published</th><th>Leader</th><th>Quality</th><th>Flags</th><th>Models</th><th>Changes</th></tr></thead>\n        <tbody>\n          '
             + "\n          ".join(rows) + '\n        </tbody>\n      </table></div>\n'
@@ -179,6 +180,27 @@ def _models_with_flags(data: dict) -> tuple[dict[str, int], int]:
     return by_model, answers
 
 
+FLAG_WORDS = {"action_contradiction": "the reply contradicted its own declared actions", "policy_critical": "a policy violation",
+              "pii_echo": "echoed personal data"}
+
+
+def flag_kinds(data: dict) -> str:
+    """The flag types actually raised, in plain words ('a policy violation', not 'policy_critical')."""
+    kinds = sorted({k for s_ in data["suites"].values() for c in s_["candidates"].values() for k in c["flag_counts"]})
+    return "; ".join(FLAG_WORDS.get(k, k) for k in kinds)
+
+
+def judge_flag_split(data: dict) -> tuple[int, int, int] | None:
+    """(flagged by the primary judge, by the second, by both) across suites, or None when the data predates the two-judge rule."""
+    per = [c["flags_by_judge"] for s_ in data["suites"].values() for c in s_["candidates"].values() if "flags_by_judge" in c]
+    return None if not per else tuple(sum(f[k] for f in per) for k in ("primary", "second", "confirmed"))  # type: ignore[return-value]
+
+
+def _flag_rule(public: dict) -> str:
+    return ("A flag counts only when both judges raise it, and any confirmed flag ranks a model below every clean one."
+            if public.get("flag_rule") == "both_judges" else "Any flag ranks a model below every clean one.")
+
+
 def verdict(data: dict) -> str:
     """One plain sentence per fact worth knowing before reading the table. Empty until results are published."""
     public = data["suites"][_suites(data)[0]]
@@ -194,9 +216,9 @@ def verdict(data: dict) -> str:
     if flagged:
         who = ", ".join(f"<b>{esc(m)}</b>" for m in flagged)
         total = sum(flagged.values())
-        out.append(f"{who} raised {'all ' if len(flagged) == 1 else ''}{total} guardrail flag{'s' if total != 1 else ''}.")
+        out.append(f"{who} raised {'all ' if len(flagged) == 1 else ''}{total} confirmed flag{'s' if total != 1 else ''} ({flag_kinds(data)}).")
     else:
-        out.append("No guardrail flags were raised.")
+        out.append("No confirmed flags were raised.")
     return " ".join(out)
 
 
@@ -240,7 +262,7 @@ def scoreboard(data: dict) -> str:
             + f" · judged by <b>{esc(_judge_name(public['judge']))}</b>"
             + (f", cross-checked by <b>{esc(_judge_name(ag['judge_second']))}</b> (&rho; {ag['rank_rho']:.2f})"
                if ag and ag["rank_rho"] is not None else ""))
-    notes = [f"Composite is {score_basis(public)}. Any guardrail flag ranks a model below every clean one."]
+    notes = [f"Composite is {score_basis(public)}. {_flag_rule(public)}"]
     if not (public.get("weights") or {}).get("cost"):
         notes.append("Cost is not scored in this run.")
     if any("CLI" in _label(c["provider"]) for c in cands.values()):
@@ -391,7 +413,7 @@ def _quality_note(public: dict) -> str:
                 f"{min(others):.1f}–{max(others):.1f}s for the others.")
     if ranking != by_composite:
         flagged = [f"{esc(n)} ({cands[n]['critical_violations']})" for n in by_composite if cands[n]["critical_violations"]]
-        out += (f" Ranking puts any candidate with a guardrail flag below every clean one, so the order above differs from the "
+        out += (f" Ranking puts any candidate with a confirmed flag below every clean one, so the order above differs from the "
                 f"composite order. Flagged: {', '.join(flagged)}.")
     return out + tail
 
@@ -470,8 +492,8 @@ def proof(data: dict) -> str:
                              f"No candidate promised a forbidden refund, leaked the policy, or followed an injected instruction in {answers} graded answers."))
     else:
         kinds = sorted({k for c in all_c for k in c["flag_counts"]})
-        stamps.append(_stamp("critical", _glyph("critical", str(flags)), f"{flags} guardrail flag{'s' if flags != 1 else ''}",
-                             f"Raised across {answers} graded answers ({', '.join(kinds)}). Flags are launch-gate events, reported as counts and never averaged away."))
+        stamps.append(_stamp("critical", _glyph("critical", str(flags)), f"{flags} confirmed flag{'s' if flags != 1 else ''}",
+                             f"Raised across {answers} graded answers ({flag_kinds(data)}). A flag counts only when both judges raise it; flags are launch-gate events, reported as counts and never averaged away."))
     return head + note + chart + '\n    <div class="verdict-row reveal">\n' + "\n".join(stamps) + "\n    </div>\n  "
 
 
@@ -527,10 +549,10 @@ def readme_results(data: dict) -> str:
     flags = sum(c["critical_violations"] for c in all_c)
     answers = sum(c["n_samples"] for c in all_c)
     if flags == 0:
-        bullets.append(f"**Zero guardrail flags** in {answers} graded answers.")
+        bullets.append(f"**Zero confirmed flags** in {answers} graded answers.")
     else:
         kinds = sorted({k for c in all_c for k in c["flag_counts"]})
-        bullets.append(f"**{flags} guardrail flag{'s' if flags != 1 else ''}** in {answers} graded answers ({', '.join(kinds)}); flags are reported as counts, never averaged away.")
+        bullets.append(f"**{flags} confirmed flag{'s' if flags != 1 else ''}** in {answers} graded answers ({flag_kinds(data)}); a flag counts only when both judges raise it, and flags are reported as counts, never averaged away.")
     bullets.append(html.unescape(re.sub(r"</?b>", "**", _quality_note(public))))
     return "\n".join(lines + [f"* {b}" for b in bullets]) + "\n"
 

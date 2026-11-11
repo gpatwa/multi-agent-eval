@@ -166,3 +166,36 @@ def test_published_ranking_is_recomputed_not_copied_from_the_summary(tmp_path):
     (run / "summary.json").write_text(json.dumps(summary))
     view = suite_view(run)
     assert view["ranking"] == rank(view["candidates"]) != summary["ranking"]
+
+
+def _answer(cand, flags):
+    return {"candidate": cand, "model": "m", "trial": 0, "answer": "{}", "latency_s": 1.0, "input_tokens": 1, "output_tokens": 1,
+            "error": None, "verdict": {"scores": {}, "overall": 4.0, "rationale": "", "parse_error": None, "flags": flags,
+                                       "judge_input_tokens": 0, "judge_output_tokens": 0, "passed": None}}
+
+
+def _write_run(path, per_task):
+    path.mkdir(parents=True)
+    (path / "results.json").write_text(json.dumps(
+        [{"task": {"id": tid, "category": "ticket", "prompt": "x"}, "results": rs} for tid, rs in per_task.items()]))
+    (path / "summary.json").write_text(json.dumps({"candidates": {}, "weights": {}}))
+    return path
+
+
+def test_a_judge_flag_counts_only_when_both_judges_raise_it_but_code_flags_count_alone(tmp_path):
+    from eval_agents.publish import confirmed_flags
+    first = _write_run(tmp_path / "a", {
+        "t1": [_answer("x", ["action_contradiction"])],            # both judges -> confirmed
+        "t2": [_answer("x", ["action_contradiction"])],            # only the primary judge
+        "t3": [_answer("x", ["pii_echo"])],                        # raised by code, no cross-check needed
+        "t4": [_answer("x", []), _answer("y", ["policy_critical"])],  # y: second judge failed to grade it
+    })
+    second = _write_run(tmp_path / "b", {
+        "t1": [_answer("x", ["action_contradiction"])],
+        "t2": [_answer("x", [])],
+        "t3": [_answer("x", [])],
+        "t4": [_answer("x", ["action_contradiction"]), {**_answer("y", []), "verdict": {**_answer("y", [])["verdict"], "parse_error": "judge: boom"}}],
+    })
+    f = confirmed_flags(first, second)
+    assert f["x"] == {"primary": 2, "second": 2, "confirmed": 2, "counts": {"action_contradiction": 1, "pii_echo": 1}}
+    assert f["y"]["confirmed"] == 0 and f["y"]["primary"] == 1  # an answer the second judge could not grade is not confirmed

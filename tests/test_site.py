@@ -94,7 +94,7 @@ def test_violations_are_counted_never_called_zero(tmp_path):
     from eval_agents.publish import build_release
     data = build_release(suites={"public": public}, second=None, walkthrough_task="t3", providers=19)
     r = regions(render(PAGE, data))
-    assert "Zero violations" not in r and "1 guardrail flag" in r and "policy_critical" in r
+    assert "Zero violations" not in r and "1 confirmed flag" in r and "a policy violation" in r
     # the scoreboard marks the flagged candidate and says the flags are outside the composite
     assert r.count('class="pill bad">1 flag<') == 1 and r.count('<tr class="flagged">') == 1 and "ranks a model below every clean one" in r
 
@@ -135,9 +135,9 @@ def test_committed_readme_is_the_render_of_the_committed_data():
 
 def test_readme_states_only_what_the_data_supports(tmp_path):
     pending = render_readme(README, {**DATA, "status": "pending"})
-    assert "being refreshed" in pending and "Zero guardrail flags" not in pending and "Spearman" not in pending
+    assert "being refreshed" in pending and "Zero confirmed flags" not in pending and "Spearman" not in pending
     md = render_readme(README, _release(tmp_path))
-    assert "| claude |" in md and "Zero guardrail flags" in md and "Spearman ρ = 1.00" in md
+    assert "| claude |" in md and "Zero confirmed flags" in md and "Spearman ρ = 1.00" in md
     assert "docs/results/public/report.md" in md and "**claude leads on both**" in md
 
 
@@ -249,11 +249,11 @@ def test_verdict_states_the_leader_the_best_writer_and_who_raised_flags(tmp_path
     text = verdict(data)
     assert text.startswith(f"<b>{lead}</b> ranks first.")
     flagged = {c["model"] for c in public["candidates"].values() if c["critical_violations"]}
-    assert all(f"<b>{m}</b>" in text for m in flagged) or "No guardrail flags" in text
+    assert all(f"<b>{m}</b>" in text for m in flagged) or "No confirmed flags" in text
     for s in data["suites"].values():
         for c in s["candidates"].values():
             c["critical_violations"] = 0
-    assert "No guardrail flags were raised." in verdict(data)
+    assert "No confirmed flags were raised." in verdict(data)
 
 
 def test_readout_puts_findings_and_limits_side_by_side(tmp_path):
@@ -297,3 +297,11 @@ def test_the_repo_is_licensed_as_the_page_says():
     assert text.startswith("MIT License") and "Permission is hereby granted, free of charge" in text
     assert '"license": "https://opensource.org/licenses/MIT"' in PAGE  # structured data matches the file
     assert "[MIT](LICENSE)" in (ROOT / "README.md").read_text()
+
+
+def test_a_history_note_is_shown_on_its_row():
+    data = json.loads((ROOT / "docs" / "data" / "results.json").read_text())
+    hist = json.loads((ROOT / "docs" / "data" / "history.json").read_text())
+    hist["entries"][-1]["note"] = "Rule changed for a test."
+    from eval_agents.site import history
+    assert "Rule changed for a test." in history({**data, "history": hist})

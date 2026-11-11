@@ -10,7 +10,7 @@ Pure functions of the release data.
 """
 from __future__ import annotations
 
-from .site import CHANGE_TEXT, REPO_URL, _judge_name, _label, _suites, site_base, vendor_of
+from .site import CHANGE_TEXT, REPO_URL, _judge_name, _label, _suites, flag_kinds, judge_flag_split, site_base, vendor_of
 
 HN_TITLE_MAX, X_POST_MAX = 80, 280
 
@@ -54,7 +54,7 @@ def findings(data: dict) -> list[str]:
     if ranking != comp:
         top = comp[0]
         flags = cands[top]["critical_violations"]
-        out.append(f"{cands[top]['model']} has the highest composite ({cands[top]['composite']:.2f}) but {flags} guardrail "
+        out.append(f"{cands[top]['model']} has the highest composite ({cands[top]['composite']:.2f}) but {flags} confirmed "
                    f"flag{'s' if flags != 1 else ''}, so {cands[ranking[0]]['model']} ranks first: a flag ranks a model below every clean one.")
     else:
         out.append(f"{cands[ranking[0]]['model']} ranks first on the composite ({cands[ranking[0]]['composite']:.2f}).")
@@ -87,9 +87,9 @@ def findings(data: dict) -> list[str]:
                 if c["critical_violations"]:
                     by_model[c["model"]] = by_model.get(c["model"], 0) + c["critical_violations"]
         who = ", ".join(f"{m}: {k}" for m, k in sorted(by_model.items(), key=lambda kv: -kv[1]))
-        out.append(f"{flags} guardrail flag{'s' if flags != 1 else ''} across {answers} graded answers ({who}).")
+        out.append(f"{flags} confirmed flag{'s' if flags != 1 else ''} across {answers} graded answers ({who}); {flag_kinds(data)}.")
     else:
-        out.append(f"No guardrail flags across {answers} graded answers.")
+        out.append(f"No confirmed flags across {answers} graded answers.")
     return out
 
 
@@ -108,6 +108,10 @@ def limitations(data: dict) -> list[str]:
         out.append("Latency for CLI candidates includes agent-CLI startup, so it is pipeline time, not model speed.")
     ag = (data.get("agreement") or {}).get(first)
     out.append(f"Judged by {_judge_name(public['judge'])}" + (f", cross-checked by {_judge_name(ag['judge_second'])}." if ag else "."))
+    split = judge_flag_split(data)
+    if split and split[:2] != (split[2], split[2]):
+        out.append(f"A flag counts only when both judges raise it. The primary judge flagged {split[0]} answers, the second {split[1]}, "
+                   f"and {split[2]} were flagged by both, so flag counts depend on which judge you ask.")
     overlap = _judge_overlap(data)
     if overlap:
         out.append(f"{overlap} Self-preference is possible, which is why a second vendor cross-checks the first judge.")
@@ -152,7 +156,7 @@ def kit(data: dict, history: dict) -> dict[str, str]:
                f"**Title ({len(hn_title)} chars, limit {HN_TITLE_MAX}):** {hn_title}\n\n**First comment (post it yourself right after submitting):**\n\n"
                f"I built this because vendor benchmarks don't say how a model does on my own policy and tickets. It runs candidates through "
                f"your tasks, grades the exact parts exactly (routing, priority, declared actions), uses an LLM judge only for judgment calls, "
-               f"cross-checks that judge with a second vendor, and treats a guardrail violation as a gate instead of an averaged score.\n\n"
+               f"cross-checks that judge with a second vendor, and treats a confirmed flag as a gate instead of an averaged score.\n\n"
                f"The first reference run ({run_date}) covers {models}:\n\n{bullets}\n\nLimits, up front:\n\n{limits}\n\n"
                f"Repo: {repo}\nResults and method: {url}\n\nI'd most like feedback on the scoring rules and on what a fair cost comparison looks like "
                f"when two of the candidates run on subscriptions.\n")
@@ -189,7 +193,7 @@ def kit(data: dict, history: dict) -> dict[str, str]:
     blog = (f"{stamp}# Blog post outline (dev.to or Hashnode)\n\n**Where:** dev.to / Hashnode with a canonical link to {url}. Search-indexed, so use the real "
             f"model names in the title.\n\n**Working title:** Comparing {', '.join(model_names(data))} on the same support tickets\n\n"
             f"1. Why a vendor's benchmark isn't your benchmark\n2. How scoring works: exact checks, a judge for judgment, a second judge to cross-check\n"
-            f"3. The result and what surprised me\n{bullets}\n4. Why a guardrail flag ranks a model down instead of averaging out\n"
+            f"3. The result and what surprised me\n{bullets}\n4. Why a confirmed flag ranks a model down instead of averaging out\n"
             f"5. What this run can't tell you\n{limits}\n6. Run it on your own tickets: {repo}\n")
 
     # Public text only (it becomes the release body): no stamp, no instructions to the person posting it.

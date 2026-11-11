@@ -60,7 +60,7 @@ def test_drafts_follow_the_data_not_a_template(tmp_path):
     after = kit(flagged, hist)["linkedin.md"]
     assert before != after
     total = sum(c["critical_violations"] for st in flagged["suites"].values() for c in st["candidates"].values())
-    assert f"{total} guardrail flags" in " ".join(findings(flagged))
+    assert f"{total} confirmed flags" in " ".join(findings(flagged))
 
 
 def test_cost_is_only_called_unscored_when_it_has_no_weight(tmp_path):
@@ -122,7 +122,7 @@ def test_flags_are_attributed_to_the_model_that_raised_them(tmp_path):
     name = next(iter(pub))
     pub[name]["critical_violations"] = 2
     line = findings(data)[-1]
-    assert f"({pub[name]['model']}: 2)" in line and line.startswith("2 guardrail flags")
+    assert f"({pub[name]['model']}: 2)" in line and line.startswith("2 confirmed flags")
 
 
 def test_latency_claim_carries_the_cli_startup_caveat_in_the_thread(tmp_path):

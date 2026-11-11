@@ -395,7 +395,8 @@
           "from": 3,
           "to": 1
         }
-      ]
+      ],
+      "note": "Flag rule changed: a flag now counts only when both judges raise it (earlier rows count the primary judge's flags alone). No new run; the same answers were re-counted."
     }
   ]
 }

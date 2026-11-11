@@ -39,7 +39,7 @@ Channel rules change. Read each channel's current posting rules the day you post
 
 Not every publish. Announce when the history shows a reason:
 - the first published run (launch);
-- a **leader change**, a **model swap**, a **quality drop** or **new guardrail flags**, which are the history's recorded changes;
+- a **leader change**, a **model swap**, a **quality drop** or **new confirmed flags**, which are the history's recorded changes;
 - a new vendor or model added to the run.
 
 Routine re-runs with no headline change only update the feed.
