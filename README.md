@@ -10,7 +10,7 @@ workload?"* — answered with data (quality scores, latency, token usage)
 instead of vibes.
 
 <!-- AUTO:readme_results -->
-## Latest result (2026-10-17)
+## Latest result (2026-11-11)
 
 Support-triage benchmark on 40 public tickets (7 adversarial) plus 20 held-out tickets kept out of this repo, every candidate at matched **low** reasoning effort, judged by Claude Code CLI (claude-opus-5) and cross-checked by Codex CLI (gpt-6-astra). Generated from [`docs/data/results.json`](docs/data/results.json); reports: [public suite](docs/results/public/report.md), [heldout aggregates](docs/results/heldout/summary.json).
 
@@ -23,7 +23,7 @@ Support-triage benchmark on 40 public tickets (7 adversarial) plus 20 held-out t
 Held-out suite (same policy, different wording): gpt 4.82 (public 4.80); claude 4.92 (public 4.94); gemini 4.86 (public 4.89) quality.
 
 * Two different-vendor judges agree on the ranking (Spearman ρ = 1.00) across 116 answers.
-* **4 guardrail flags** in 180 graded answers (action_contradiction); flags are reported as counts, never averaged away.
+* **2 confirmed flags** in 180 graded answers (the reply contradicted its own declared actions); a flag counts only when both judges raise it, and flags are reported as counts, never averaged away.
 * Composite is 70% quality, 30% latency — **claude has the highest raw reply quality** (4.94/5 vs gemini’s 4.89, gpt’s 4.80) but ranks 2nd on the composite: its p95 latency is 15.2s vs 9.5–34.8s for the others. Latency for CLI candidates includes agent-CLI startup, so read it as pipeline time, not model speed. Cost is not scored in this run: the subscription CLIs report no usable token counts.
 <!-- /AUTO:readme_results -->
 

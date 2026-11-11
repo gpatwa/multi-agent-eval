@@ -4,7 +4,14 @@
   <id>https://eval.aveto.dev/</id>
   <link href="https://eval.aveto.dev/feed.xml" rel="self"/>
   <link href="https://eval.aveto.dev/"/>
-  <updated>2026-10-17T14:15:24+00:00</updated>
+  <updated>2026-11-11T00:10:54+00:00</updated>
+  <entry>
+    <title>Run 2026-11-11: gpt-6-astra ranks first</title>
+    <id>https://eval.aveto.dev/#run-eaec576c73935aaf</id>
+    <updated>2026-11-11T00:10:54+00:00</updated>
+    <link href="https://eval.aveto.dev/#history"/>
+    <summary>gpt-6-astra ranks first. No headline change.</summary>
+  </entry>
   <entry>
     <title>Run 2026-10-17: gpt-6-astra ranks first</title>
     <id>https://eval.aveto.dev/#run-0972cd3a286586b6</id>

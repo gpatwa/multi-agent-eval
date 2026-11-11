@@ -504,9 +504,9 @@
   <section class="hero wrap" id="results">
     <p class="eyebrow fade-up">Multi-vendor LLM evaluation · latest run</p>
     <h1 class="fade-up" style="margin-top:16px;">Choose your model vendor with evidence, not marketing.</h1>
-    <p class="lede fade-up">Run every major model against your own policy and tickets, judged twice, with a guardrail violation treated as a gate and not averaged away. This is what a run looks like.</p>
+    <p class="lede fade-up">Run every major model against your own policy and tickets, judged twice, with a flag that both judges raise treated as a gate and not averaged away. This is what a run looks like.</p>
     <div class="scoreboard-wrap fade-up"><!-- AUTO:scoreboard -->
-      <p class="verdict"><b>gpt-6-astra</b> ranks first. <b>claude-opus-5-5</b> writes the best replies (4.94/5) but is the slowest. <b>gemini-4-argon</b> raised all 4 guardrail flags.</p>
+      <p class="verdict"><b>gpt-6-astra</b> ranks first. <b>claude-opus-5-5</b> writes the best replies (4.94/5) but is the slowest. <b>gemini-4-argon</b> raised all 2 confirmed flags (the reply contradicted its own declared actions).</p>
       <div class="sb-scroll"><table class="scoreboard">
         <thead><tr><th>Rank</th><th>Model</th><th>Composite</th><th>Quality</th><th>Latency</th><th>Guardrail</th><th>Best topics</th></tr></thead>
         <tbody>
@@ -515,8 +515,8 @@
           <tr class="flagged"><th scope="row" data-label="Rank"><span class="rank">3</span></th><td class="model" data-label="Model"><div class="mdl"><span class="vendor">Google</span><b class="mono">gemini-4-argon</b><span class="via">API</span></div></td><td class="comp" data-label="Composite"><div class="cmp"><span class="tr"><i style="--w:68%"></i></span><span class="num">0.68</span></div></td><td class="num" data-label="Quality">4.89<small> / 5</small></td><td class="num" data-label="Median latency">6.0s</td><td data-label="Guardrail"><span class="pill bad">1 flag</span></td><td class="num" data-label="Best topics">1<small> of 6</small></td></tr>
         </tbody>
       </table></div>
-      <p class="sb-meta">Latest run 2026-10-17 · 60 tickets (20 held-out) · reasoning effort low · judged by <b>Claude Code CLI (claude-opus-5)</b>, cross-checked by <b>Codex CLI (gpt-6-astra)</b> (&rho; 1.00).</p>
-      <p class="sb-meta">Composite is 70% quality, 30% latency. Any guardrail flag ranks a model below every clean one. Cost is not scored in this run. Latency marked CLI includes agent-CLI startup.</p>
+      <p class="sb-meta">Latest run 2026-11-11 · 60 tickets (20 held-out) · reasoning effort low · judged by <b>Claude Code CLI (claude-opus-5)</b>, cross-checked by <b>Codex CLI (gpt-6-astra)</b> (&rho; 1.00).</p>
+      <p class="sb-meta">Composite is 70% quality, 30% latency. A flag counts only when both judges raise it, and any confirmed flag ranks a model below every clean one. Cost is not scored in this run. Latency marked CLI includes agent-CLI startup.</p>
     <!-- /AUTO:scoreboard --></div>
     <div class="ctas fade-up">
       <a class="btn btn-primary" href="https://github.com/gpatwa/multi-agent-eval" target="_blank" rel="noopener">View the source →</a>
@@ -531,8 +531,8 @@
       <h2>What this run shows, and what it can&rsquo;t</h2>
     </div>
     <div class="readout reveal">
-      <div class="ro-col"><h3>Findings</h3><ul><li>gpt-6-astra ranks first on the composite (0.97).</li><li>claude-opus-5-5 has the highest raw reply quality (4.94/5) but the slowest median latency (10.9s vs 6.0-6.8s).</li><li>claude-opus-5-5 has the best quality on 5 of 6 ticket topics.</li><li>Two judges from different vendors agree on the order (Spearman rho 1.00, 116 answers).</li><li>Quality on 20 held-out tickets stays within 0.04 of the public suite.</li><li>4 guardrail flags across 180 graded answers (gemini-4-argon: 4).</li></ul></div>
-      <div class="ro-col limits"><h3>Limits</h3><ul><li>40 public tickets plus 20 held-out, from one reference workload (support triage). It may not transfer to your tickets, which is why the tool is self-hosted.</li><li>Every candidate ran at reasoning effort low.</li><li>Cost is not scored in this run.</li><li>Latency for CLI candidates includes agent-CLI startup, so it is pipeline time, not model speed.</li><li>Judged by Claude Code CLI (claude-opus-5), cross-checked by Codex CLI (gpt-6-astra).</li><li>The primary judge (claude-opus-5) is from the same vendor as candidate claude-opus-5-5. The second judge (gpt-6-astra) is also a candidate. Self-preference is possible, which is why a second vendor cross-checks the first judge.</li></ul></div>
+      <div class="ro-col"><h3>Findings</h3><ul><li>gpt-6-astra ranks first on the composite (0.97).</li><li>claude-opus-5-5 has the highest raw reply quality (4.94/5) but the slowest median latency (10.9s vs 6.0-6.8s).</li><li>claude-opus-5-5 has the best quality on 5 of 6 ticket topics.</li><li>Two judges from different vendors agree on the order (Spearman rho 1.00, 116 answers).</li><li>Quality on 20 held-out tickets stays within 0.04 of the public suite.</li><li>2 confirmed flags across 180 graded answers (gemini-4-argon: 2); the reply contradicted its own declared actions.</li></ul></div>
+      <div class="ro-col limits"><h3>Limits</h3><ul><li>40 public tickets plus 20 held-out, from one reference workload (support triage). It may not transfer to your tickets, which is why the tool is self-hosted.</li><li>Every candidate ran at reasoning effort low.</li><li>Cost is not scored in this run.</li><li>Latency for CLI candidates includes agent-CLI startup, so it is pipeline time, not model speed.</li><li>Judged by Claude Code CLI (claude-opus-5), cross-checked by Codex CLI (gpt-6-astra).</li><li>A flag counts only when both judges raise it. The primary judge flagged 4 answers, the second 10, and 2 were flagged by both, so flag counts depend on which judge you ask.</li><li>The primary judge (claude-opus-5) is from the same vendor as candidate claude-opus-5-5. The second judge (gpt-6-astra) is also a candidate. Self-preference is possible, which is why a second vendor cross-checks the first judge.</li></ul></div>
     </div>
   <!-- /AUTO:readout -->  </section>
 
@@ -628,9 +628,9 @@
         <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <circle cx="26" cy="26" r="24" stroke="var(--critical)" stroke-width="1.4" stroke-dasharray="2 3"/>
           <circle cx="26" cy="26" r="18.5" stroke="var(--critical)" stroke-width="1.4"/>
-          <text x="26" y="31" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="600" fill="var(--critical)">4</text>
+          <text x="26" y="31" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="15" font-weight="600" fill="var(--critical)">2</text>
         </svg>
-        <span class="label"><b>4 guardrail flags</b>Raised across 180 graded answers (action_contradiction). Flags are launch-gate events, reported as counts and never averaged away.</span>
+        <span class="label"><b>2 confirmed flags</b>Raised across 180 graded answers (the reply contradicted its own declared actions). A flag counts only when both judges raise it; flags are launch-gate events, reported as counts and never averaged away.</span>
       </div>
     </div>
   <!-- /AUTO:proof -->  </section>
@@ -705,6 +705,7 @@
       <div class="topic-table"><table class="history-table">
         <thead><tr><th>Published</th><th>Leader</th><th>Quality</th><th>Flags</th><th>Models</th><th>Changes</th></tr></thead>
         <tbody>
+          <tr><th scope="row">2026-11-11</th><td>gpt</td><td>gpt 4.80 · claude 4.94 · gemini 4.89</td><td>2</td><td class="mod">gpt-6-astra · claude-opus-5-5 · gemini-4-argon</td><td><span class="chg">gemini: flags 3 → 1</span></td></tr>
           <tr><th scope="row">2026-10-17</th><td>gpt</td><td>gpt 4.80 · claude 4.94 · gemini 4.89</td><td>4</td><td class="mod">gpt-6-astra · claude-opus-5-5 · gemini-4-argon</td><td><span class="chg">claude: model claude-opus-5 → claude-opus-5-5</span> <span class="chg">claude: flags 1 → 0</span> <span class="chg">gemini: model gemini-3.1-pro-preview → gemini-4-argon</span> <span class="chg">gemini: flags 2 → 1</span> <span class="chg">leader gemini → gpt</span> <span class="chg">claude: model claude-opus-5 → claude-opus-5-5</span> <span class="chg">claude: flags 1 → 0</span> <span class="chg">gemini: model gemini-3.1-pro-preview → gemini-4-argon</span> <span class="chg bad">gemini: flags 0 → 3</span></td></tr>
           <tr><th scope="row">2026-09-29</th><td>gpt</td><td>gpt 4.80 · gemini 4.84 · claude 4.95</td><td>4</td><td class="mod">gpt-6-astra · gemini-3.1-pro-preview · claude-opus-5</td><td><span class="chg">leader gemini → gpt</span></td></tr>
           <tr><th scope="row">2026-09-29</th><td>gemini</td><td>gemini 4.84 · gpt 4.80 · claude 4.95</td><td>4</td><td class="mod">gemini-3.1-pro-preview · gpt-6-astra · claude-opus-5</td><td><span class="chg">first published run</span></td></tr>
