@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "checked": "2026-11-18",
+  "checked": "2026-11-19",
   "models": [
     {
       "vendor": "OpenAI",
@@ -767,7 +767,8 @@
       "gemini-25-flash",
       "gemini-25-pro",
       "gemini-3.6-flash",
-      "gemini-4-hydrogen"
+      "gemini-4-hydrogen",
+      "gemini-4-neon"
     ]
   },
   "not_included": [
